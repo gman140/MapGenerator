@@ -1,3 +1,4 @@
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 
@@ -18,9 +19,10 @@ public class EggService
         _mapCache = mapCache;
     }
 
-    public async Task<(bool success, string message, int eggCount)> LayEggAsync(Player player)
+    public async Task<(bool success, string message, int eggCount)> LayEggAsync(
+        Player player, IReadOnlySet<Permission> permissions)
     {
-        if (player.LastEggLaidAt.HasValue)
+        if (!permissions.Contains(Permission.IgnoreEggCooldown) && player.LastEggLaidAt.HasValue)
         {
             var remaining = EggCooldown - (DateTime.UtcNow - player.LastEggLaidAt.Value);
             if (remaining > TimeSpan.Zero)

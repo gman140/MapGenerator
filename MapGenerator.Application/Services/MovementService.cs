@@ -1,6 +1,7 @@
 using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
+using System.Collections.Generic;
 
 namespace MapGenerator.Application.Services;
 
@@ -44,13 +45,19 @@ public class MovementService
         return MapGeneratorService.HexNeighborOffsets().Any(o => o.dq == dq && o.dr == dr);
     }
 
-    public async Task<MovementResult> TryMoveAsync(Player player, int targetQ, int targetR, bool oceanConfirmed = false)
+    public async Task<MovementResult> TryMoveAsync(
+        Player player,
+        IReadOnlySet<Permission> permissions,
+        int targetQ, int targetR,
+        bool oceanConfirmed = false)
     {
-        if (!AreAdjacent(player.Q, player.R, targetQ, targetR))
+        if (!permissions.Contains(Permission.MoveToAnyTile) &&
+            !AreAdjacent(player.Q, player.R, targetQ, targetR))
             return Fail("You can only move to adjacent tiles.");
 
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        if (now < player.MovementCooldownUntil)
+        if (!permissions.Contains(Permission.IgnoreMovementCooldown) &&
+            now < player.MovementCooldownUntil)
         {
             double secs = (player.MovementCooldownUntil - now) / 1000.0;
             return Fail($"You must wait {secs:F1}s before moving again.");
@@ -76,13 +83,15 @@ public class MovementService
             return new MovementResult { Success = true, PlayerDrowned = true };
         }
 
-        long cooldown = BiomeCooldownMs.TryGetValue(tile.Biome, out long cd) ? cd : 400;
+        long cooldown = permissions.Contains(Permission.IgnoreMovementCooldown)
+            ? 0
+            : BiomeCooldownMs.TryGetValue(tile.Biome, out long cd) ? cd : 400;
 
         await _visitRepo.RecordDepartureAsync(player.Id, player.Q, player.R);
 
         player.Q = targetQ;
         player.R = targetR;
-        player.MovementCooldownUntil = now + cooldown;
+        player.MovementCooldownUntil = cooldown > 0 ? now + cooldown : 0;
         player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(player);
 

@@ -8,6 +8,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddSingleton<MapGeneratorService>();
+        services.AddSingleton<PermissionService>();
         services.AddScoped<MovementService>();
         services.AddScoped<PlayerService>();
         services.AddScoped<ChatService>();

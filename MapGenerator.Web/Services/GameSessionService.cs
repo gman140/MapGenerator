@@ -10,6 +10,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly ChatService _chatSvc;
     private readonly MovementService _movementSvc;
     private readonly EggService _eggSvc;
+    private readonly PermissionService _permissionSvc;
     private readonly GameBroadcastService _broadcast;
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
@@ -22,6 +23,7 @@ public class GameSessionService : IAsyncDisposable
         ChatService chatSvc,
         MovementService movementSvc,
         EggService eggSvc,
+        PermissionService permissionSvc,
         GameBroadcastService broadcast,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo)
@@ -30,6 +32,7 @@ public class GameSessionService : IAsyncDisposable
         _chatSvc = chatSvc;
         _movementSvc = movementSvc;
         _eggSvc = eggSvc;
+        _permissionSvc = permissionSvc;
         _broadcast = broadcast;
         _playerRepo = playerRepo;
         _visitRepo = visitRepo;
@@ -57,7 +60,8 @@ public class GameSessionService : IAsyncDisposable
         if (Player == null) return new MovementResult { ErrorMessage = "Not logged in." };
 
         int oldQ = Player.Q, oldR = Player.R;
-        var result = await _movementSvc.TryMoveAsync(Player, targetQ, targetR, oceanConfirmed);
+        var permissions = _permissionSvc.GetPermissions(Player);
+        var result = await _movementSvc.TryMoveAsync(Player, permissions, targetQ, targetR, oceanConfirmed);
 
         if (result.PlayerDrowned)
         {
@@ -91,7 +95,8 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string message, int eggCount)> LayEggAsync()
     {
         if (Player == null) return (false, "Not logged in.", 0);
-        var result = await _eggSvc.LayEggAsync(Player);
+        var permissions = _permissionSvc.GetPermissions(Player);
+        var result = await _eggSvc.LayEggAsync(Player, permissions);
         if (result.success)
             _broadcast.NotifyEggLaid(Player.Id, Player.Q, Player.R, result.eggCount);
         return result;
