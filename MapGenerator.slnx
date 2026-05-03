@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MapGenerator.Application/MapGenerator.Application.csproj" />
+  <Project Path="MapGenerator.Domain/MapGenerator.Domain.csproj" />
+  <Project Path="MapGenerator.Infrastructure/MapGenerator.Infrastructure.csproj" />
+  <Project Path="MapGenerator.Web/MapGenerator.Web.csproj" />
+</Solution>

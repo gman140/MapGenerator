@@ -1,0 +1,236 @@
+@page "/game"
+@rendermode InteractiveServer
+@inject GameSessionService Session
+@inject GameBroadcastService Broadcast
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>@(Session.Player?.Username ?? "World Map")</PageTitle>
+
+@if (!Session.IsLoaded)
+{
+    <div class="loading-screen"><p>Loading&hellip;</p></div>
+}
+else if (Session.Player == null)
+{
+    <div class="loading-screen"><p>Redirecting&hellip;</p></div>
+}
+else
+{
+    <div class="game-layout">
+        <div class="map-area">
+            <HexMapView Player="Session.Player"
+                        OnTileClicked="HandleTileClickAsync"
+                        OnlinePlayers="Broadcast.GetOnlinePlayers()" />
+        </div>
+        <div class="sidebar">
+            <MiniMap Player="Session.Player" MapVersion="_mapVersion" />
+            <PlayerInfo Player="Session.Player"
+                        CooldownUntil="_cooldownUntil"
+                        OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)" />
+        </div>
+        <div class="chat-area">
+            <ChatPanel LocalMessages="_localMessages"
+                       WorldMessages="_worldMessages"
+                       OnSendLocal="SendLocalAsync"
+                       OnSendWorld="SendWorldAsync" />
+        </div>
+    </div>
+
+    @if (_oceanWarning)
+    {
+        <div class="modal-overlay">
+            <div class="modal-box danger">
+                <p>The ocean is treacherous and vast. Venturing in without a vessel means certain death.</p>
+                <p><strong>Are you sure you want to enter the ocean?</strong></p>
+                <div class="modal-actions">
+                    <button class="btn-danger" @onclick="ConfirmOceanAsync">Yes, I accept my fate</button>
+                    <button @onclick="() => _oceanWarning = false">Turn back</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_drownedMessage)
+    {
+        <div class="modal-overlay">
+            <div class="modal-box danger">
+                <p>The waves swallowed you whole. Your journey ends here.</p>
+                <p>A new soul may yet walk this world.</p>
+                <button @onclick="HandleDrownedAsync">Begin Again</button>
+            </div>
+        </div>
+    }
+
+    @if (_moveError != null)
+    {
+        <div class="toast-error">@_moveError</div>
+    }
+}
+
+@code {
+    private List<ChatMessage> _localMessages = [];
+    private List<ChatMessage> _worldMessages = [];
+    private long _cooldownUntil;
+    private bool _oceanWarning;
+    private bool _drownedMessage;
+    private string? _moveError;
+    private (int q, int r)? _pendingOceanMove;
+    private System.Threading.Timer? _toastTimer;
+    private int _mapVersion;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var browserId = await JS.InvokeAsync<string>("gameJs.getBrowserId");
+        await Session.InitAsync(browserId);
+
+        if (Session.Player == null)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        _cooldownUntil = Session.Player.MovementCooldownUntil;
+        _localMessages = await Session.GetTileChatAsync();
+        _worldMessages = await Session.GetWorldChatAsync();
+
+        Broadcast.PlayerMoved += OnPlayerMoved;
+        Broadcast.MessageReceived += OnMessageReceived;
+        Broadcast.MapRegenerated += OnMapRegenerated;
+
+        await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
+        StateHasChanged();
+    }
+
+    private async Task HandleTileClickAsync((int q, int r) target)
+    {
+        if (Session.Player == null) return;
+        _moveError = null;
+
+        var result = await Session.MoveAsync(target.q, target.r);
+
+        if (result.RequiresOceanConfirmation)
+        {
+            _pendingOceanMove = target;
+            _oceanWarning = true;
+            StateHasChanged();
+            return;
+        }
+
+        if (result.PlayerDrowned)
+        {
+            _drownedMessage = true;
+            StateHasChanged();
+            return;
+        }
+
+        if (!result.Success)
+        {
+            ShowToast(result.ErrorMessage ?? "Cannot move there.");
+            return;
+        }
+
+        _cooldownUntil = result.CooldownUntil ?? 0;
+        _localMessages = await Session.GetTileChatAsync();
+        await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player!.Q, Session.Player.R);
+        StateHasChanged();
+    }
+
+    private async Task ConfirmOceanAsync()
+    {
+        _oceanWarning = false;
+        if (_pendingOceanMove == null) return;
+        var (q, r) = _pendingOceanMove.Value;
+        _pendingOceanMove = null;
+
+        var result = await Session.MoveAsync(q, r, oceanConfirmed: true);
+        if (result.PlayerDrowned)
+        {
+            _drownedMessage = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDrownedAsync()
+    {
+        await JS.InvokeVoidAsync("gameJs.clearBrowserId");
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+
+    private async Task SendLocalAsync(string content)
+    {
+        await Session.SendLocalMessageAsync(content);
+    }
+
+    private async Task SendWorldAsync(string content)
+    {
+        await Session.SendWorldMessageAsync(content);
+    }
+
+    private void OnPlayerMoved(string playerId, int oldQ, int oldR, int newQ, int newR) =>
+        InvokeAsync(StateHasChanged);
+
+    private void OnMessageReceived(ChatMessage msg)
+    {
+        InvokeAsync(() =>
+        {
+            if (msg.IsWorldChat)
+                _worldMessages.Add(msg);
+            else if (Session.Player != null && msg.TileQ == Session.Player.Q && msg.TileR == Session.Player.R)
+                _localMessages.Add(msg);
+            StateHasChanged();
+        });
+    }
+
+    private void OnMapRegenerated(MapConfig config)
+    {
+        InvokeAsync(async () =>
+        {
+            if (Session.Player == null) return;
+
+            // Transition visit records and reload player position from DB
+            await Session.HandleMapResetAsync();
+
+            // Reload tile chat for the new spawn tile
+            _localMessages = await Session.GetTileChatAsync();
+
+            // Inject the "bright flash" system message into the local chat view
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "System",
+                Content = "You saw a bright flash, and the world faded away. You woke up here.",
+                IsSystemMessage = true,
+                SentAt = DateTime.UtcNow
+            });
+
+            // Bump version so MiniMap redraws itself with the new biome data
+            _mapVersion++;
+
+            StateHasChanged();
+        });
+    }
+
+    private void ShowToast(string message)
+    {
+        _moveError = message;
+        _toastTimer?.Dispose();
+        _toastTimer = new System.Threading.Timer(_ =>
+        {
+            _moveError = null;
+            InvokeAsync(StateHasChanged);
+        }, null, 3000, Timeout.Infinite);
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Broadcast.PlayerMoved -= OnPlayerMoved;
+        Broadcast.MessageReceived -= OnMessageReceived;
+        Broadcast.MapRegenerated -= OnMapRegenerated;
+        _toastTimer?.Dispose();
+        await Session.DisposeAsync();
+    }
+}

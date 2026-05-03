@@ -1,0 +1,183 @@
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg:        #0e0e12;
+    --surface:   #16161e;
+    --border:    #2a2a3a;
+    --text:      #d4d0c8;
+    --text-dim:  #7a7a8a;
+    --accent:    #6eb5a0;
+    --danger:    #c04040;
+    --warn:      #c09040;
+    --admin:     #a06ec0;
+
+    --ocean:     #1c4e8c;
+    --lake:      #3a6e90;
+    --beach:     #d2c38c;
+    --river:     #4078be;
+    --swamp:     #3c503c;
+    --grassland: #6eaf41;
+    --plains:    #b9af5a;
+    --forest:    #285a28;
+    --desert:    #d2af64;
+    --mountain:  #827d78;
+    --snow:      #e6ebf0;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
+
+/* ── Login Screen ─────────────────────────────────────────────────────────── */
+.login-screen { display: flex; align-items: center; justify-content: center; height: 100vh; }
+.login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; width: 340px; display: flex; flex-direction: column; gap: 1rem; }
+.login-box h1 { font-size: 1.5rem; color: var(--accent); text-align: center; }
+.login-box label { display: flex; flex-direction: column; gap: .3rem; color: var(--text-dim); font-size: .85rem; }
+.login-box input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: .5rem .7rem; border-radius: 4px; font-size: 1rem; outline: none; }
+.login-box input:focus { border-color: var(--accent); }
+.login-box button { background: var(--accent); color: #0e0e12; border: none; border-radius: 4px; padding: .6rem 1rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
+.login-box button:disabled { opacity: .5; cursor: default; }
+.hint { font-size: .78rem; color: var(--text-dim); text-align: center; }
+.status-text { color: var(--text-dim); text-align: center; }
+.error-text  { color: var(--danger); font-size: .85rem; }
+.success-text { color: var(--accent); font-size: .85rem; }
+
+/* ── Game Layout ──────────────────────────────────────────────────────────── */
+.game-layout {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    grid-template-rows: 1fr 220px;
+    height: 100vh;
+    gap: 4px;
+    padding: 4px;
+}
+.map-area  { grid-column: 1; grid-row: 1; overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.sidebar   { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 4px; }
+.chat-area { grid-column: 1 / 3; grid-row: 2; }
+
+/* ── Hex Map ──────────────────────────────────────────────────────────────── */
+.hex-map-container { width: 100%; height: 100%; overflow: hidden; cursor: default; }
+.hex-map-svg { display: block; }
+.hex-group { cursor: pointer; }
+.hex-group:hover polygon { filter: brightness(1.25); }
+.hex-group.adjacent polygon { stroke: rgba(255,255,255,.35); stroke-width: 1.5; }
+.hex-group.hovered polygon { stroke: white; stroke-width: 1.5; filter: brightness(1.3); }
+
+.hex-tile { stroke: rgba(0,0,0,.35); stroke-width: .8; }
+.biome-ocean     { fill: var(--ocean); }
+.biome-lake      { fill: var(--lake); }
+.biome-beach     { fill: var(--beach); }
+.biome-river     { fill: var(--river); }
+.biome-swamp     { fill: var(--swamp); }
+.biome-grassland { fill: var(--grassland); }
+.biome-plains    { fill: var(--plains); }
+.biome-forest    { fill: var(--forest); }
+.biome-desert    { fill: var(--desert); }
+.biome-mountain  { fill: var(--mountain); }
+.biome-snow      { fill: var(--snow); }
+
+.player-dot       { pointer-events: none; }
+.player-dot.self  { fill: #f0e050; stroke: #0e0e12; stroke-width: 1.5; }
+.player-dot.other { fill: #50a0f0; stroke: #0e0e12; stroke-width: 1; }
+
+.tile-tooltip { fill: white; font-size: 11px; pointer-events: none; text-shadow: 0 0 4px #000; }
+
+/* ── Minimap ──────────────────────────────────────────────────────────────── */
+.minimap-container { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.minimap-canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--border); border-radius: 3px; }
+.minimap-label { font-size: .75rem; color: var(--text-dim); text-align: center; }
+
+/* ── Player Info ──────────────────────────────────────────────────────────── */
+.player-info { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: .75rem; display: flex; flex-direction: column; gap: .5rem; flex: 1; overflow-y: auto; }
+.player-name { font-size: 1rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: .4rem; }
+.admin-badge { background: var(--admin); color: white; font-size: .68rem; padding: .1rem .4rem; border-radius: 10px; font-weight: 600; }
+.tile-info   { display: flex; align-items: center; gap: .5rem; }
+.biome-tag   { font-size: .78rem; padding: .15rem .5rem; border-radius: 10px; font-weight: 600; background: var(--border); }
+.biome-tag.biome-ocean     { background: var(--ocean); color: #e0e8f8; }
+.biome-tag.biome-lake      { background: var(--lake); color: #d0e8f4; }
+.biome-tag.biome-grassland { background: var(--grassland); color: #0e0e12; }
+.biome-tag.biome-forest    { background: var(--forest); color: #a0e0a0; }
+.biome-tag.biome-mountain  { background: var(--mountain); color: #0e0e12; }
+.biome-tag.biome-swamp     { background: var(--swamp); color: #a0c0a0; }
+.biome-tag.biome-plains    { background: var(--plains); color: #0e0e12; }
+.biome-tag.biome-desert    { background: var(--desert); color: #0e0e12; }
+.biome-tag.biome-snow      { background: var(--snow); color: #0e0e12; }
+.biome-tag.biome-river     { background: var(--river); color: white; }
+.biome-tag.biome-beach     { background: var(--beach); color: #0e0e12; }
+.coords { font-size: .75rem; color: var(--text-dim); }
+
+.cooldown-bar  { background: var(--border); border-radius: 4px; height: 14px; position: relative; overflow: hidden; }
+.cooldown-fill { background: var(--warn); height: 100%; transition: width .1s linear; }
+.cooldown-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; color: white; font-weight: 600; }
+
+.section-label { font-size: .75rem; color: var(--text-dim); }
+.players-here  { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.player-chip      { background: var(--border); color: var(--text); font-size: .78rem; padding: .1rem .4rem; border-radius: 10px; }
+.player-chip.self { background: rgba(240,224,80,.2); color: #f0e050; }
+.admin-link { font-size: .8rem; color: var(--admin); text-decoration: none; margin-top: auto; }
+.admin-link:hover { text-decoration: underline; }
+
+/* ── Chat Panel ───────────────────────────────────────────────────────────── */
+.chat-panel    { display: flex; flex-direction: column; height: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.chat-tabs     { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); }
+.chat-tabs button { flex: 1; background: none; border: none; color: var(--text-dim); padding: .5rem; font-size: .85rem; cursor: pointer; position: relative; }
+.chat-tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+.unread-badge  { background: var(--danger); color: white; font-size: .65rem; padding: .05rem .35rem; border-radius: 10px; margin-left: .3rem; }
+.chat-messages { flex: 1; overflow-y: auto; padding: .5rem; display: flex; flex-direction: column; gap: .25rem; scrollbar-width: thin; }
+.chat-msg      { display: flex; gap: .4rem; align-items: baseline; flex-wrap: wrap; font-size: .85rem; line-height: 1.4; }
+.chat-msg.system .chat-content { color: var(--warn); font-style: italic; }
+.chat-msg.world-msg .chat-sender { color: #f090c0; }
+.chat-sender   { color: var(--accent); font-weight: 600; flex-shrink: 0; }
+.chat-time     { color: var(--text-dim); font-size: .72rem; flex-shrink: 0; }
+.chat-content  { color: var(--text); word-break: break-word; }
+.chat-empty    { color: var(--text-dim); font-style: italic; font-size: .82rem; padding: .5rem; }
+
+.chat-input        { display: flex; gap: .4rem; padding: .4rem; border-top: 1px solid var(--border); }
+.chat-input input  { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: .4rem .6rem; border-radius: 4px; font-size: .9rem; outline: none; }
+.chat-input input:focus { border-color: var(--accent); }
+.chat-input button { background: var(--accent); color: #0e0e12; border: none; border-radius: 4px; padding: .4rem .9rem; font-weight: 600; font-size: .85rem; cursor: pointer; }
+.chat-input button:disabled { opacity: .4; cursor: default; }
+
+/* ── Modals ───────────────────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-box     { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; max-width: 400px; width: 90%; display: flex; flex-direction: column; gap: 1rem; }
+.modal-box.danger { border-color: var(--danger); }
+.modal-box p   { line-height: 1.6; }
+.modal-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+.btn-danger    { background: var(--danger); color: white; border: none; border-radius: 4px; padding: .5rem 1rem; font-weight: 600; cursor: pointer; }
+
+.toast-error { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; padding: .6rem 1.4rem; border-radius: 6px; font-size: .9rem; z-index: 200; pointer-events: none; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ── Loading & Misc ───────────────────────────────────────────────────────── */
+.loading-screen { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--text-dim); font-size: 1.1rem; }
+
+/* ── Admin Panel ──────────────────────────────────────────────────────────── */
+.admin-panel { max-width: 600px; margin: 3rem auto; padding: 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; height: 100vh; }
+.admin-panel h2 { color: var(--accent); }
+.admin-panel h3 { color: var(--text); margin-bottom: .5rem; }
+.warning-text { color: var(--warn); font-size: .85rem; }
+.form-row { display: flex; flex-wrap: wrap; gap: 1rem; }
+.form-row label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; color: var(--text-dim); }
+.form-row input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: .35rem .6rem; border-radius: 4px; font-size: .9rem; width: 120px; }
+
+.admin-section { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 6px; }
+.admin-section h4 { font-size: .9rem; color: var(--text-dim); margin-top: .25rem; }
+
+.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1.5rem; }
+.option-grid label { display: flex; flex-direction: column; gap: .3rem; font-size: .84rem; color: var(--text-dim); }
+.option-grid label small { font-size: .75rem; color: var(--text-dim); opacity: .75; }
+.option-grid input[type=number] { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: .3rem .5rem; border-radius: 4px; font-size: .9rem; width: 110px; }
+.option-grid input[type=range] { accent-color: var(--accent); cursor: pointer; }
+
+.stat-grid { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; font-size: .84rem; }
+.stat-grid span:nth-child(odd) { color: var(--text-dim); }
+.stat-grid span:nth-child(even) { color: var(--text); font-weight: 500; }
+
+.dim-text { color: var(--text-dim); font-size: .9rem; }
+.back-link { color: var(--accent); text-decoration: none; font-size: .9rem; }
+.back-link:hover { text-decoration: underline; }
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }

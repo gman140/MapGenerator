@@ -1,0 +1,89 @@
+@using MapGenerator.Application.Services
+@inject MapGeneratorService MapCache
+
+<div class="player-info">
+    <div class="player-name">
+        @Player.Username
+        @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
+    </div>
+    <div class="tile-info">
+        @{
+            var tile = MapCache.GetCachedTile(Player.Q, Player.R);
+        }
+        <span class="biome-tag biome-@(tile?.Biome.ToString().ToLower() ?? "unknown")">
+            @(tile?.Biome.ToString() ?? "Unknown")
+        </span>
+        <span class="coords">(@Player.Q, @Player.R)</span>
+    </div>
+
+    @if (_cooldownRemaining > 0)
+    {
+        <div class="cooldown-bar">
+            <div class="cooldown-fill" style="width: @_fillPct%"></div>
+            <span class="cooldown-text">@((_cooldownRemaining / 1000.0).ToString("F1"))s</span>
+        </div>
+    }
+
+    @if (OnlinePlayers.Count > 0)
+    {
+        <div class="players-here">
+            <span class="section-label">Here:</span>
+            @foreach (var (id, username) in OnlinePlayers)
+            {
+                <span class="player-chip @(id == Player.Id ? "self" : "")">@username</span>
+            }
+        </div>
+    }
+
+    @if (Player.IsAdmin)
+    {
+        <a href="/admin" class="admin-link">Admin Panel</a>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public long CooldownUntil { get; set; }
+    [Parameter] public List<(string Id, string Username)> OnlinePlayers { get; set; } = [];
+
+    private long _cooldownRemaining;
+    private double _fillPct;
+    private System.Threading.Timer? _timer;
+    private long _cooldownDuration;
+
+    protected override void OnParametersSet()
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _cooldownRemaining = Math.Max(0, CooldownUntil - now);
+        _cooldownDuration = _cooldownRemaining > 0 ? _cooldownRemaining : _cooldownDuration;
+        UpdateFill();
+
+        if (_cooldownRemaining > 0 && _timer == null)
+            _timer = new System.Threading.Timer(Tick, null, 100, 100);
+        else if (_cooldownRemaining <= 0)
+            _timer?.Dispose();
+    }
+
+    private void Tick(object? _)
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _cooldownRemaining = Math.Max(0, CooldownUntil - now);
+        UpdateFill();
+
+        if (_cooldownRemaining <= 0)
+        {
+            _timer?.Dispose();
+            _timer = null;
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateFill()
+    {
+        _fillPct = _cooldownDuration > 0
+            ? _cooldownRemaining / (double)_cooldownDuration * 100.0
+            : 0;
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

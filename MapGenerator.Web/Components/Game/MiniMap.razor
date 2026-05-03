@@ -1,0 +1,50 @@
+@using MapGenerator.Application.Services
+@inject MapGeneratorService MapCache
+@inject IJSRuntime JS
+
+<div class="minimap-container">
+    <canvas @ref="_canvas" id="minimap-canvas" class="minimap-canvas"></canvas>
+    <div class="minimap-label">World Map</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public int MapVersion { get; set; }
+
+    private ElementReference _canvas;
+    private bool _needsFullRedraw = true;
+    private int _lastMapVersion = -1;
+
+    protected override void OnParametersSet()
+    {
+        if (MapVersion != _lastMapVersion)
+        {
+            _lastMapVersion = MapVersion;
+            _needsFullRedraw = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsFullRedraw && !firstRender) return;
+
+        var config = MapCache.GetCachedConfig();
+        if (config == null) return;
+
+        var rgbData = MapCache.GetMinimapData();
+        if (rgbData.Length == 0) return;
+
+        await JS.InvokeVoidAsync("gameJs.drawMinimap",
+            _canvas, rgbData, config.Width, config.Height, Player.Q, Player.R);
+
+        _needsFullRedraw = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Only update the player dot when there is no full redraw pending —
+        // drawMinimap already places the dot at the correct position.
+        if (_needsFullRedraw) return;
+        await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Player.Q, Player.R);
+    }
+}

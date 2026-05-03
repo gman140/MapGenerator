@@ -1,0 +1,77 @@
+@page "/"
+@rendermode InteractiveServer
+@inject GameSessionService Session
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Map Generator — Enter the World</PageTitle>
+
+<div class="login-screen">
+    <div class="login-box">
+        <h1>Enter the World</h1>
+
+        @if (_checking)
+        {
+            <p class="status-text">Entering the world&hellip;</p>
+        }
+        else
+        {
+            <form @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+                <label for="username">Choose your name</label>
+                <input id="username"
+                       type="text"
+                       @bind="_username"
+                       maxlength="24"
+                       placeholder="Traveller"
+                       autofocus />
+                @if (_error != null)
+                {
+                    <p class="error-text">@_error</p>
+                }
+                <button type="submit" disabled="@_busy">Enter</button>
+            </form>
+            <p class="hint">Names ending with <em>admin</em> receive admin privileges.</p>
+        }
+    </div>
+</div>
+
+@code {
+    private string _username = string.Empty;
+    private string? _error;
+    private bool _busy;
+    private bool _checking = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var browserId = await JS.InvokeAsync<string>("gameJs.getBrowserId");
+        await Session.InitAsync(browserId);
+
+        if (Session.Player != null)
+            Nav.NavigateTo("/game");
+        else
+        {
+            _checking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+        _busy = true;
+        StateHasChanged();
+
+        var browserId = await JS.InvokeAsync<string>("gameJs.getBrowserId");
+        var (ok, error) = await Session.CreatePlayerAsync(_username, browserId);
+
+        if (ok)
+            Nav.NavigateTo("/game");
+        else
+        {
+            _error = error;
+            _busy = false;
+        }
+    }
+}

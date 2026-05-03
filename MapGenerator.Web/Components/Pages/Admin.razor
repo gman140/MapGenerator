@@ -1,0 +1,170 @@
+@page "/admin"
+@rendermode InteractiveServer
+@inject GameSessionService Session
+@inject AdminService AdminSvc
+@inject GameBroadcastService Broadcast
+@inject MapGeneratorService MapCache
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Admin Panel</PageTitle>
+
+@if (!Session.IsLoaded)
+{
+    <p class="loading-screen">Loading&hellip;</p>
+}
+else if (Session.Player == null || !Session.Player.IsAdmin)
+{
+    <p class="loading-screen">Access denied.</p>
+}
+else
+{
+    <div class="admin-panel">
+        <h2>Admin Panel</h2>
+        <p class="dim-text">Logged in as <strong>@Session.Player.Username</strong></p>
+
+        @if (_currentConfig != null)
+        {
+            <section class="admin-section">
+                <h3>Current World</h3>
+                <div class="stat-grid">
+                    <span>Size</span>          <span>@_currentConfig.Width × @_currentConfig.Height</span>
+                    <span>Seed</span>          <span>@_currentConfig.Seed</span>
+                    <span>Generated</span>     <span>@_currentConfig.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                    <span>Spawn</span>         <span>(@_currentConfig.SpawnQ, @_currentConfig.SpawnR)</span>
+                    <span>Sea Level</span>     <span>@_currentConfig.Options.SeaLevel.ToString("F2")</span>
+                    <span>Mountains at</span>  <span>@_currentConfig.Options.MountainLevel.ToString("F2")</span>
+                    <span>Warp</span>          <span>@_currentConfig.Options.WarpStrength.ToString("F2")</span>
+                </div>
+            </section>
+        }
+
+        <section class="admin-section">
+            <h3>Regenerate World</h3>
+            <p class="warning-text">
+                This destroys the current map and teleports all players to the new spawn point.
+            </p>
+
+            <div class="option-grid">
+                <label>
+                    Width
+                    <input type="number" @bind="_width" min="50" max="1000" />
+                </label>
+                <label>
+                    Height
+                    <input type="number" @bind="_height" min="50" max="1000" />
+                </label>
+                <label>
+                    Seed <small>(blank = random)</small>
+                    <input type="number" @bind="_seed" placeholder="random" />
+                </label>
+            </div>
+
+            <h4>Terrain Options</h4>
+            <div class="option-grid">
+                <label>
+                    Sea Level <small>(@_opts.SeaLevel.ToString("F2")) — higher = more ocean</small>
+                    <input type="range" min="0.20" max="0.65" step="0.01"
+                           @bind="_opts.SeaLevel" @bind:event="oninput" />
+                </label>
+                <label>
+                    Mountain Level <small>(@_opts.MountainLevel.ToString("F2")) — lower = more mountains</small>
+                    <input type="range" min="0.50" max="0.88" step="0.01"
+                           @bind="_opts.MountainLevel" @bind:event="oninput" />
+                </label>
+                <label>
+                    Snow Level <small>(@_opts.SnowLevel.ToString("F2"))</small>
+                    <input type="range" min="0.65" max="0.98" step="0.01"
+                           @bind="_opts.SnowLevel" @bind:event="oninput" />
+                </label>
+                <label>
+                    Elevation Scale <small>(@_opts.ElevationScale.ToString("F1")) — lower = more varied</small>
+                    <input type="range" min="1.0" max="8.0" step="0.1"
+                           @bind="_opts.ElevationScale" @bind:event="oninput" />
+                </label>
+                <label>
+                    Moisture Scale <small>(@_opts.MoistureScale.ToString("F1"))</small>
+                    <input type="range" min="1.0" max="8.0" step="0.1"
+                           @bind="_opts.MoistureScale" @bind:event="oninput" />
+                </label>
+                <label>
+                    Warp Strength <small>(@_opts.WarpStrength.ToString("F2")) — higher = more jagged coasts</small>
+                    <input type="range" min="0.0" max="2.5" step="0.05"
+                           @bind="_opts.WarpStrength" @bind:event="oninput" />
+                </label>
+                <label>
+                    Moisture Bias <small>(@_opts.MoistureBias.ToString("F2")) — positive = lusher; negative = drier</small>
+                    <input type="range" min="-0.40" max="0.40" step="0.01"
+                           @bind="_opts.MoistureBias" @bind:event="oninput" />
+                </label>
+                <label>
+                    River Count <small>(@(_opts.RiverCount == 0 ? "auto" : _opts.RiverCount.ToString()))</small>
+                    <input type="range" min="0" max="150" step="1"
+                           @bind="_opts.RiverCount" @bind:event="oninput" />
+                </label>
+            </div>
+
+            <button class="btn-danger" @onclick="RegenerateAsync" disabled="@_busy">
+                @(_busy ? "Regenerating…" : "Regenerate World")
+            </button>
+
+            @if (_message != null)
+            {
+                <p class="@(_isError ? "error-text" : "success-text")">@_message</p>
+            }
+        </section>
+
+        <section class="admin-section">
+            <a href="/game" class="back-link">← Back to game</a>
+        </section>
+    </div>
+}
+
+@code {
+    private int _width = 300;
+    private int _height = 300;
+    private int? _seed;
+    private MapGenerationOptions _opts = new();
+    private MapConfig? _currentConfig;
+    private bool _busy;
+    private string? _message;
+    private bool _isError;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var browserId = await JS.InvokeAsync<string>("gameJs.getBrowserId");
+        await Session.InitAsync(browserId);
+        if (Session.Player == null) { Nav.NavigateTo("/"); return; }
+        if (!Session.Player.IsAdmin) { Nav.NavigateTo("/game"); return; }
+
+        _currentConfig = MapCache.GetCachedConfig();
+        if (_currentConfig != null)
+        {
+            _width  = _currentConfig.Width;
+            _height = _currentConfig.Height;
+            _opts   = _currentConfig.Options ?? new();
+        }
+        StateHasChanged();
+    }
+
+    private async Task RegenerateAsync()
+    {
+        _busy = true; _message = null;
+        StateHasChanged();
+        try
+        {
+            var config = await AdminSvc.RegenerateMapAsync(_width, _height, _seed, _opts);
+            await Broadcast.BroadcastMapRegeneratedAsync(config);
+            _currentConfig = config;
+            _message = $"World regenerated — {config.Width}×{config.Height}, seed {config.Seed}.";
+            _isError = false;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error: {ex.Message}";
+            _isError = true;
+        }
+        finally { _busy = false; StateHasChanged(); }
+    }
+}

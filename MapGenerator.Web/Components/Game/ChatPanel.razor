@@ -1,0 +1,91 @@
+<div class="chat-panel">
+    <div class="chat-tabs">
+        <button class="@(_tab == "local" ? "active" : "")" @onclick='() => _tab = "local"'>Local</button>
+        <button class="@(_tab == "world" ? "active" : "")" @onclick='() => _tab = "world"'>
+            World
+            @if (_unreadWorld > 0 && _tab != "world") { <span class="unread-badge">@_unreadWorld</span> }
+        </button>
+    </div>
+
+    <div class="chat-messages" @ref="_messagesRef">
+        @if (_tab == "local")
+        {
+            @foreach (var msg in LocalMessages)
+            {
+                <div class="chat-msg @(msg.IsSystemMessage ? "system" : "")">
+                    @if (!msg.IsSystemMessage)
+                    {
+                        <span class="chat-sender">@msg.SenderName</span>
+                        <span class="chat-time">@msg.SentAt.ToString("HH:mm")</span>
+                    }
+                    <span class="chat-content">@msg.Content</span>
+                </div>
+            }
+            @if (!LocalMessages.Any())
+            {
+                <p class="chat-empty">No one has spoken here.</p>
+            }
+        }
+        else
+        {
+            @foreach (var msg in WorldMessages)
+            {
+                <div class="chat-msg world-msg">
+                    <span class="chat-sender">@msg.SenderName</span>
+                    <span class="chat-time">@msg.SentAt.ToString("HH:mm")</span>
+                    <span class="chat-content">@msg.Content</span>
+                </div>
+            }
+            @if (!WorldMessages.Any())
+            {
+                <p class="chat-empty">The world is silent.</p>
+            }
+        }
+    </div>
+
+    <div class="chat-input">
+        <input @ref="_inputRef"
+               type="text"
+               @bind="_draft"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown"
+               maxlength="500"
+               placeholder="@(_tab == "local" ? "Say something…" : "Yell to the world…")" />
+        <button @onclick="SendAsync" disabled="@(string.IsNullOrWhiteSpace(_draft))">
+            @(_tab == "world" ? "Yell" : "Say")
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<ChatMessage> LocalMessages { get; set; } = [];
+    [Parameter] public List<ChatMessage> WorldMessages { get; set; } = [];
+    [Parameter] public EventCallback<string> OnSendLocal { get; set; }
+    [Parameter] public EventCallback<string> OnSendWorld { get; set; }
+
+    private string _tab = "local";
+    private string _draft = string.Empty;
+    private int _unreadWorld;
+    private ElementReference _messagesRef;
+    private ElementReference _inputRef;
+
+    protected override void OnParametersSet()
+    {
+        if (_tab == "world") _unreadWorld = 0;
+    }
+
+    private async Task SendAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_draft)) return;
+        var text = _draft.Trim();
+        _draft = string.Empty;
+
+        if (_tab == "local") await OnSendLocal.InvokeAsync(text);
+        else await OnSendWorld.InvokeAsync(text);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SendAsync();
+    }
+}
