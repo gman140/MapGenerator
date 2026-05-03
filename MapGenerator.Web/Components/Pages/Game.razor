@@ -3,6 +3,7 @@
 @inject GameSessionService Session
 @inject GameBroadcastService Broadcast
 @inject MapGeneratorService MapCache
+@inject PermissionService PermissionSvc
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @using MapGenerator.Application.Services
@@ -33,7 +34,8 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync" />
             <ActionsMenu OnLayEgg="HandleLayEggAsync"
-                         LastEggLaidAt="Session.Player.LastEggLaidAt" />
+                         LastEggLaidAt="Session.Player.LastEggLaidAt"
+                         CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)" />
         </div>
         <div class="chat-area">
             <ChatPanel LocalMessages="_localMessages"

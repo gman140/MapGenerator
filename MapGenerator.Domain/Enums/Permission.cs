@@ -2,7 +2,6 @@ namespace MapGenerator.Domain.Enums;
 
 public enum Permission
 {
-    IgnoreMovementCooldown,
+    IgnoreCooldowns,
     MoveToAnyTile,
-    IgnoreEggCooldown,
 }

@@ -22,7 +22,7 @@ public class EggService
     public async Task<(bool success, string message, int eggCount)> LayEggAsync(
         Player player, IReadOnlySet<Permission> permissions)
     {
-        if (!permissions.Contains(Permission.IgnoreEggCooldown) && player.LastEggLaidAt.HasValue)
+        if (!permissions.Contains(Permission.IgnoreCooldowns) && player.LastEggLaidAt.HasValue)
         {
             var remaining = EggCooldown - (DateTime.UtcNow - player.LastEggLaidAt.Value);
             if (remaining > TimeSpan.Zero)

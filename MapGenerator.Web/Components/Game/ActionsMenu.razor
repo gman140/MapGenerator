@@ -24,9 +24,10 @@
 @code {
     [Parameter] public EventCallback OnLayEgg { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
+    [Parameter] public bool CooldownBypassed { get; set; }
 
     private bool _open;
-    private bool EggOnCooldown => LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
+    private bool EggOnCooldown => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
     private string _eggCooldownText = "";
     private System.Threading.Timer? _timer;
 

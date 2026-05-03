@@ -7,9 +7,8 @@ public class PermissionService
 {
     private static readonly IReadOnlySet<Permission> AdminPermissions = new HashSet<Permission>
     {
-        Permission.IgnoreMovementCooldown,
+        Permission.IgnoreCooldowns,
         Permission.MoveToAnyTile,
-        Permission.IgnoreEggCooldown,
     };
 
     private static readonly IReadOnlySet<Permission> NoPermissions = new HashSet<Permission>();

@@ -56,7 +56,7 @@ public class MovementService
             return Fail("You can only move to adjacent tiles.");
 
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        if (!permissions.Contains(Permission.IgnoreMovementCooldown) &&
+        if (!permissions.Contains(Permission.IgnoreCooldowns) &&
             now < player.MovementCooldownUntil)
         {
             double secs = (player.MovementCooldownUntil - now) / 1000.0;
@@ -83,7 +83,7 @@ public class MovementService
             return new MovementResult { Success = true, PlayerDrowned = true };
         }
 
-        long cooldown = permissions.Contains(Permission.IgnoreMovementCooldown)
+        long cooldown = permissions.Contains(Permission.IgnoreCooldowns)
             ? 0
             : BiomeCooldownMs.TryGetValue(tile.Biome, out long cd) ? cd : 400;
 
