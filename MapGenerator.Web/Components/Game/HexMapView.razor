@@ -6,40 +6,59 @@
          class="hex-map-svg"
          @onmousemove="HandleMouseMove"
          @onmouseleave="() => _hoveredTile = null">
-        @foreach (var tile in _visibleTiles)
-        {
-            var (cx, cy) = TileCenter(tile.Q, tile.R);
-            bool isPlayer = tile.Q == Player.Q && tile.R == Player.R;
-            bool isAdjacent = MovementService.AreAdjacent(Player.Q, Player.R, tile.Q, tile.R);
-            bool isHovered = _hoveredTile?.Q == tile.Q && _hoveredTile?.R == tile.R;
 
-            <g @key="@($"{tile.Q}_{tile.R}")"
-               class="hex-group @(isHovered ? "hovered" : "") @(isAdjacent ? "adjacent" : "")"
-               @onclick="() => OnTileClicked.InvokeAsync((tile.Q, tile.R))">
-                <polygon points="@HexPoints(cx, cy)"
-                         class="hex-tile biome-@tile.Biome.ToString().ToLower()" />
-                @if (isPlayer)
+        @for (int dq = -ViewRadius; dq <= ViewRadius; dq++)
+        {
+            @for (int dr = -ViewRadius; dr <= ViewRadius; dr++)
+            {
+                int hexDist = Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
+                int tq = Player.Q + dq, tr = Player.R + dr;
+                var (cx, cy) = TileCenter(tq, tr);
+
+                if (hexDist > ViewRadius || !_tileMap.TryGetValue((tq, tr), out var tile))
                 {
-                    <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
-                            r="@(HexSize * 0.35)"
-                            class="player-dot self" />
+                    <polygon @key="@($"fog_{tq}_{tr}")"
+                             points="@HexPoints(cx, cy)"
+                             class="hex-fog" />
                 }
                 else
                 {
-                    var others = OnlinePlayers.Where(p => p.Q == tile.Q && p.R == tile.R).ToList();
-                    @for (int i = 0; i < Math.Min(others.Count, 4); i++)
-                    {
-                        double ox = cx + (i % 2 == 0 ? -6 : 6);
-                        double oy = cy + (i < 2 ? -6 : 6);
-                        <circle @key="others[i].Id"
-                                cx="@ox.ToString("F1")" cy="@oy.ToString("F1")"
-                                r="@(HexSize * 0.22)"
-                                class="player-dot other">
-                            <title>@others[i].Username</title>
-                        </circle>
-                    }
+                    bool isPlayerTile = tq == Player.Q && tr == Player.R;
+                    bool isAdjacent = MovementService.AreAdjacent(Player.Q, Player.R, tq, tr);
+                    bool isHovered = _hoveredTile?.Q == tq && _hoveredTile?.R == tr;
+
+                    <g @key="@($"{tq}_{tr}")"
+                       class="hex-group @(isHovered ? "hovered" : "") @(isAdjacent ? "adjacent" : "")"
+                       @onclick="() => OnTileClicked.InvokeAsync((tq, tr))">
+                        <polygon points="@HexPoints(cx, cy)"
+                                 class="hex-tile biome-@tile.Biome.ToString().ToLower()" />
+
+                        @if (isPlayerTile)
+                        {
+                            <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
+                                    r="@(HexSize * 0.35)"
+                                    class="player-dot self"
+                                    style="fill: @Player.Color" />
+                        }
+
+                        @{
+                            var others = OnlinePlayers.Where(p => p.Q == tq && p.R == tr).ToList();
+                            @for (int i = 0; i < Math.Min(others.Count, 4); i++)
+                            {
+                                double ox = cx + (i % 2 == 0 ? -6 : 6);
+                                double oy = cy + (i < 2 ? -6 : 6);
+                                <circle @key="others[i].Id"
+                                        cx="@ox.ToString("F1")" cy="@oy.ToString("F1")"
+                                        r="@(HexSize * 0.22)"
+                                        class="player-dot other"
+                                        style="fill: @others[i].Color">
+                                    <title>@others[i].Username</title>
+                                </circle>
+                            }
+                        }
+                    </g>
                 }
-            </g>
+            }
         }
 
         @if (_hoveredTile != null)
@@ -47,7 +66,7 @@
             var (hx, hy) = TileCenter(_hoveredTile.Q, _hoveredTile.R);
             double tx = hx + 4, ty = hy - HexSize - 4;
             <svg:text x="@tx.ToString("F0")" y="@ty.ToString("F0")" class="tile-tooltip">
-                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R})")
+                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){(_hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "")}")
             </svg:text>
         }
     </svg>
@@ -56,15 +75,14 @@
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public EventCallback<(int q, int r)> OnTileClicked { get; set; }
-    [Parameter] public List<(string Id, string Username, int Q, int R)> OnlinePlayers { get; set; } = [];
+    [Parameter] public List<(string Id, string Username, int Q, int R, string Color)> OnlinePlayers { get; set; } = [];
 
     private const double HexSize = 32;
-    private const int QRadius = 14;
-    private const int RRadius = 9;
+    private const int ViewRadius = 9;
 
     private double _svgWidth;
     private double _svgHeight;
-    private List<HexTile> _visibleTiles = [];
+    private Dictionary<(int, int), HexTile> _tileMap = [];
     private HexTile? _hoveredTile;
     private ElementReference _container;
 
@@ -72,15 +90,15 @@
 
     protected override void OnParametersSet()
     {
-        _svgWidth = (QRadius * 2 + 1) * HexSize * Sqrt3 + HexSize;
-        _svgHeight = (RRadius * 2 + 1) * HexSize * 1.5 + HexSize;
-        _visibleTiles = MapCache.GetViewportTiles(Player.Q, Player.R, QRadius, RRadius);
+        _svgWidth  = (ViewRadius * 2 + 1) * HexSize * Sqrt3 + HexSize;
+        _svgHeight = (ViewRadius * 2 + 1) * HexSize * 1.5  + HexSize;
+        var tiles = MapCache.GetViewportTiles(Player.Q, Player.R, ViewRadius, ViewRadius);
+        _tileMap = tiles.ToDictionary(t => (t.Q, t.R));
     }
 
-    // Pointy-top hex: screen position relative to SVG center
     private (double cx, double cy) TileCenter(int q, int r)
     {
-        double cx = _svgWidth / 2 + HexSize * Sqrt3 * (q - Player.Q) + HexSize * Sqrt3 / 2 * (r - Player.R);
+        double cx = _svgWidth  / 2 + HexSize * Sqrt3 * (q - Player.Q) + HexSize * Sqrt3 / 2 * (r - Player.R);
         double cy = _svgHeight / 2 + HexSize * 1.5 * (r - Player.R);
         return (cx, cy);
     }
@@ -101,16 +119,16 @@
 
     private void HandleMouseMove(MouseEventArgs e)
     {
-        // Convert mouse position to axial hex coordinates
-        double mx = e.OffsetX - _svgWidth / 2;
+        double mx = e.OffsetX - _svgWidth  / 2;
         double my = e.OffsetY - _svgHeight / 2;
 
         double fq = (mx * Sqrt3 / 3 - my / 3) / HexSize;
         double fr = my * 2 / 3 / HexSize;
         var (q, r) = AxialRound(fq + Player.Q, fr + Player.R);
 
-        var tile = MapCache.GetCachedTile(q, r);
-        _hoveredTile = tile;
+        int dq = q - Player.Q, dr = r - Player.R;
+        int hexDist = Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
+        _hoveredTile = hexDist <= ViewRadius ? MapCache.GetCachedTile(q, r) : null;
     }
 
     private static (int q, int r) AxialRound(double fq, double fr)

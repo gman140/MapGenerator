@@ -10,4 +10,5 @@ public interface IMapRepository
     Task SaveTilesAsync(IEnumerable<HexTile> tiles);
     Task SaveConfigAsync(MapConfig config);
     Task DeleteAllTilesAsync();
+    Task<int> IncrementEggCountAsync(int q, int r);
 }

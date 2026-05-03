@@ -2,8 +2,10 @@
 @rendermode InteractiveServer
 @inject GameSessionService Session
 @inject GameBroadcastService Broadcast
+@inject MapGeneratorService MapCache
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@using MapGenerator.Application.Services
 @implements IAsyncDisposable
 
 <PageTitle>@(Session.Player?.Username ?? "World Map")</PageTitle>
@@ -28,7 +30,10 @@ else
             <MiniMap Player="Session.Player" MapVersion="_mapVersion" />
             <PlayerInfo Player="Session.Player"
                         CooldownUntil="_cooldownUntil"
-                        OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)" />
+                        OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
+                        OnColorChanged="HandleColorChangedAsync" />
+            <ActionsMenu OnLayEgg="HandleLayEggAsync"
+                         LastEggLaidAt="Session.Player.LastEggLaidAt" />
         </div>
         <div class="chat-area">
             <ChatPanel LocalMessages="_localMessages"
@@ -95,11 +100,14 @@ else
 
         _cooldownUntil = Session.Player.MovementCooldownUntil;
         _localMessages = await Session.GetTileChatAsync();
+        AddEggArrivalMessage(Session.Player.Q, Session.Player.R);
         _worldMessages = await Session.GetWorldChatAsync();
 
-        Broadcast.PlayerMoved += OnPlayerMoved;
+        Broadcast.PlayerMoved    += OnPlayerMoved;
         Broadcast.MessageReceived += OnMessageReceived;
-        Broadcast.MapRegenerated += OnMapRegenerated;
+        Broadcast.MapRegenerated  += OnMapRegenerated;
+        Broadcast.EggLaid         += OnEggLaid;
+        Broadcast.PlayerColorChanged += OnPlayerColorChanged;
 
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
         StateHasChanged();
@@ -135,8 +143,22 @@ else
 
         _cooldownUntil = result.CooldownUntil ?? 0;
         _localMessages = await Session.GetTileChatAsync();
-        await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player!.Q, Session.Player.R);
+        AddEggArrivalMessage(Session.Player!.Q, Session.Player.R);
+        await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         StateHasChanged();
+    }
+
+    private void AddEggArrivalMessage(int q, int r)
+    {
+        var tile = MapCache.GetCachedTile(q, r);
+        if (tile == null || tile.EggCount <= 0) return;
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World",
+            Content = EggService.GetEggDescriptor(tile.EggCount),
+            IsSystemMessage = true,
+            SentAt = DateTime.UtcNow
+        });
     }
 
     private async Task ConfirmOceanAsync()
@@ -160,17 +182,35 @@ else
         Nav.NavigateTo("/", forceLoad: true);
     }
 
-    private async Task SendLocalAsync(string content)
+    private async Task HandleLayEggAsync()
     {
-        await Session.SendLocalMessageAsync(content);
+        var (success, message, _) = await Session.LayEggAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World",
+            Content = success ? message : message,
+            IsSystemMessage = true,
+            SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
     }
 
-    private async Task SendWorldAsync(string content)
+    private async Task HandleColorChangedAsync(string color)
     {
-        await Session.SendWorldMessageAsync(content);
+        await Session.UpdateColorAsync(color);
+        StateHasChanged();
     }
+
+    private async Task SendLocalAsync(string content) =>
+        await Session.SendLocalMessageAsync(content);
+
+    private async Task SendWorldAsync(string content) =>
+        await Session.SendWorldMessageAsync(content);
 
     private void OnPlayerMoved(string playerId, int oldQ, int oldR, int newQ, int newR) =>
+        InvokeAsync(StateHasChanged);
+
+    private void OnPlayerColorChanged(string playerId, string color) =>
         InvokeAsync(StateHasChanged);
 
     private void OnMessageReceived(ChatMessage msg)
@@ -185,19 +225,30 @@ else
         });
     }
 
+    private void OnEggLaid(string playerId, int q, int r, int eggCount)
+    {
+        InvokeAsync(() =>
+        {
+            if (Session.Player == null || Session.Player.Q != q || Session.Player.R != r) return;
+            if (playerId == Session.Player.Id) return; // already handled in HandleLayEggAsync
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World",
+                Content = EggService.GetEggDescriptor(eggCount),
+                IsSystemMessage = true,
+                SentAt = DateTime.UtcNow
+            });
+            StateHasChanged();
+        });
+    }
+
     private void OnMapRegenerated(MapConfig config)
     {
         InvokeAsync(async () =>
         {
             if (Session.Player == null) return;
-
-            // Transition visit records and reload player position from DB
             await Session.HandleMapResetAsync();
-
-            // Reload tile chat for the new spawn tile
             _localMessages = await Session.GetTileChatAsync();
-
-            // Inject the "bright flash" system message into the local chat view
             _localMessages.Add(new ChatMessage
             {
                 SenderName = "System",
@@ -205,10 +256,7 @@ else
                 IsSystemMessage = true,
                 SentAt = DateTime.UtcNow
             });
-
-            // Bump version so MiniMap redraws itself with the new biome data
             _mapVersion++;
-
             StateHasChanged();
         });
     }
@@ -227,9 +275,11 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        Broadcast.PlayerMoved -= OnPlayerMoved;
-        Broadcast.MessageReceived -= OnMessageReceived;
-        Broadcast.MapRegenerated -= OnMapRegenerated;
+        Broadcast.PlayerMoved        -= OnPlayerMoved;
+        Broadcast.MessageReceived    -= OnMessageReceived;
+        Broadcast.MapRegenerated     -= OnMapRegenerated;
+        Broadcast.EggLaid            -= OnEggLaid;
+        Broadcast.PlayerColorChanged -= OnPlayerColorChanged;
         _toastTimer?.Dispose();
         await Session.DisposeAsync();
     }

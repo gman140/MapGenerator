@@ -133,6 +133,12 @@ public class MapGeneratorService
 
     public MapConfig? GetCachedConfig() => _configCache;
 
+    public void UpdateCachedEggCount(int q, int r, int eggCount)
+    {
+        var tile = GetCachedTile(q, r);
+        if (tile != null) tile.EggCount = eggCount;
+    }
+
     public List<HexTile> GetViewportTiles(int centerQ, int centerR, int qRadius, int rRadius)
     {
         if (_cache == null) return [];

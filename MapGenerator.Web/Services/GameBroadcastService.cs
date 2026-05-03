@@ -4,31 +4,27 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace MapGenerator.Web.Services;
 
-/// <summary>
-/// Singleton that wires Blazor-circuit code to SignalR group broadcasts and in-process C# events.
-/// Blazor components subscribe to the C# events for immediate in-process delivery;
-/// SignalR broadcasts handle future external clients and cross-process scenarios.
-/// </summary>
 public class GameBroadcastService
 {
     private readonly IHubContext<GameHub> _hub;
 
-    // In-process events consumed by Blazor Server circuits
     public event Action<string, int, int, int, int>? PlayerMoved;   // playerId, oldQ, oldR, newQ, newR
     public event Action<ChatMessage>? MessageReceived;
     public event Action<string, string>? PlayerConnected;            // playerId, username
     public event Action<string>? PlayerDisconnected;                 // playerId
     public event Action<MapConfig>? MapRegenerated;
+    public event Action<string, string>? PlayerColorChanged;         // playerId, newColor
+    public event Action<string, int, int, int>? EggLaid;             // playerId, q, r, eggCount
 
-    // In-memory online player presence: playerId -> (username, q, r)
-    private readonly Dictionary<string, (string Username, int Q, int R)> _online = [];
+    // playerId -> (username, q, r, color)
+    private readonly Dictionary<string, (string Username, int Q, int R, string Color)> _online = [];
     private readonly Lock _lock = new();
 
     public GameBroadcastService(IHubContext<GameHub> hub) => _hub = hub;
 
-    public void PlayerCameOnline(string playerId, string username, int q, int r)
+    public void PlayerCameOnline(string playerId, string username, int q, int r, string color)
     {
-        lock (_lock) _online[playerId] = (username, q, r);
+        lock (_lock) _online[playerId] = (username, q, r, color);
         PlayerConnected?.Invoke(playerId, username);
     }
 
@@ -38,9 +34,19 @@ public class GameBroadcastService
         PlayerDisconnected?.Invoke(playerId);
     }
 
-    public List<(string Id, string Username, int Q, int R)> GetOnlinePlayers()
+    public void UpdatePlayerColor(string playerId, string color)
     {
-        lock (_lock) return _online.Select(kv => (kv.Key, kv.Value.Username, kv.Value.Q, kv.Value.R)).ToList();
+        lock (_lock)
+        {
+            if (_online.TryGetValue(playerId, out var p))
+                _online[playerId] = (p.Username, p.Q, p.R, color);
+        }
+        PlayerColorChanged?.Invoke(playerId, color);
+    }
+
+    public List<(string Id, string Username, int Q, int R, string Color)> GetOnlinePlayers()
+    {
+        lock (_lock) return _online.Select(kv => (kv.Key, kv.Value.Username, kv.Value.Q, kv.Value.R, kv.Value.Color)).ToList();
     }
 
     public List<(string Id, string Username)> GetOnlinePlayersOnTile(int q, int r)
@@ -54,7 +60,11 @@ public class GameBroadcastService
 
     public async Task NotifyPlayerMovedAsync(string playerId, string username, int oldQ, int oldR, int newQ, int newR)
     {
-        lock (_lock) _online[playerId] = (username, newQ, newR);
+        lock (_lock)
+        {
+            if (_online.TryGetValue(playerId, out var p))
+                _online[playerId] = (p.Username, newQ, newR, p.Color);
+        }
         PlayerMoved?.Invoke(playerId, oldQ, oldR, newQ, newR);
 
         await _hub.Clients.Group(GameHub.TileKey(oldQ, oldR))
@@ -80,5 +90,10 @@ public class GameBroadcastService
     {
         MapRegenerated?.Invoke(config);
         await _hub.Clients.All.SendAsync("MapRegenerated");
+    }
+
+    public void NotifyEggLaid(string playerId, int q, int r, int eggCount)
+    {
+        EggLaid?.Invoke(playerId, q, r, eggCount);
     }
 }

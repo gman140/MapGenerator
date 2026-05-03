@@ -2,16 +2,31 @@
 @inject MapGeneratorService MapCache
 @inject IJSRuntime JS
 
-<div class="minimap-container">
+<div class="minimap-container" @onclick="() => _showPopup = true" title="Click to expand">
     <canvas @ref="_canvas" id="minimap-canvas" class="minimap-canvas"></canvas>
     <div class="minimap-label">World Map</div>
 </div>
+
+@if (_showPopup)
+{
+    <div class="modal-overlay" @onclick="() => _showPopup = false">
+        <div class="minimap-popup" @onclick:stopPropagation>
+            <div class="minimap-popup-header">
+                <span>World Map</span>
+                <button @onclick="() => _showPopup = false">✕</button>
+            </div>
+            <canvas @ref="_popupCanvas" class="minimap-popup-canvas"></canvas>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public int MapVersion { get; set; }
 
     private ElementReference _canvas;
+    private ElementReference _popupCanvas;
+    private bool _showPopup;
     private bool _needsFullRedraw = true;
     private int _lastMapVersion = -1;
 
@@ -26,24 +41,28 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_needsFullRedraw && !firstRender) return;
+        if (_needsFullRedraw || firstRender)
+        {
+            var config = MapCache.GetCachedConfig();
+            if (config == null) return;
 
-        var config = MapCache.GetCachedConfig();
-        if (config == null) return;
+            var rgbData = MapCache.GetMinimapData();
+            if (rgbData.Length == 0) return;
 
-        var rgbData = MapCache.GetMinimapData();
-        if (rgbData.Length == 0) return;
+            await JS.InvokeVoidAsync("gameJs.drawMinimap",
+                _canvas, rgbData, config.Width, config.Height, Player.Q, Player.R);
 
-        await JS.InvokeVoidAsync("gameJs.drawMinimap",
-            _canvas, rgbData, config.Width, config.Height, Player.Q, Player.R);
+            _needsFullRedraw = false;
+        }
 
-        _needsFullRedraw = false;
+        if (_showPopup)
+        {
+            await JS.InvokeVoidAsync("gameJs.openMinimapPopup", _popupCanvas, Player.Q, Player.R);
+        }
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // Only update the player dot when there is no full redraw pending —
-        // drawMinimap already places the dot at the correct position.
         if (_needsFullRedraw) return;
         await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Player.Q, Player.R);
     }

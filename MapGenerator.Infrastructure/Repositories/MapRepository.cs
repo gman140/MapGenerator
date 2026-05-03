@@ -47,4 +47,15 @@ public class MapRepository : IMapRepository
     public Task SaveConfigAsync(MapConfig config) => _ctx.MapConfigs.InsertOneAsync(config);
 
     public Task DeleteAllTilesAsync() => _ctx.Tiles.DeleteManyAsync(_ => true);
+
+    public async Task<int> IncrementEggCountAsync(int q, int r)
+    {
+        var filter = Builders<HexTile>.Filter.And(
+            Builders<HexTile>.Filter.Eq(t => t.Q, q),
+            Builders<HexTile>.Filter.Eq(t => t.R, r));
+        var update = Builders<HexTile>.Update.Inc(t => t.EggCount, 1);
+        var opts = new FindOneAndUpdateOptions<HexTile> { ReturnDocument = ReturnDocument.After };
+        var tile = await _ctx.Tiles.FindOneAndUpdateAsync(filter, update, opts);
+        return tile?.EggCount ?? 0;
+    }
 }

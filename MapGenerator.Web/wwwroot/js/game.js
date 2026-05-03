@@ -31,7 +31,6 @@ window.gameJs = (() => {
         canvasEl.width = width;
         canvasEl.height = height;
 
-        // Build base ImageData from RGB byte array
         const imageData = _ctx.createImageData(width, height);
         const d = imageData.data;
         for (let i = 0; i < width * height; i++) {
@@ -42,31 +41,54 @@ window.gameJs = (() => {
         }
         _ctx.putImageData(imageData, 0, 0);
 
-        // Keep a clean copy so we can erase the old dot before drawing a new one
         _baseImageData = _ctx.getImageData(0, 0, width, height);
-
-        _drawPlayerDot(playerQ, playerR);
+        _drawPlayerDot(_ctx, playerQ, playerR, 2.5);
     }
 
     function updateMinimapPlayer(q, r) {
         if (!_ctx || !_baseImageData) return;
-
-        // Restore clean base, then draw dot at new position
         _ctx.putImageData(_baseImageData, 0, 0);
         _playerQ = q;
         _playerR = r;
-        _drawPlayerDot(q, r);
+        _drawPlayerDot(_ctx, q, r, 2.5);
     }
 
-    function _drawPlayerDot(q, r) {
-        if (!_ctx) return;
-        _ctx.fillStyle = '#f0e050';
-        _ctx.strokeStyle = '#0e0e12';
-        _ctx.lineWidth = 0.5;
-        _ctx.beginPath();
-        _ctx.arc(q, r, 2.5, 0, Math.PI * 2);
-        _ctx.fill();
-        _ctx.stroke();
+    function openMinimapPopup(popupCanvasEl, playerQ, playerR) {
+        if (!popupCanvasEl || !_baseImageData) return;
+
+        const srcW = _baseImageData.width;
+        const srcH = _baseImageData.height;
+
+        // Scale to fit within 800×600, preserving aspect ratio
+        const maxW = 800, maxH = 600;
+        const scale = Math.min(maxW / srcW, maxH / srcH);
+        const dstW = Math.round(srcW * scale);
+        const dstH = Math.round(srcH * scale);
+
+        popupCanvasEl.width  = dstW;
+        popupCanvasEl.height = dstH;
+
+        const pCtx = popupCanvasEl.getContext('2d');
+        pCtx.imageSmoothingEnabled = false;
+
+        // Draw base image scaled up via an offscreen canvas
+        const off = new OffscreenCanvas(srcW, srcH);
+        const offCtx = off.getContext('2d');
+        offCtx.putImageData(_baseImageData, 0, 0);
+        pCtx.drawImage(off, 0, 0, dstW, dstH);
+
+        // Draw player dot proportionally scaled
+        _drawPlayerDot(pCtx, playerQ * scale, playerR * scale, 4 * scale);
+    }
+
+    function _drawPlayerDot(ctx, x, y, radius) {
+        ctx.fillStyle   = '#f0e050';
+        ctx.strokeStyle = '#0e0e12';
+        ctx.lineWidth   = 0.5;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
     }
 
     function initMinimap(playerQ, playerR) {
@@ -74,5 +96,5 @@ window.gameJs = (() => {
         _playerR = playerR;
     }
 
-    return { getBrowserId, clearBrowserId, drawMinimap, updateMinimapPlayer, initMinimap };
+    return { getBrowserId, clearBrowserId, drawMinimap, updateMinimapPlayer, openMinimapPopup, initMinimap };
 })();

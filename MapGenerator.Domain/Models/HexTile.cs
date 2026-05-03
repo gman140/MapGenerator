@@ -10,4 +10,5 @@ public class HexTile
     public BiomeType Biome { get; set; }
     public float Elevation { get; set; }
     public float Moisture { get; set; }
+    public int EggCount { get; set; }
 }

@@ -1,0 +1,74 @@
+@implements IDisposable
+
+<div class="actions-menu-wrapper">
+    <button class="actions-btn" @onclick="Toggle">Actions ▾</button>
+
+    @if (_open)
+    {
+        <div class="actions-overlay" @onclick="() => _open = false"></div>
+        <div class="actions-dropdown">
+            <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
+                🥚 Lay Egg
+                @if (EggOnCooldown)
+                {
+                    <span class="action-cooldown">@_eggCooldownText</span>
+                }
+            </button>
+            <button class="action-item" disabled>🍖 Eat <span class="action-soon">soon</span></button>
+            <button class="action-item" disabled>⛏ Dig <span class="action-soon">soon</span></button>
+            <button class="action-item" disabled>💃 Dance <span class="action-soon">soon</span></button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback OnLayEgg { get; set; }
+    [Parameter] public DateTime? LastEggLaidAt { get; set; }
+
+    private bool _open;
+    private bool EggOnCooldown => LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
+    private string _eggCooldownText = "";
+    private System.Threading.Timer? _timer;
+
+    protected override void OnParametersSet()
+    {
+        if (EggOnCooldown)
+        {
+            UpdateCooldownText();
+            _timer ??= new System.Threading.Timer(Tick, null, 1000, 1000);
+        }
+        else
+        {
+            _timer?.Dispose();
+            _timer = null;
+        }
+    }
+
+    private void Tick(object? _)
+    {
+        if (!EggOnCooldown)
+        {
+            _timer?.Dispose();
+            _timer = null;
+        }
+        UpdateCooldownText();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateCooldownText()
+    {
+        if (!LastEggLaidAt.HasValue) return;
+        var remaining = TimeSpan.FromMinutes(1) - (DateTime.UtcNow - LastEggLaidAt.Value);
+        _eggCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
+    }
+
+    private async Task LayEgg()
+    {
+        _open = false;
+        await OnLayEgg.InvokeAsync();
+    }
+
+    private void Toggle() => _open = !_open;
+
+    public void Dispose() => _timer?.Dispose();
+}

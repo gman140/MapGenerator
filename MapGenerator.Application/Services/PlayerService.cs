@@ -5,6 +5,15 @@ namespace MapGenerator.Application.Services;
 
 public class PlayerService
 {
+    private static readonly string[] PlayerColors =
+    [
+        "#f05050", "#f09050", "#f0d050", "#80d050",
+        "#50c0a0", "#5090f0", "#a050f0", "#f050b0",
+        "#ff7070", "#70c0ff", "#c0ff70", "#ff70c0",
+    ];
+
+    private static readonly Random _rng = new();
+
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly MapGeneratorService _mapCache;
@@ -46,6 +55,7 @@ public class PlayerService
             R = config.SpawnR,
             CreatedAt = DateTime.UtcNow,
             LastSeen = DateTime.UtcNow,
+            Color = PlayerColors[_rng.Next(PlayerColors.Length)],
         };
 
         player = await _playerRepo.CreateAsync(player);

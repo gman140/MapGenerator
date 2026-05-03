@@ -1,9 +1,14 @@
 @using MapGenerator.Application.Services
 @inject MapGeneratorService MapCache
+@implements IDisposable
 
 <div class="player-info">
     <div class="player-name">
-        @Player.Username
+        <label class="color-swatch-label" title="Change your color">
+            <input type="color" value="@Player.Color" @onchange="HandleColorChange" class="color-swatch-input" />
+            <span class="color-swatch" style="background: @Player.Color"></span>
+        </label>
+        <span>@Player.Username</span>
         @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
     </div>
     <div class="tile-info">
@@ -45,6 +50,7 @@
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public long CooldownUntil { get; set; }
     [Parameter] public List<(string Id, string Username)> OnlinePlayers { get; set; } = [];
+    [Parameter] public EventCallback<string> OnColorChanged { get; set; }
 
     private long _cooldownRemaining;
     private double _fillPct;
@@ -83,6 +89,13 @@
         _fillPct = _cooldownDuration > 0
             ? _cooldownRemaining / (double)_cooldownDuration * 100.0
             : 0;
+    }
+
+    private async Task HandleColorChange(ChangeEventArgs e)
+    {
+        var color = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(color))
+            await OnColorChanged.InvokeAsync(color);
     }
 
     public void Dispose() => _timer?.Dispose();

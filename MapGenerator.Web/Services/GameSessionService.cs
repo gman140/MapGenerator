@@ -9,6 +9,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly PlayerService _playerSvc;
     private readonly ChatService _chatSvc;
     private readonly MovementService _movementSvc;
+    private readonly EggService _eggSvc;
     private readonly GameBroadcastService _broadcast;
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
@@ -20,6 +21,7 @@ public class GameSessionService : IAsyncDisposable
         PlayerService playerSvc,
         ChatService chatSvc,
         MovementService movementSvc,
+        EggService eggSvc,
         GameBroadcastService broadcast,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo)
@@ -27,6 +29,7 @@ public class GameSessionService : IAsyncDisposable
         _playerSvc = playerSvc;
         _chatSvc = chatSvc;
         _movementSvc = movementSvc;
+        _eggSvc = eggSvc;
         _broadcast = broadcast;
         _playerRepo = playerRepo;
         _visitRepo = visitRepo;
@@ -36,7 +39,7 @@ public class GameSessionService : IAsyncDisposable
     {
         Player = await _playerSvc.RestorePlayerAsync(browserId);
         if (Player != null)
-            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R);
+            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color);
         IsLoaded = true;
     }
 
@@ -45,7 +48,7 @@ public class GameSessionService : IAsyncDisposable
         var (player, error) = await _playerSvc.CreatePlayerAsync(username, browserId);
         if (player == null) return (false, error);
         Player = player;
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color);
         return (true, null);
     }
 
@@ -74,29 +77,32 @@ public class GameSessionService : IAsyncDisposable
         return result;
     }
 
-    /// <summary>
-    /// Called when the admin regenerates the world. Closes the player's current visit,
-    /// reloads their DB position (already moved to spawn by the admin action),
-    /// and opens a fresh visit at the new tile.
-    /// </summary>
     public async Task HandleMapResetAsync()
     {
         if (Player == null) return;
-
-        // Close visit at old tile
         await _visitRepo.RecordDepartureAsync(Player.Id, Player.Q, Player.R);
-
-        // Re-fetch from DB — admin already moved this player to spawn
         var updated = await _playerRepo.GetByIdAsync(Player.Id);
         if (updated == null) return;
-
         Player = updated;
-
-        // Open visit at spawn
         await _visitRepo.RecordArrivalAsync(Player.Id, Player.Q, Player.R);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color);
+    }
 
-        // Update broadcast presence
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R);
+    public async Task<(bool success, string message, int eggCount)> LayEggAsync()
+    {
+        if (Player == null) return (false, "Not logged in.", 0);
+        var result = await _eggSvc.LayEggAsync(Player);
+        if (result.success)
+            _broadcast.NotifyEggLaid(Player.Id, Player.Q, Player.R, result.eggCount);
+        return result;
+    }
+
+    public async Task UpdateColorAsync(string color)
+    {
+        if (Player == null) return;
+        Player.Color = color;
+        await _playerRepo.UpdateAsync(Player);
+        _broadcast.UpdatePlayerColor(Player.Id, color);
     }
 
     public async Task<ChatMessage?> SendLocalMessageAsync(string content)

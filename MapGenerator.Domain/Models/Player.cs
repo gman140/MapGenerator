@@ -11,4 +11,6 @@ public class Player
     public DateTime CreatedAt { get; set; }
     public DateTime LastSeen { get; set; }
     public long MovementCooldownUntil { get; set; } // Unix ms
+    public string Color { get; set; } = "#50a0f0";
+    public DateTime? LastEggLaidAt { get; set; }
 }

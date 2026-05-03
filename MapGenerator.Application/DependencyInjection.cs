@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<PlayerService>();
         services.AddScoped<ChatService>();
         services.AddScoped<AdminService>();
+        services.AddScoped<EggService>();
         return services;
     }
 }
