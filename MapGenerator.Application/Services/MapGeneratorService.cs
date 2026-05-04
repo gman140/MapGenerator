@@ -146,6 +146,12 @@ public class MapGeneratorService
         if (tile != null) tile.EggCount = eggCount;
     }
 
+    public void UpdateCachedSign(int q, int r, string text, string authorName)
+    {
+        var tile = GetCachedTile(q, r);
+        if (tile != null) { tile.SignText = text; tile.SignAuthor = authorName; }
+    }
+
     public List<HexTile> GetViewportTiles(int centerQ, int centerR, int qRadius, int rRadius)
     {
         if (_cache == null) return [];

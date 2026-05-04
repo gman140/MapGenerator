@@ -34,6 +34,9 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync" />
             <ActionsMenu OnLayEgg="HandleLayEggAsync"
+                         OnInvestigate="HandleInvestigateAsync"
+                         OnLeaveNote="() => { _showNoteModal = true; _noteText = string.Empty; }"
+                         OnPlantSign="() => { _showSignModal = true; _signText = string.Empty; }"
                          LastEggLaidAt="Session.Player.LastEggLaidAt"
                          CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)" />
         </div>
@@ -70,6 +73,40 @@ else
         </div>
     }
 
+    @if (_showNoteModal)
+    {
+        <div class="modal-overlay" @onclick="() => _showNoteModal = false">
+            <div class="modal-box" @onclick:stopPropagation>
+                <h3 class="modal-title">Leave a Note</h3>
+                <p class="modal-hint">Your note will be hidden here, discoverable only by those who investigate this tile.</p>
+                <textarea class="modal-textarea" maxlength="200" placeholder="Write your note…"
+                          @bind="_noteText" @bind:event="oninput" rows="4"></textarea>
+                <div class="modal-char-count">@(_noteText?.Length ?? 0) / 200</div>
+                <div class="modal-actions">
+                    <button @onclick="HandleLeaveNoteAsync" disabled="@string.IsNullOrWhiteSpace(_noteText)">Leave Note</button>
+                    <button @onclick="() => _showNoteModal = false">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_showSignModal)
+    {
+        <div class="modal-overlay" @onclick="() => _showSignModal = false">
+            <div class="modal-box" @onclick:stopPropagation>
+                <h3 class="modal-title">Plant a Sign</h3>
+                <p class="modal-hint">Your sign will be visible to anyone who enters this tile. It replaces any existing sign.</p>
+                <textarea class="modal-textarea" maxlength="100" placeholder="Write your sign…"
+                          @bind="_signText" @bind:event="oninput" rows="3"></textarea>
+                <div class="modal-char-count">@(_signText?.Length ?? 0) / 100</div>
+                <div class="modal-actions">
+                    <button @onclick="HandlePlantSignAsync" disabled="@string.IsNullOrWhiteSpace(_signText)">Plant Sign</button>
+                    <button @onclick="() => _showSignModal = false">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
+
     @if (_moveError != null)
     {
         <div class="toast-error">@_moveError</div>
@@ -87,6 +124,11 @@ else
     private System.Threading.Timer? _toastTimer;
     private int _mapVersion;
 
+    private bool _showNoteModal;
+    private bool _showSignModal;
+    private string _noteText = string.Empty;
+    private string _signText = string.Empty;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
@@ -102,13 +144,13 @@ else
 
         _cooldownUntil = Session.Player.MovementCooldownUntil;
         _localMessages = await Session.GetTileChatAsync();
-        AddEggArrivalMessage(Session.Player.Q, Session.Player.R);
+        AddArrivalMessages(Session.Player.Q, Session.Player.R);
         _worldMessages = await Session.GetWorldChatAsync();
 
-        Broadcast.PlayerMoved    += OnPlayerMoved;
-        Broadcast.MessageReceived += OnMessageReceived;
-        Broadcast.MapRegenerated  += OnMapRegenerated;
-        Broadcast.EggLaid         += OnEggLaid;
+        Broadcast.PlayerMoved        += OnPlayerMoved;
+        Broadcast.MessageReceived    += OnMessageReceived;
+        Broadcast.MapRegenerated     += OnMapRegenerated;
+        Broadcast.EggLaid            += OnEggLaid;
         Broadcast.PlayerColorChanged += OnPlayerColorChanged;
 
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
@@ -145,22 +187,30 @@ else
 
         _cooldownUntil = result.CooldownUntil ?? 0;
         _localMessages = await Session.GetTileChatAsync();
-        AddEggArrivalMessage(Session.Player!.Q, Session.Player.R);
+        AddArrivalMessages(Session.Player!.Q, Session.Player.R);
         await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         StateHasChanged();
     }
 
-    private void AddEggArrivalMessage(int q, int r)
+    private void AddArrivalMessages(int q, int r)
     {
         var tile = MapCache.GetCachedTile(q, r);
-        if (tile == null || tile.EggCount <= 0) return;
-        _localMessages.Add(new ChatMessage
-        {
-            SenderName = "World",
-            Content = EggService.GetEggDescriptor(tile.EggCount),
-            IsSystemMessage = true,
-            SentAt = DateTime.UtcNow
-        });
+        if (tile == null) return;
+
+        if (tile.EggCount > 0)
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = EggService.GetEggDescriptor(tile.EggCount),
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+
+        if (!string.IsNullOrEmpty(tile.SignText))
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World",
+                Content = $"A sign planted by {tile.SignAuthor} reads: \"{tile.SignText}\"",
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
     }
 
     private async Task ConfirmOceanAsync()
@@ -186,14 +236,61 @@ else
 
     private async Task HandleLayEggAsync()
     {
-        var (success, message, _) = await Session.LayEggAsync();
+        var (_, message, _) = await Session.LayEggAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleInvestigateAsync()
+    {
+        var (flavorText, notes) = await Session.InvestigateAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = flavorText,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        foreach (var note in notes)
+        {
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World",
+                Content = $"📜 {note.AuthorName} wrote: \"{note.Content}\"",
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleLeaveNoteAsync()
+    {
+        _showNoteModal = false;
+        if (string.IsNullOrWhiteSpace(_noteText)) return;
+        await Session.LeaveNoteAsync(_noteText);
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = "You tuck a note away somewhere only the curious will find it.",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        _noteText = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task HandlePlantSignAsync()
+    {
+        _showSignModal = false;
+        if (string.IsNullOrWhiteSpace(_signText)) return;
+        await Session.PlantSignAsync(_signText);
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World",
-            Content = success ? message : message,
-            IsSystemMessage = true,
-            SentAt = DateTime.UtcNow
+            Content = $"You plant a sign that reads: \"{_signText}\"",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
+        _signText = string.Empty;
         StateHasChanged();
     }
 
@@ -232,13 +329,11 @@ else
         InvokeAsync(() =>
         {
             if (Session.Player == null || Session.Player.Q != q || Session.Player.R != r) return;
-            if (playerId == Session.Player.Id) return; // already handled in HandleLayEggAsync
+            if (playerId == Session.Player.Id) return;
             _localMessages.Add(new ChatMessage
             {
-                SenderName = "World",
-                Content = EggService.GetEggDescriptor(eggCount),
-                IsSystemMessage = true,
-                SentAt = DateTime.UtcNow
+                SenderName = "World", Content = EggService.GetEggDescriptor(eggCount),
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
             StateHasChanged();
         });
@@ -255,8 +350,7 @@ else
             {
                 SenderName = "System",
                 Content = "You saw a bright flash, and the world faded away. You woke up here.",
-                IsSystemMessage = true,
-                SentAt = DateTime.UtcNow
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
             _mapVersion++;
             StateHasChanged();

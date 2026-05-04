@@ -197,8 +197,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .modal-box     { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; max-width: 400px; width: 90%; display: flex; flex-direction: column; gap: 1rem; }
 .modal-box.danger { border-color: var(--danger); }
 .modal-box p   { line-height: 1.6; }
+.modal-title   { font-size: 1rem; font-weight: 600; color: var(--text); }
+.modal-hint    { font-size: .82rem; color: var(--text-dim); line-height: 1.5; }
+.modal-textarea { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: .5rem .7rem; font-size: .9rem; font-family: inherit; resize: vertical; outline: none; width: 100%; }
+.modal-textarea:focus { border-color: var(--accent); }
+.modal-char-count { font-size: .75rem; color: var(--text-dim); text-align: right; }
 .modal-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+.modal-actions button { background: var(--accent); color: #0e0e12; border: none; border-radius: 4px; padding: .5rem 1rem; font-weight: 600; cursor: pointer; }
+.modal-actions button:last-child { background: var(--border); color: var(--text); }
+.modal-actions button:disabled { opacity: .4; cursor: default; }
 .btn-danger    { background: var(--danger); color: white; border: none; border-radius: 4px; padding: .5rem 1rem; font-weight: 600; cursor: pointer; }
+.action-divider { border-top: 1px solid var(--border); margin: .2rem 0; }
 
 .toast-error { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; padding: .6rem 1.4rem; border-radius: 6px; font-size: .9rem; z-index: 200; pointer-events: none; animation: fadeIn .2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }

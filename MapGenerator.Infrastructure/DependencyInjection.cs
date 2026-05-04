@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IChatRepository, ChatRepository>();
         services.AddScoped<IPlayerTileVisitRepository, PlayerTileVisitRepository>();
+        services.AddScoped<ITileNoteRepository, TileNoteRepository>();
         return services;
     }
 }

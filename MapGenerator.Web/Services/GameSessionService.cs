@@ -10,10 +10,14 @@ public class GameSessionService : IAsyncDisposable
     private readonly ChatService _chatSvc;
     private readonly MovementService _movementSvc;
     private readonly EggService _eggSvc;
+    private readonly InvestigateService _investigateSvc;
     private readonly PermissionService _permissionSvc;
+    private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
+    private readonly ITileNoteRepository _noteRepo;
+    private readonly IMapRepository _mapRepo;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -23,19 +27,27 @@ public class GameSessionService : IAsyncDisposable
         ChatService chatSvc,
         MovementService movementSvc,
         EggService eggSvc,
+        InvestigateService investigateSvc,
         PermissionService permissionSvc,
+        MapGeneratorService mapCache,
         GameBroadcastService broadcast,
         IPlayerRepository playerRepo,
-        IPlayerTileVisitRepository visitRepo)
+        IPlayerTileVisitRepository visitRepo,
+        ITileNoteRepository noteRepo,
+        IMapRepository mapRepo)
     {
         _playerSvc = playerSvc;
         _chatSvc = chatSvc;
         _movementSvc = movementSvc;
         _eggSvc = eggSvc;
+        _investigateSvc = investigateSvc;
         _permissionSvc = permissionSvc;
+        _mapCache = mapCache;
         _broadcast = broadcast;
         _playerRepo = playerRepo;
         _visitRepo = visitRepo;
+        _noteRepo = noteRepo;
+        _mapRepo = mapRepo;
     }
 
     public async Task InitAsync(string browserId)
@@ -132,6 +144,34 @@ public class GameSessionService : IAsyncDisposable
             : Task.FromResult(new List<ChatMessage>());
 
     public Task<List<ChatMessage>> GetWorldChatAsync() => _chatSvc.GetWorldHistoryAsync();
+
+    public async Task<(string flavorText, List<TileNote> notes)> InvestigateAsync()
+    {
+        if (Player == null) return ("You are not sure who you are.", []);
+        return await _investigateSvc.InvestigateAsync(Player);
+    }
+
+    public async Task LeaveNoteAsync(string content)
+    {
+        if (Player == null || string.IsNullOrWhiteSpace(content)) return;
+        content = content.Trim();
+        if (content.Length > 200) content = content[..200];
+        await _noteRepo.AddNoteAsync(new TileNote
+        {
+            Q = Player.Q, R = Player.R,
+            AuthorId = Player.Id, AuthorName = Player.Username,
+            Content = content, CreatedAt = DateTime.UtcNow
+        });
+    }
+
+    public async Task PlantSignAsync(string content)
+    {
+        if (Player == null || string.IsNullOrWhiteSpace(content)) return;
+        content = content.Trim();
+        if (content.Length > 100) content = content[..100];
+        await _mapRepo.PlaceSignAsync(Player.Q, Player.R, content, Player.Username);
+        _mapCache.UpdateCachedSign(Player.Q, Player.R, content, Player.Username);
+    }
 
     public ValueTask DisposeAsync()
     {

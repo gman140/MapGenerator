@@ -17,6 +17,7 @@ public class MongoDbContext
         RegisterMap<PlayerTileVisit>();
         RegisterMap<MapConfig>();
         RegisterMap<MapGenerationOptions>();
+        RegisterMap<TileNote>();
     }
 
     private static void RegisterMap<T>() where T : class
@@ -50,4 +51,5 @@ public class MongoDbContext
     public IMongoCollection<ChatMessage> ChatMessages => _db.GetCollection<ChatMessage>("chatMessages");
     public IMongoCollection<PlayerTileVisit> Visits => _db.GetCollection<PlayerTileVisit>("visits");
     public IMongoCollection<MapConfig> MapConfigs => _db.GetCollection<MapConfig>("mapConfigs");
+    public IMongoCollection<TileNote> TileNotes => _db.GetCollection<TileNote>("tileNotes");
 }

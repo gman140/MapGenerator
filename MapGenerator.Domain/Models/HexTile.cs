@@ -12,4 +12,6 @@ public class HexTile
     public float Elevation { get; set; }
     public float Moisture { get; set; }
     public int EggCount { get; set; }
+    public string? SignText { get; set; }
+    public string? SignAuthor { get; set; }
 }

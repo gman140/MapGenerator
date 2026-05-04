@@ -58,4 +58,15 @@ public class MapRepository : IMapRepository
         var tile = await _ctx.Tiles.FindOneAndUpdateAsync(filter, update, opts);
         return tile?.EggCount ?? 0;
     }
+
+    public Task PlaceSignAsync(int q, int r, string text, string authorName)
+    {
+        var filter = Builders<HexTile>.Filter.And(
+            Builders<HexTile>.Filter.Eq(t => t.Q, q),
+            Builders<HexTile>.Filter.Eq(t => t.R, r));
+        var update = Builders<HexTile>.Update
+            .Set(t => t.SignText, text)
+            .Set(t => t.SignAuthor, authorName);
+        return _ctx.Tiles.UpdateOneAsync(filter, update);
+    }
 }

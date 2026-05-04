@@ -11,4 +11,5 @@ public interface IMapRepository
     Task SaveConfigAsync(MapConfig config);
     Task DeleteAllTilesAsync();
     Task<int> IncrementEggCountAsync(int q, int r);
+    Task PlaceSignAsync(int q, int r, string text, string authorName);
 }

@@ -7,6 +7,10 @@
     {
         <div class="actions-overlay" @onclick="() => _open = false"></div>
         <div class="actions-dropdown">
+            <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
+            <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
+            <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
+            <div class="action-divider"></div>
             <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
                 🥚 Lay Egg
                 @if (EggOnCooldown)
@@ -23,6 +27,9 @@
 
 @code {
     [Parameter] public EventCallback OnLayEgg { get; set; }
+    [Parameter] public EventCallback OnInvestigate { get; set; }
+    [Parameter] public EventCallback OnLeaveNote { get; set; }
+    [Parameter] public EventCallback OnPlantSign { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
     [Parameter] public bool CooldownBypassed { get; set; }
 
@@ -47,11 +54,7 @@
 
     private void Tick(object? _)
     {
-        if (!EggOnCooldown)
-        {
-            _timer?.Dispose();
-            _timer = null;
-        }
+        if (!EggOnCooldown) { _timer?.Dispose(); _timer = null; }
         UpdateCooldownText();
         InvokeAsync(StateHasChanged);
     }
@@ -63,11 +66,10 @@
         _eggCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
     }
 
-    private async Task LayEgg()
-    {
-        _open = false;
-        await OnLayEgg.InvokeAsync();
-    }
+    private async Task LayEgg()        { _open = false; await OnLayEgg.InvokeAsync(); }
+    private async Task HandleInvestigate() { _open = false; await OnInvestigate.InvokeAsync(); }
+    private async Task HandleLeaveNote()   { _open = false; await OnLeaveNote.InvokeAsync(); }
+    private async Task HandlePlantSign()   { _open = false; await OnPlantSign.InvokeAsync(); }
 
     private void Toggle() => _open = !_open;
 

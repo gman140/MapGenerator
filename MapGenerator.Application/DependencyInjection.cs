@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<ChatService>();
         services.AddScoped<AdminService>();
         services.AddScoped<EggService>();
+        services.AddScoped<InvestigateService>();
         return services;
     }
 }
