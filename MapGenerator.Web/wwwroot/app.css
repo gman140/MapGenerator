@@ -14,15 +14,22 @@
 
     --ocean:     #1c4e8c;
     --lake:      #3a6e90;
+    --shallows:  #3a8aaa;
     --beach:     #d2c38c;
     --river:     #4078be;
     --swamp:     #3c503c;
+    --marsh:     #556848;
     --grassland: #6eaf41;
     --plains:    #b9af5a;
+    --savanna:   #c8b850;
     --forest:    #285a28;
+    --jungle:    #1a5c1a;
     --desert:    #d2af64;
     --mountain:  #827d78;
+    --tundra:    #8ea898;
     --snow:      #e6ebf0;
+    --glacier:   #c8dce8;
+    --volcano:   #5a2818;
 }
 
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
@@ -66,15 +73,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .hex-fog  { fill: #050508; stroke: rgba(0,0,0,.5); stroke-width: .8; pointer-events: none; }
 .biome-ocean     { fill: var(--ocean); }
 .biome-lake      { fill: var(--lake); }
+.biome-shallows  { fill: var(--shallows); }
 .biome-beach     { fill: var(--beach); }
 .biome-river     { fill: var(--river); }
 .biome-swamp     { fill: var(--swamp); }
+.biome-marsh     { fill: var(--marsh); }
 .biome-grassland { fill: var(--grassland); }
 .biome-plains    { fill: var(--plains); }
+.biome-savanna   { fill: var(--savanna); }
 .biome-forest    { fill: var(--forest); }
+.biome-jungle    { fill: var(--jungle); }
 .biome-desert    { fill: var(--desert); }
 .biome-mountain  { fill: var(--mountain); }
+.biome-tundra    { fill: var(--tundra); }
 .biome-snow      { fill: var(--snow); }
+.biome-glacier   { fill: var(--glacier); }
+.biome-volcano   { fill: var(--volcano); }
+
+.feature-dot         { pointer-events: none; opacity: 0.82; stroke: rgba(0,0,0,0.5); stroke-width: 0.8; }
+.feature-dot.feature-nature  { fill: #9b59b6; }
+.feature-dot.feature-ruins   { fill: #c0392b; }
+.feature-dot.feature-water   { fill: #2980b9; }
+.feature-dot.feature-desert  { fill: #d4a017; }
+.feature-dot.feature-cold    { fill: #85c1e9; }
 
 .player-dot       { pointer-events: none; }
 .player-dot.self  { stroke: #0e0e12; stroke-width: 1.5; }
@@ -118,18 +139,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .admin-badge { background: var(--admin); color: white; font-size: .68rem; padding: .1rem .4rem; border-radius: 10px; font-weight: 600; }
 .tile-info   { display: flex; align-items: center; gap: .5rem; }
 .biome-tag   { font-size: .78rem; padding: .15rem .5rem; border-radius: 10px; font-weight: 600; background: var(--border); }
-.biome-tag.biome-ocean     { background: var(--ocean); color: #e0e8f8; }
-.biome-tag.biome-lake      { background: var(--lake); color: #d0e8f4; }
+.biome-tag.biome-ocean     { background: var(--ocean);     color: #e0e8f8; }
+.biome-tag.biome-lake      { background: var(--lake);      color: #d0e8f4; }
+.biome-tag.biome-shallows  { background: var(--shallows);  color: #e0f0f8; }
+.biome-tag.biome-beach     { background: var(--beach);     color: #0e0e12; }
+.biome-tag.biome-river     { background: var(--river);     color: white; }
+.biome-tag.biome-swamp     { background: var(--swamp);     color: #a0c0a0; }
+.biome-tag.biome-marsh     { background: var(--marsh);     color: #c0d8b0; }
 .biome-tag.biome-grassland { background: var(--grassland); color: #0e0e12; }
-.biome-tag.biome-forest    { background: var(--forest); color: #a0e0a0; }
-.biome-tag.biome-mountain  { background: var(--mountain); color: #0e0e12; }
-.biome-tag.biome-swamp     { background: var(--swamp); color: #a0c0a0; }
-.biome-tag.biome-plains    { background: var(--plains); color: #0e0e12; }
-.biome-tag.biome-desert    { background: var(--desert); color: #0e0e12; }
-.biome-tag.biome-snow      { background: var(--snow); color: #0e0e12; }
-.biome-tag.biome-river     { background: var(--river); color: white; }
-.biome-tag.biome-beach     { background: var(--beach); color: #0e0e12; }
+.biome-tag.biome-plains    { background: var(--plains);    color: #0e0e12; }
+.biome-tag.biome-savanna   { background: var(--savanna);   color: #0e0e12; }
+.biome-tag.biome-forest    { background: var(--forest);    color: #a0e0a0; }
+.biome-tag.biome-jungle    { background: var(--jungle);    color: #90d890; }
+.biome-tag.biome-desert    { background: var(--desert);    color: #0e0e12; }
+.biome-tag.biome-mountain  { background: var(--mountain);  color: #0e0e12; }
+.biome-tag.biome-tundra    { background: var(--tundra);    color: #0e0e12; }
+.biome-tag.biome-snow      { background: var(--snow);      color: #0e0e12; }
+.biome-tag.biome-glacier   { background: var(--glacier);   color: #0e0e12; }
+.biome-tag.biome-volcano   { background: var(--volcano);   color: #f0a080; }
 .coords { font-size: .75rem; color: var(--text-dim); }
+.feature-tag { font-size: .75rem; color: var(--text-dim); font-style: italic; }
 
 .cooldown-bar  { background: var(--border); border-radius: 4px; height: 14px; position: relative; overflow: hidden; }
 .cooldown-fill { background: var(--warn); height: 100%; transition: width .1s linear; }

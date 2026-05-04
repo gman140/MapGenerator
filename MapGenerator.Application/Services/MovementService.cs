@@ -14,17 +14,24 @@ public class MovementService
 
     private static readonly Dictionary<BiomeType, long> BiomeCooldownMs = new()
     {
-        [BiomeType.Ocean]     = 0,
-        [BiomeType.Beach]     = 400,
+        [BiomeType.Ocean]     =    0,
+        [BiomeType.Shallows]  = 1200,
+        [BiomeType.Beach]     =  400,
         [BiomeType.River]     = 1500,
         [BiomeType.Swamp]     = 3000,
-        [BiomeType.Grassland] = 400,
-        [BiomeType.Plains]    = 400,
-        [BiomeType.Forest]    = 700,
-        [BiomeType.Desert]    = 900,
+        [BiomeType.Marsh]     = 2000,
+        [BiomeType.Grassland] =  400,
+        [BiomeType.Plains]    =  400,
+        [BiomeType.Savanna]   =  500,
+        [BiomeType.Forest]    =  700,
+        [BiomeType.Jungle]    = 1200,
+        [BiomeType.Desert]    =  900,
         [BiomeType.Mountain]  = 2000,
+        [BiomeType.Tundra]    = 1800,
         [BiomeType.Snow]      = 2500,
-        [BiomeType.Lake]      = 0,
+        [BiomeType.Glacier]   = 3000,
+        [BiomeType.Volcano]   =    0,
+        [BiomeType.Lake]      =    0,
     };
 
     public MovementService(
@@ -71,6 +78,9 @@ public class MovementService
 
         if (tile.Biome == BiomeType.Lake)
             return Fail("The lake is too deep to cross without a boat.");
+
+        if (tile.Biome == BiomeType.Volcano)
+            return Fail("The volcanic terrain is impassable.");
 
         if (tile.Biome == BiomeType.Ocean)
         {

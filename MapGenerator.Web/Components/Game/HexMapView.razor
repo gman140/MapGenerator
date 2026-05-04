@@ -33,6 +33,13 @@
                         <polygon points="@HexPoints(cx, cy)"
                                  class="hex-tile biome-@tile.Biome.ToString().ToLower()" />
 
+                        @if (tile.Feature != TileFeature.None)
+                        {
+                            <circle cx="@cx.ToString("F1")" cy="@((cy + HexSize * 0.52).ToString("F1"))"
+                                    r="4"
+                                    class="feature-dot feature-@FeatureCategory(tile.Feature)" />
+                        }
+
                         @if (isPlayerTile)
                         {
                             <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
@@ -65,8 +72,12 @@
         {
             var (hx, hy) = TileCenter(_hoveredTile.Q, _hoveredTile.R);
             double tx = hx + 4, ty = hy - HexSize - 4;
+            var featurePart = _hoveredTile.Feature != TileFeature.None
+                ? $" · {TileFeatureHelper.GetDisplayName(_hoveredTile.Feature, _hoveredTile.Q, _hoveredTile.R)}"
+                : "";
+            var eggPart = _hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "";
             <svg:text x="@tx.ToString("F0")" y="@ty.ToString("F0")" class="tile-tooltip">
-                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){(_hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "")}")
+                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){featurePart}{eggPart}")
             </svg:text>
         }
     </svg>
@@ -147,4 +158,24 @@
 
         return (q, r);
     }
+
+    private static string FeatureCategory(TileFeature f) => f switch
+    {
+        TileFeature.SpookyWoods   or TileFeature.MushroomGrove  or TileFeature.AncientGlade or
+        TileFeature.FernDell      or TileFeature.BramblePatch   or TileFeature.MushroomRing or
+        TileFeature.TropicalGrove or TileFeature.WildOrchard    => "nature",
+
+        TileFeature.BurnedRuins   or TileFeature.AncientShrine  or TileFeature.RuinedTower  or
+        TileFeature.AbandonedFarm or TileFeature.ForgottenGrave or TileFeature.CrumbledFortress or
+        TileFeature.StoneCircle   or TileFeature.LonelyWell     or TileFeature.WitchsCottage => "ruins",
+
+        TileFeature.HotSpring or TileFeature.TidePools or TileFeature.ReedBeds => "water",
+
+        TileFeature.SaltFlats  or TileFeature.OasisGrove or
+        TileFeature.DeadForest or TileFeature.QuickSand  => "desert",
+
+        TileFeature.CaveEntrance or TileFeature.FrozenShrine or TileFeature.IcyCavern => "cold",
+
+        _ => "nature"
+    };
 }

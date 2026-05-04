@@ -18,6 +18,10 @@
         <span class="biome-tag biome-@(tile?.Biome.ToString().ToLower() ?? "unknown")">
             @(tile?.Biome.ToString() ?? "Unknown")
         </span>
+        @if (tile?.Feature is not null and not TileFeature.None)
+        {
+            <span class="feature-tag">@TileFeatureHelper.GetDisplayName(tile.Feature, Player.Q, Player.R)</span>
+        }
         <span class="coords">(@Player.Q, @Player.R)</span>
     </div>
 

@@ -66,13 +66,19 @@ public class MapGeneratorService
         // ── Step 3: beach strips at water edges ───────────────────────────
         AddBeaches(grid, width, height, opts.SeaLevel);
 
+        // ── Step 3b: shallows (shallow ocean adjacent to land) ────────────
+        AddShallows(grid, width, height, opts.SeaLevel);
+
         // ── Step 4: rivers ────────────────────────────────────────────────
         int riverCount = opts.RiverCount > 0
             ? opts.RiverCount
             : Math.Max(5, width * height / 2_000);
         GenerateRivers(grid, width, height, actualSeed, riverCount);
 
-        // ── Step 5: find spawn (grassland/plains near centre) ─────────────
+        // ── Step 5: scatter tile features (overlays) ──────────────────────
+        PlaceFeatures(grid, width, height, actualSeed);
+
+        // ── Step 6: find spawn (grassland/plains near centre) ─────────────
         var flat = FlatList(grid, width, height);
         int cx = width / 2, cy = height / 2;
         var spawn = flat
@@ -80,7 +86,8 @@ public class MapGeneratorService
             .OrderBy(t => Math.Abs(t.Q - cx) + Math.Abs(t.R - cy))
             .FirstOrDefault()
             ?? flat.Where(t => t.Biome is not BiomeType.Ocean and not BiomeType.Lake
-                                         and not BiomeType.Mountain and not BiomeType.Snow)
+                                         and not BiomeType.Mountain and not BiomeType.Snow
+                                         and not BiomeType.Glacier  and not BiomeType.Volcano)
                    .OrderBy(t => Math.Abs(t.Q - cx) + Math.Abs(t.R - cy))
                    .First();
 
@@ -183,25 +190,35 @@ public class MapGeneratorService
 
     private static BiomeType AssignRawBiome(float e, float m, MapGenerationOptions opts)
     {
-        // Water tiles — will be reclassified as Ocean or Lake in ClassifyWaterBodies
+        // Water tiles — reclassified as Ocean or Lake in ClassifyWaterBodies
         if (e < opts.SeaLevel) return BiomeType.Ocean;
 
+        // Very high peaks → Glacier
+        if (e >= opts.SnowLevel + 0.04f) return BiomeType.Glacier;
         if (e >= opts.SnowLevel) return BiomeType.Snow;
+
+        // Rare dry volcanic peaks
+        if (e >= opts.MountainLevel + 0.06f && m < 0.12f) return BiomeType.Volcano;
         if (e >= opts.MountainLevel) return BiomeType.Mountain;
 
-        float landDepth = e - opts.SeaLevel; // 0 at coastline, increases inland
+        float landDepth = e - opts.SeaLevel;
 
-        // Near-shore low land with high moisture → swamp
+        // Cold sub-mountain zone with low moisture → tundra
+        if (e >= opts.MountainLevel - 0.12f && m < 0.35f) return BiomeType.Tundra;
+
+        // Near-shore moisture variants
         if (landDepth < 0.10f && m > 0.62f) return BiomeType.Swamp;
+        if (landDepth < 0.12f && m >= 0.35f && m <= 0.62f) return BiomeType.Marsh;
 
-        // High-elevation forests (montane)
+        // Montane forest (near mountain edge, wet)
         if (e > opts.MountainLevel - 0.10f && m > 0.50f) return BiomeType.Forest;
 
-        // General moisture-based biomes
-        if (m > 0.72f) return BiomeType.Forest;
-        if (m > 0.56f) return BiomeType.Grassland;
-        if (m > 0.38f) return BiomeType.Plains;
-        if (m > 0.20f) return BiomeType.Desert;
+        // Moisture gradient
+        if (m > 0.78f) return BiomeType.Jungle;
+        if (m > 0.62f) return BiomeType.Forest;
+        if (m > 0.48f) return BiomeType.Grassland;
+        if (m > 0.30f) return BiomeType.Plains;
+        if (m > 0.15f) return BiomeType.Savanna;
         return BiomeType.Desert;
     }
 
@@ -267,6 +284,91 @@ public class MapGeneratorService
         }
     }
 
+    /// Shallow ocean tiles (elevation near sea level) that border land become Shallows.
+    private static void AddShallows(HexTile[,] grid, int width, int height, float seaLevel)
+    {
+        var toConvert = new List<(int q, int r)>();
+        for (int r = 0; r < height; r++)
+        {
+            for (int q = 0; q < width; q++)
+            {
+                var tile = grid[q, r];
+                if (tile.Biome != BiomeType.Ocean) continue;
+                if (tile.Elevation < seaLevel - 0.05f) continue;
+
+                foreach (var (dq, dr) in HexNeighborOffsets())
+                {
+                    int nq = q + dq, nr = r + dr;
+                    if (nq < 0 || nq >= width || nr < 0 || nr >= height) continue;
+                    if (grid[nq, nr].Biome is not BiomeType.Ocean and not BiomeType.Lake)
+                    {
+                        toConvert.Add((q, r));
+                        break;
+                    }
+                }
+            }
+        }
+        foreach (var (q, r) in toConvert)
+            grid[q, r].Biome = BiomeType.Shallows;
+    }
+
+    private record FeatureEntry(TileFeature Feature, BiomeType[] Biomes, float Probability);
+
+    private static readonly FeatureEntry[] FeatureTable =
+    [
+        new(TileFeature.SpookyWoods,      [BiomeType.Forest, BiomeType.Swamp],                                       0.040f),
+        new(TileFeature.MushroomGrove,    [BiomeType.Forest, BiomeType.Swamp, BiomeType.Marsh],                      0.030f),
+        new(TileFeature.AncientGlade,     [BiomeType.Forest, BiomeType.Jungle],                                      0.025f),
+        new(TileFeature.FernDell,         [BiomeType.Forest, BiomeType.Jungle, BiomeType.Grassland],                 0.030f),
+        new(TileFeature.BramblePatch,     [BiomeType.Forest, BiomeType.Grassland, BiomeType.Swamp],                  0.030f),
+        new(TileFeature.MushroomRing,     [BiomeType.Forest, BiomeType.Swamp, BiomeType.Marsh],                      0.025f),
+        new(TileFeature.TropicalGrove,    [BiomeType.Jungle, BiomeType.Beach],                                       0.035f),
+        new(TileFeature.WildOrchard,      [BiomeType.Grassland, BiomeType.Plains, BiomeType.Forest],                 0.025f),
+        new(TileFeature.BurnedRuins,      [BiomeType.Forest, BiomeType.Grassland, BiomeType.Plains],                 0.020f),
+        new(TileFeature.AncientShrine,    [BiomeType.Forest, BiomeType.Mountain, BiomeType.Plains],                  0.015f),
+        new(TileFeature.RuinedTower,      [BiomeType.Grassland, BiomeType.Plains, BiomeType.Mountain],               0.015f),
+        new(TileFeature.AbandonedFarm,    [BiomeType.Grassland, BiomeType.Plains],                                   0.025f),
+        new(TileFeature.ForgottenGrave,   [BiomeType.Grassland, BiomeType.Plains, BiomeType.Desert],                 0.020f),
+        new(TileFeature.CrumbledFortress, [BiomeType.Mountain, BiomeType.Plains],                                    0.010f),
+        new(TileFeature.StoneCircle,      [BiomeType.Plains, BiomeType.Grassland, BiomeType.Mountain],               0.010f),
+        new(TileFeature.LonelyWell,       [BiomeType.Plains, BiomeType.Desert, BiomeType.Grassland],                 0.015f),
+        new(TileFeature.WitchsCottage,    [BiomeType.Swamp, BiomeType.Forest],                                       0.010f),
+        new(TileFeature.HotSpring,        [BiomeType.Mountain, BiomeType.Snow, BiomeType.Tundra],                    0.020f),
+        new(TileFeature.TidePools,        [BiomeType.Beach, BiomeType.Shallows],                                     0.040f),
+        new(TileFeature.ReedBeds,         [BiomeType.Marsh, BiomeType.River],                                        0.040f),
+        new(TileFeature.SaltFlats,        [BiomeType.Desert, BiomeType.Beach],                                       0.025f),
+        new(TileFeature.OasisGrove,       [BiomeType.Desert],                                                        0.020f),
+        new(TileFeature.DeadForest,       [BiomeType.Desert, BiomeType.Plains],                                      0.020f),
+        new(TileFeature.QuickSand,        [BiomeType.Desert, BiomeType.Swamp, BiomeType.Marsh],                      0.020f),
+        new(TileFeature.CaveEntrance,     [BiomeType.Mountain, BiomeType.Glacier],                                   0.035f),
+        new(TileFeature.FrozenShrine,     [BiomeType.Snow, BiomeType.Glacier, BiomeType.Tundra],                     0.020f),
+        new(TileFeature.IcyCavern,        [BiomeType.Glacier, BiomeType.Snow],                                       0.025f),
+    ];
+
+    private static void PlaceFeatures(HexTile[,] grid, int width, int height, int seed)
+    {
+        var rng = new Random(seed + 0x5EED);
+        for (int r = 0; r < height; r++)
+        {
+            for (int q = 0; q < width; q++)
+            {
+                var tile = grid[q, r];
+                if (tile.Biome is BiomeType.Ocean or BiomeType.Lake or BiomeType.River
+                                or BiomeType.Shallows or BiomeType.Volcano) continue;
+
+                foreach (var entry in FeatureTable)
+                {
+                    if (!Array.Exists(entry.Biomes, b => b == tile.Biome)) continue;
+                    if (rng.NextDouble() < entry.Probability)
+                    {
+                        tile.Feature = entry.Feature;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     /// Traces rivers downhill from mountain/snow sources to the nearest water body.
     private static void GenerateRivers(HexTile[,] grid, int width, int height, int seed, int count)
     {
@@ -275,7 +377,7 @@ public class MapGeneratorService
 
         for (int r = 0; r < height; r++)
             for (int q = 0; q < width; q++)
-                if (grid[q, r].Biome is BiomeType.Mountain or BiomeType.Snow)
+                if (grid[q, r].Biome is BiomeType.Mountain or BiomeType.Snow or BiomeType.Glacier)
                     sources.Add((q, r));
 
         // Fisher-Yates shuffle
@@ -303,7 +405,7 @@ public class MapGeneratorService
         {
             var tile = grid[q, r];
             if (tile.Biome is BiomeType.Ocean or BiomeType.Lake) { reachedWater = true; break; }
-            if (tile.Biome is not BiomeType.Mountain and not BiomeType.Snow and not BiomeType.Beach)
+            if (tile.Biome is not BiomeType.Mountain and not BiomeType.Snow and not BiomeType.Glacier and not BiomeType.Beach)
                 tile.Biome = BiomeType.River;
 
             // Collect all downhill neighbours; add a small random weight to avoid grid artifacts
@@ -339,17 +441,24 @@ public class MapGeneratorService
 
     private static (byte r, byte g, byte b) BiomeRgb(BiomeType biome) => biome switch
     {
-        BiomeType.Ocean     => (28,  78, 140),
-        BiomeType.Lake      => (58, 110, 165),
+        BiomeType.Ocean     => ( 28,  78, 140),
+        BiomeType.Lake      => ( 58, 110, 165),
+        BiomeType.Shallows  => ( 58, 138, 170),
         BiomeType.Beach     => (210, 195, 140),
-        BiomeType.River     => (64,  120, 190),
-        BiomeType.Swamp     => (60,  80,  55),
+        BiomeType.River     => ( 64, 120, 190),
+        BiomeType.Swamp     => ( 60,  80,  55),
+        BiomeType.Marsh     => ( 85, 104,  72),
         BiomeType.Grassland => (110, 175,  65),
         BiomeType.Plains    => (185, 175,  90),
-        BiomeType.Forest    => (40,  90,  40),
+        BiomeType.Savanna   => (200, 184,  80),
+        BiomeType.Forest    => ( 40,  90,  40),
+        BiomeType.Jungle    => ( 26,  92,  26),
         BiomeType.Desert    => (210, 175, 100),
         BiomeType.Mountain  => (130, 125, 120),
+        BiomeType.Tundra    => (142, 168, 152),
         BiomeType.Snow      => (230, 235, 240),
+        BiomeType.Glacier   => (200, 220, 232),
+        BiomeType.Volcano   => ( 90,  40,  24),
         _                   => (100, 100, 100)
     };
 }
