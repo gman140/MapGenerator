@@ -1,4 +1,5 @@
 using MapGenerator.Application.Services;
+using MapGenerator.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MapGenerator.Application;
@@ -7,6 +8,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddSingleton<IFeatureDefinitionProvider, InMemoryFeatureDefinitionProvider>();
         services.AddSingleton<MapGeneratorService>();
         services.AddSingleton<PermissionService>();
         services.AddScoped<MovementService>();

@@ -1,5 +1,7 @@
 @using MapGenerator.Application.Services
+@using MapGenerator.Domain.Interfaces
 @inject MapGeneratorService MapCache
+@inject IFeatureDefinitionProvider FeatureProvider
 
 <div class="hex-map-container" @ref="_container">
     <svg width="@_svgWidth" height="@_svgHeight"
@@ -26,6 +28,7 @@
                     bool isPlayerTile = tq == Player.Q && tr == Player.R;
                     bool isAdjacent = MovementService.AreAdjacent(Player.Q, Player.R, tq, tr);
                     bool isHovered = _hoveredTile?.Q == tq && _hoveredTile?.R == tr;
+                    var featureDef = FeatureProvider.GetById(tile.FeatureId);
 
                     <g @key="@($"{tq}_{tr}")"
                        class="hex-group @(isHovered ? "hovered" : "") @(isAdjacent ? "adjacent" : "")"
@@ -33,11 +36,11 @@
                         <polygon points="@HexPoints(cx, cy)"
                                  class="hex-tile biome-@tile.Biome.ToString().ToLower()" />
 
-                        @if (tile.Feature != TileFeature.None)
+                        @if (featureDef != null)
                         {
                             <circle cx="@cx.ToString("F1")" cy="@((cy + HexSize * 0.52).ToString("F1"))"
                                     r="4"
-                                    class="feature-dot feature-@FeatureCategory(tile.Feature)" />
+                                    class="feature-dot feature-@featureDef.Category.ToString().ToLower()" />
                         }
 
                         @if (isPlayerTile)
@@ -72,8 +75,9 @@
         {
             var (hx, hy) = TileCenter(_hoveredTile.Q, _hoveredTile.R);
             double tx = hx + 4, ty = hy - HexSize - 4;
-            var featurePart = _hoveredTile.Feature != TileFeature.None
-                ? $" · {TileFeatureHelper.GetDisplayName(_hoveredTile.Feature, _hoveredTile.Q, _hoveredTile.R)}"
+            var hoveredFeature = FeatureProvider.GetById(_hoveredTile.FeatureId);
+            var featurePart = hoveredFeature != null
+                ? $" · {hoveredFeature.GetDisplayName(_hoveredTile.Q, _hoveredTile.R)}"
                 : "";
             var eggPart = _hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "";
             <svg:text x="@tx.ToString("F0")" y="@ty.ToString("F0")" class="tile-tooltip">
@@ -158,24 +162,4 @@
 
         return (q, r);
     }
-
-    private static string FeatureCategory(TileFeature f) => f switch
-    {
-        TileFeature.SpookyWoods   or TileFeature.MushroomGrove  or TileFeature.AncientGlade or
-        TileFeature.FernDell      or TileFeature.BramblePatch   or TileFeature.MushroomRing or
-        TileFeature.TropicalGrove or TileFeature.WildOrchard    => "nature",
-
-        TileFeature.BurnedRuins   or TileFeature.AncientShrine  or TileFeature.RuinedTower  or
-        TileFeature.AbandonedFarm or TileFeature.ForgottenGrave or TileFeature.CrumbledFortress or
-        TileFeature.StoneCircle   or TileFeature.LonelyWell     or TileFeature.WitchsCottage => "ruins",
-
-        TileFeature.HotSpring or TileFeature.TidePools or TileFeature.ReedBeds => "water",
-
-        TileFeature.SaltFlats  or TileFeature.OasisGrove or
-        TileFeature.DeadForest or TileFeature.QuickSand  => "desert",
-
-        TileFeature.CaveEntrance or TileFeature.FrozenShrine or TileFeature.IcyCavern => "cold",
-
-        _ => "nature"
-    };
 }

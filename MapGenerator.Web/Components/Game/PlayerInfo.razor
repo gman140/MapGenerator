@@ -1,5 +1,7 @@
 @using MapGenerator.Application.Services
+@using MapGenerator.Domain.Interfaces
 @inject MapGeneratorService MapCache
+@inject IFeatureDefinitionProvider FeatureProvider
 @implements IDisposable
 
 <div class="player-info">
@@ -14,13 +16,14 @@
     <div class="tile-info">
         @{
             var tile = MapCache.GetCachedTile(Player.Q, Player.R);
+            var featureDef = FeatureProvider.GetById(tile?.FeatureId);
         }
         <span class="biome-tag biome-@(tile?.Biome.ToString().ToLower() ?? "unknown")">
             @(tile?.Biome.ToString() ?? "Unknown")
         </span>
-        @if (tile?.Feature is not null and not TileFeature.None)
+        @if (featureDef != null)
         {
-            <span class="feature-tag">@TileFeatureHelper.GetDisplayName(tile.Feature, Player.Q, Player.R)</span>
+            <span class="feature-tag">@featureDef.GetDisplayName(Player.Q, Player.R)</span>
         }
         <span class="coords">(@Player.Q, @Player.R)</span>
     </div>

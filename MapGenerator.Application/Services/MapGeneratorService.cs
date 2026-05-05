@@ -8,10 +8,15 @@ namespace MapGenerator.Application.Services;
 public class MapGeneratorService
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IFeatureDefinitionProvider _featureProvider;
     private HexTile[,]? _cache;
     private MapConfig? _configCache;
 
-    public MapGeneratorService(IServiceScopeFactory scopeFactory) => _scopeFactory = scopeFactory;
+    public MapGeneratorService(IServiceScopeFactory scopeFactory, IFeatureDefinitionProvider featureProvider)
+    {
+        _scopeFactory    = scopeFactory;
+        _featureProvider = featureProvider;
+    }
 
     private IMapRepository Repo(IServiceScope scope) =>
         scope.ServiceProvider.GetRequiredService<IMapRepository>();
@@ -318,40 +323,7 @@ public class MapGeneratorService
             grid[q, r].Biome = BiomeType.Shallows;
     }
 
-    private record FeatureEntry(TileFeature Feature, BiomeType[] Biomes, float Probability);
-
-    private static readonly FeatureEntry[] FeatureTable =
-    [
-        new(TileFeature.SpookyWoods,      [BiomeType.Forest, BiomeType.Swamp],                                       0.040f),
-        new(TileFeature.MushroomGrove,    [BiomeType.Forest, BiomeType.Swamp, BiomeType.Marsh],                      0.030f),
-        new(TileFeature.AncientGlade,     [BiomeType.Forest, BiomeType.Jungle],                                      0.025f),
-        new(TileFeature.FernDell,         [BiomeType.Forest, BiomeType.Jungle, BiomeType.Grassland],                 0.030f),
-        new(TileFeature.BramblePatch,     [BiomeType.Forest, BiomeType.Grassland, BiomeType.Swamp],                  0.030f),
-        new(TileFeature.MushroomRing,     [BiomeType.Forest, BiomeType.Swamp, BiomeType.Marsh],                      0.025f),
-        new(TileFeature.TropicalGrove,    [BiomeType.Jungle, BiomeType.Beach],                                       0.035f),
-        new(TileFeature.WildOrchard,      [BiomeType.Grassland, BiomeType.Plains, BiomeType.Forest],                 0.025f),
-        new(TileFeature.BurnedRuins,      [BiomeType.Forest, BiomeType.Grassland, BiomeType.Plains],                 0.020f),
-        new(TileFeature.AncientShrine,    [BiomeType.Forest, BiomeType.Mountain, BiomeType.Plains],                  0.015f),
-        new(TileFeature.RuinedTower,      [BiomeType.Grassland, BiomeType.Plains, BiomeType.Mountain],               0.015f),
-        new(TileFeature.AbandonedFarm,    [BiomeType.Grassland, BiomeType.Plains],                                   0.025f),
-        new(TileFeature.ForgottenGrave,   [BiomeType.Grassland, BiomeType.Plains, BiomeType.Desert],                 0.020f),
-        new(TileFeature.CrumbledFortress, [BiomeType.Mountain, BiomeType.Plains],                                    0.010f),
-        new(TileFeature.StoneCircle,      [BiomeType.Plains, BiomeType.Grassland, BiomeType.Mountain],               0.010f),
-        new(TileFeature.LonelyWell,       [BiomeType.Plains, BiomeType.Desert, BiomeType.Grassland],                 0.015f),
-        new(TileFeature.WitchsCottage,    [BiomeType.Swamp, BiomeType.Forest],                                       0.010f),
-        new(TileFeature.HotSpring,        [BiomeType.Mountain, BiomeType.Snow, BiomeType.Tundra],                    0.020f),
-        new(TileFeature.TidePools,        [BiomeType.Beach, BiomeType.Shallows],                                     0.040f),
-        new(TileFeature.ReedBeds,         [BiomeType.Marsh, BiomeType.River],                                        0.040f),
-        new(TileFeature.SaltFlats,        [BiomeType.Desert, BiomeType.Beach],                                       0.025f),
-        new(TileFeature.OasisGrove,       [BiomeType.Desert],                                                        0.020f),
-        new(TileFeature.DeadForest,       [BiomeType.Desert, BiomeType.Plains],                                      0.020f),
-        new(TileFeature.QuickSand,        [BiomeType.Desert, BiomeType.Swamp, BiomeType.Marsh],                      0.020f),
-        new(TileFeature.CaveEntrance,     [BiomeType.Mountain, BiomeType.Glacier],                                   0.035f),
-        new(TileFeature.FrozenShrine,     [BiomeType.Snow, BiomeType.Glacier, BiomeType.Tundra],                     0.020f),
-        new(TileFeature.IcyCavern,        [BiomeType.Glacier, BiomeType.Snow],                                       0.025f),
-    ];
-
-    private static void PlaceFeatures(HexTile[,] grid, int width, int height, int seed)
+    private void PlaceFeatures(HexTile[,] grid, int width, int height, int seed)
     {
         var rng = new Random(seed + 0x5EED);
         for (int r = 0; r < height; r++)
@@ -362,12 +334,12 @@ public class MapGeneratorService
                 if (tile.Biome is BiomeType.Ocean or BiomeType.Lake or BiomeType.River
                                 or BiomeType.Shallows or BiomeType.Volcano) continue;
 
-                foreach (var entry in FeatureTable)
+                foreach (var def in _featureProvider.All)
                 {
-                    if (!Array.Exists(entry.Biomes, b => b == tile.Biome)) continue;
-                    if (rng.NextDouble() < entry.Probability)
+                    if (!def.AllowedBiomes.Contains(tile.Biome)) continue;
+                    if (rng.NextDouble() < def.Probability)
                     {
-                        tile.Feature = entry.Feature;
+                        tile.FeatureId = def.Id;
                         break;
                     }
                 }
