@@ -48,6 +48,9 @@ public class PlayerTileVisitRepository : IPlayerTileVisitRepository
             .SortBy(v => v.ArrivedAt)
             .ToListAsync();
 
+    public async Task<int> CountVisitsAsync(string playerId, int q, int r) =>
+        (int)await _ctx.Visits.CountDocumentsAsync(v => v.PlayerId == playerId && v.Q == q && v.R == r);
+
     public Task DeleteAllForPlayerAsync(string playerId) =>
         _ctx.Visits.DeleteManyAsync(v => v.PlayerId == playerId);
 

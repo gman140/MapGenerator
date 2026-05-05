@@ -7,27 +7,43 @@ namespace MapGenerator.Application.Services;
 public class InvestigateService
 {
     private readonly ITileNoteRepository _noteRepo;
+    private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly MapGeneratorService _mapCache;
 
-    public InvestigateService(ITileNoteRepository noteRepo, MapGeneratorService mapCache)
+    public InvestigateService(ITileNoteRepository noteRepo, IPlayerTileVisitRepository visitRepo, MapGeneratorService mapCache)
     {
         _noteRepo = noteRepo;
+        _visitRepo = visitRepo;
         _mapCache = mapCache;
     }
 
     public async Task<(string flavorText, List<TileNote> notes)> InvestigateAsync(Player player)
     {
         var tile = _mapCache.GetCachedTile(player.Q, player.R);
+        var visitCount = await _visitRepo.CountVisitsAsync(player.Id, player.Q, player.R);
+        var neighbors = GetNeighborTiles(player.Q, player.R);
         var flavor = tile != null
-            ? BuildFlavorText(tile.Biome, tile.Feature, player.Q, player.R)
+            ? BuildFlavorText(tile.Biome, tile.Feature, player.Q, player.R, visitCount, neighbors)
             : "You look around carefully. There is not much to see. You look again. Still nothing. You are thorough and it has not helped.";
         var notes = await _noteRepo.GetNotesForTileAsync(player.Q, player.R);
         return (flavor, notes);
     }
 
+    private List<HexTile> GetNeighborTiles(int q, int r)
+    {
+        (int dq, int dr)[] dirs = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)];
+        var result = new List<HexTile>(6);
+        foreach (var (dq, dr) in dirs)
+        {
+            var t = _mapCache.GetCachedTile(q + dq, r + dr);
+            if (t != null) result.Add(t);
+        }
+        return result;
+    }
+
     // ── Core assembly ────────────────────────────────────────────────────────
 
-    private static string BuildFlavorText(BiomeType biome, TileFeature feature, int q, int r)
+    private static string BuildFlavorText(BiomeType biome, TileFeature feature, int q, int r, int visitCount, List<HexTile> neighbors)
     {
         // Rare event: ~4% per tile per day — completely overrides normal text
         var rareHash = Math.Abs(q * 31 + r * 37 + DateTime.UtcNow.DayOfYear * 7919);
@@ -37,18 +53,167 @@ public class InvestigateService
         int hashA = Math.Abs(q * 11 + r * 17);
         int hashB = Math.Abs(q * 7  + r * 23);
 
+        string body;
         if (feature != TileFeature.None)
         {
             var (partA, partB) = GetFeatureParts(feature);
             var prefix = GetTimePrefix(GetFeatureCategory(feature), GetTimeOfDay(), q, r);
-            var body   = $"{partA[hashA % partA.Length]} {partB[hashB % partB.Length]}";
-            return string.IsNullOrEmpty(prefix) ? body : $"{prefix} {body}";
+            var bodyText = $"{partA[hashA % partA.Length]} {partB[hashB % partB.Length]}";
+            body = string.IsNullOrEmpty(prefix) ? bodyText : $"{prefix} {bodyText}";
         }
         else
         {
             var (partA, partB) = GetBiomeParts(biome);
-            return $"{partA[hashA % partA.Length]} {partB[hashB % partB.Length]}";
+            body = $"{partA[hashA % partA.Length]} {partB[hashB % partB.Length]}";
         }
+
+        var visitIntro    = GetVisitIntro(visitCount, q, r);
+        var neighborNote  = GetNeighborInfluence(biome, neighbors, q, r);
+
+        var sb = new System.Text.StringBuilder();
+        if (!string.IsNullOrEmpty(visitIntro)) sb.Append(visitIntro).Append(' ');
+        sb.Append(body);
+        if (!string.IsNullOrEmpty(neighborNote)) sb.Append(' ').Append(neighborNote);
+        return sb.ToString();
+    }
+
+    // ── Visit context ─────────────────────────────────────────────────────────
+
+    private static string GetVisitIntro(int visitCount, int q, int r)
+    {
+        int idx = Math.Abs(q * 17 + r * 41);
+        string[] options = visitCount switch
+        {
+            1 => [
+                "You have not stood here before.",
+                "This place is entirely new to you.",
+                "First impressions take hold immediately.",
+                "You are somewhere you have never been.",
+            ],
+            <= 4 => [
+                "The place settles around you like a half-remembered dream.",
+                "You've been here before. Something is different, or you are.",
+                "You know this ground. Not well, but enough.",
+                "A return visit shows you what the first one didn't.",
+            ],
+            <= 9 => [
+                "Familiar ground. You scan it out of habit now.",
+                "This place has become part of your mental map.",
+                "You notice things you overlooked before.",
+                "You've been here enough times to have opinions about it.",
+            ],
+            _ => [
+                "You know this place the way you know your own hands.",
+                "This has become ordinary in the best possible way.",
+                "Old ground. You walk it without thinking.",
+                "The place doesn't surprise you anymore. You find you don't mind.",
+            ],
+        };
+        return options[idx % options.Length];
+    }
+
+    // ── Adjacent tile influence ───────────────────────────────────────────────
+
+    private static string GetNeighborInfluence(BiomeType selfBiome, List<HexTile> neighbors, int q, int r)
+    {
+        static int Score(BiomeType b) => b switch
+        {
+            BiomeType.Volcano  => 10,
+            BiomeType.Ocean    => 8,
+            BiomeType.Glacier  => 7,
+            BiomeType.Swamp    => 6,
+            BiomeType.Marsh    => 6,
+            BiomeType.Desert   => 5,
+            BiomeType.River    => 5,
+            BiomeType.Snow     => 4,
+            BiomeType.Tundra   => 4,
+            BiomeType.Jungle   => 4,
+            BiomeType.Mountain => 3,
+            BiomeType.Forest   => 3,
+            BiomeType.Beach    => 3,
+            BiomeType.Shallows => 2,
+            _ => 0,
+        };
+
+        var best = neighbors
+            .Where(n => n.Biome != selfBiome && Score(n.Biome) > 0)
+            .OrderByDescending(n => Score(n.Biome))
+            .FirstOrDefault();
+
+        if (best == null) return string.Empty;
+
+        int idx = Math.Abs(q * 19 + r * 43);
+        string[] options = best.Biome switch
+        {
+            BiomeType.Volcano => [
+                "Sulfur drifts in from somewhere it shouldn't.",
+                "The air on one side carries a warmth that has nothing to do with the sun.",
+                "Ash has settled here in fine gray layers from whatever burns nearby.",
+            ],
+            BiomeType.Ocean => [
+                "Salt air finds you from the direction of the water.",
+                "The sea is close enough to smell, maybe to hear.",
+                "Something maritime is in the air here — borrowed from wherever the water begins.",
+            ],
+            BiomeType.Glacier => [
+                "One direction is noticeably colder than the others.",
+                "Glacial air presses in from one side with quiet certainty.",
+                "The cold here has been traveling over ice to reach you.",
+            ],
+            BiomeType.Swamp or BiomeType.Marsh => [
+                "A wet, organic smell drifts in from somewhere low and still.",
+                "The air carries a note of standing water from somewhere nearby.",
+                "The edge of wetter ground is close enough to smell.",
+            ],
+            BiomeType.Desert => [
+                "Fine grit finds your teeth from the direction of the open dry land.",
+                "The air on one side is noticeably drier than the rest.",
+                "The desert's edge is close enough to taste.",
+            ],
+            BiomeType.River => [
+                "You can hear running water nearby if you listen for it.",
+                "The sound of a river reaches here — intermittent, comfortable.",
+                "Water is moving somewhere close. You can't see it, but the sound finds you.",
+            ],
+            BiomeType.Snow => [
+                "The air carries a clean cold from whatever is white on the horizon.",
+                "Snow is visible somewhere close, lending the air an edge.",
+                "The cold from nearby elevation finds this place reliably.",
+            ],
+            BiomeType.Tundra => [
+                "The wind from one direction has been traveling over open frozen ground.",
+                "A spare, cold air reaches here from the tundra nearby.",
+                "Something wide and cold is close. You feel its edge.",
+            ],
+            BiomeType.Jungle => [
+                "Dense green presses in from one direction.",
+                "The jungle is audible from here — layered, relentless.",
+                "Jungle heat and humidity find this place from one side.",
+            ],
+            BiomeType.Mountain => [
+                "The terrain rises sharply not far from here.",
+                "Elevation is visible in one direction, patient and permanent.",
+                "The shadow of higher ground passes through here at certain hours.",
+            ],
+            BiomeType.Forest => [
+                "The treeline is close enough to feel — a change in light and temperature.",
+                "Birdsong from the nearby forest finds this place.",
+                "The smell of damp wood and leaf litter drifts over from the trees.",
+            ],
+            BiomeType.Beach => [
+                "Surf sounds reach you on the right wind.",
+                "The ground is sandier here, borrowed from wherever the shore begins.",
+                "Something coastal is in the light here — reflected off water not far away.",
+            ],
+            BiomeType.Shallows => [
+                "The air smells faintly of shallow water and wet sand.",
+                "A coastal quality settles over the light here.",
+                "Water is close — shallow, warm, audible when the wind shifts.",
+            ],
+            _ => [],
+        };
+
+        return options.Length == 0 ? string.Empty : options[idx % options.Length];
     }
 
     // ── Time of day ───────────────────────────────────────────────────────────
