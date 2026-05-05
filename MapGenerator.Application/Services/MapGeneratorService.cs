@@ -176,7 +176,7 @@ public class MapGeneratorService
         for (int r = 0; r < h; r++)
             for (int q = 0; q < w; q++)
             {
-                var (red, green, blue) = BiomeRgb(_cache[q, r]?.Biome ?? BiomeType.Ocean);
+                var (red, green, blue) = BiomeProperties.MinimapRgb(_cache[q, r]?.Biome ?? BiomeType.Ocean);
                 int idx = (r * w + q) * 3;
                 data[idx] = red; data[idx + 1] = green; data[idx + 2] = blue;
             }
@@ -417,26 +417,4 @@ public class MapGeneratorService
     public static (int dq, int dr)[] HexNeighborOffsets() =>
         [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, 1), (1, -1)];
 
-    private static (byte r, byte g, byte b) BiomeRgb(BiomeType biome) => biome switch
-    {
-        BiomeType.Ocean     => ( 28,  78, 140),
-        BiomeType.Lake      => ( 58, 110, 165),
-        BiomeType.Shallows  => ( 58, 138, 170),
-        BiomeType.Beach     => (210, 195, 140),
-        BiomeType.River     => ( 64, 120, 190),
-        BiomeType.Swamp     => ( 60,  80,  55),
-        BiomeType.Marsh     => ( 85, 104,  72),
-        BiomeType.Grassland => (110, 175,  65),
-        BiomeType.Plains    => (185, 175,  90),
-        BiomeType.Savanna   => (200, 184,  80),
-        BiomeType.Forest    => ( 40,  90,  40),
-        BiomeType.Jungle    => ( 26,  92,  26),
-        BiomeType.Desert    => (210, 175, 100),
-        BiomeType.Mountain  => (130, 125, 120),
-        BiomeType.Tundra    => (142, 168, 152),
-        BiomeType.Snow      => (230, 235, 240),
-        BiomeType.Glacier   => (200, 220, 232),
-        BiomeType.Volcano   => ( 90,  40,  24),
-        _                   => (100, 100, 100)
-    };
 }

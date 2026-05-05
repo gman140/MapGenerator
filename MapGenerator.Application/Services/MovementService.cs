@@ -1,7 +1,6 @@
 using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
-using System.Collections.Generic;
 
 namespace MapGenerator.Application.Services;
 
@@ -12,27 +11,6 @@ public class MovementService
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly MapGeneratorService _mapCache;
 
-    private static readonly Dictionary<BiomeType, long> BiomeCooldownMs = new()
-    {
-        [BiomeType.Ocean]     =    0,
-        [BiomeType.Shallows]  = 1200,
-        [BiomeType.Beach]     =  400,
-        [BiomeType.River]     = 1500,
-        [BiomeType.Swamp]     = 3000,
-        [BiomeType.Marsh]     = 2000,
-        [BiomeType.Grassland] =  400,
-        [BiomeType.Plains]    =  400,
-        [BiomeType.Savanna]   =  500,
-        [BiomeType.Forest]    =  700,
-        [BiomeType.Jungle]    = 1200,
-        [BiomeType.Desert]    =  900,
-        [BiomeType.Mountain]  = 2000,
-        [BiomeType.Tundra]    = 1800,
-        [BiomeType.Snow]      = 2500,
-        [BiomeType.Glacier]   = 3000,
-        [BiomeType.Volcano]   =    0,
-        [BiomeType.Lake]      =    0,
-    };
 
     public MovementService(
         IMapRepository mapRepo,
@@ -95,7 +73,7 @@ public class MovementService
 
         long cooldown = permissions.Contains(Permission.IgnoreCooldowns)
             ? 0
-            : BiomeCooldownMs.TryGetValue(tile.Biome, out long cd) ? cd : 400;
+            : BiomeProperties.CooldownMs(tile.Biome);
 
         await _visitRepo.RecordDepartureAsync(player.Id, player.Q, player.R);
 
