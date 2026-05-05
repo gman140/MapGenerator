@@ -9,13 +9,18 @@ public class MapGeneratorService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IFeatureDefinitionProvider _featureProvider;
+    private readonly IBiomeDefinitionProvider _biomeProvider;
     private HexTile[,]? _cache;
     private MapConfig? _configCache;
 
-    public MapGeneratorService(IServiceScopeFactory scopeFactory, IFeatureDefinitionProvider featureProvider)
+    public MapGeneratorService(
+        IServiceScopeFactory scopeFactory,
+        IFeatureDefinitionProvider featureProvider,
+        IBiomeDefinitionProvider biomeProvider)
     {
         _scopeFactory    = scopeFactory;
         _featureProvider = featureProvider;
+        _biomeProvider   = biomeProvider;
     }
 
     private IMapRepository Repo(IServiceScope scope) =>
@@ -176,7 +181,8 @@ public class MapGeneratorService
         for (int r = 0; r < h; r++)
             for (int q = 0; q < w; q++)
             {
-                var (red, green, blue) = BiomeProperties.MinimapRgb(_cache[q, r]?.Biome ?? BiomeType.Ocean);
+                var biome = _cache[q, r]?.Biome ?? BiomeType.Ocean;
+                var (red, green, blue) = _biomeProvider.GetByType(biome)?.MinimapRgb ?? (28, 78, 140);
                 int idx = (r * w + q) * 3;
                 data[idx] = red; data[idx + 1] = green; data[idx + 2] = blue;
             }

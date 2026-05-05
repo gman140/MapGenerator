@@ -9,6 +9,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddSingleton<IFeatureDefinitionProvider, InMemoryFeatureDefinitionProvider>();
+        services.AddSingleton<IBiomeDefinitionProvider, InMemoryBiomeDefinitionProvider>();
         services.AddSingleton<MapGeneratorService>();
         services.AddSingleton<PermissionService>();
         services.AddScoped<MovementService>();

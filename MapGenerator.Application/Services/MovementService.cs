@@ -10,18 +10,20 @@ public class MovementService
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly MapGeneratorService _mapCache;
-
+    private readonly IBiomeDefinitionProvider _biomeProvider;
 
     public MovementService(
         IMapRepository mapRepo,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo,
-        MapGeneratorService mapCache)
+        MapGeneratorService mapCache,
+        IBiomeDefinitionProvider biomeProvider)
     {
-        _mapRepo = mapRepo;
-        _playerRepo = playerRepo;
-        _visitRepo = visitRepo;
-        _mapCache = mapCache;
+        _mapRepo       = mapRepo;
+        _playerRepo    = playerRepo;
+        _visitRepo     = visitRepo;
+        _mapCache      = mapCache;
+        _biomeProvider = biomeProvider;
     }
 
     public static bool AreAdjacent(int q1, int r1, int q2, int r2)
@@ -73,7 +75,7 @@ public class MovementService
 
         long cooldown = permissions.Contains(Permission.IgnoreCooldowns)
             ? 0
-            : BiomeProperties.CooldownMs(tile.Biome);
+            : (_biomeProvider.GetByType(tile.Biome)?.CooldownMs ?? 400);
 
         await _visitRepo.RecordDepartureAsync(player.Id, player.Q, player.R);
 

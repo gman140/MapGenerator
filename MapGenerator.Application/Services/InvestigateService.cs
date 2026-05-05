@@ -9,17 +9,20 @@ public class InvestigateService
     private readonly ITileNoteRepository _noteRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly IFeatureDefinitionProvider _featureProvider;
+    private readonly IBiomeDefinitionProvider _biomeProvider;
     private readonly MapGeneratorService _mapCache;
 
     public InvestigateService(
         ITileNoteRepository noteRepo,
         IPlayerTileVisitRepository visitRepo,
         IFeatureDefinitionProvider featureProvider,
+        IBiomeDefinitionProvider biomeProvider,
         MapGeneratorService mapCache)
     {
         _noteRepo        = noteRepo;
         _visitRepo       = visitRepo;
         _featureProvider = featureProvider;
+        _biomeProvider   = biomeProvider;
         _mapCache        = mapCache;
     }
 
@@ -69,7 +72,9 @@ public class InvestigateService
         }
         else
         {
-            var (partA, partB) = GetBiomeParts(biome);
+            var biomeDef = _biomeProvider.GetByType(biome);
+            var partA = biomeDef?.InvestigatePartA is { Length: > 0 } a ? a : ["You look around carefully."];
+            var partB = biomeDef?.InvestigatePartB is { Length: > 0 } b ? b : ["There is not much to see."];
             body = $"{partA[hashA % partA.Length]} {partB[hashB % partB.Length]}";
         }
 
@@ -324,106 +329,19 @@ public class InvestigateService
 
     // ── Adjacent tile influence ───────────────────────────────────────────────
 
-    private static string GetNeighborInfluence(BiomeType selfBiome, List<HexTile> neighbors, int q, int r)
+    private string GetNeighborInfluence(BiomeType selfBiome, List<HexTile> neighbors, int q, int r)
     {
-        static int Score(BiomeType b) => b switch
-        {
-            BiomeType.Volcano  => 10,
-            BiomeType.Ocean    => 8,
-            BiomeType.Glacier  => 7,
-            BiomeType.Swamp    => 6,
-            BiomeType.Marsh    => 6,
-            BiomeType.Desert   => 5,
-            BiomeType.River    => 5,
-            BiomeType.Snow     => 4,
-            BiomeType.Tundra   => 4,
-            BiomeType.Jungle   => 4,
-            BiomeType.Mountain => 3,
-            BiomeType.Forest   => 3,
-            BiomeType.Beach    => 3,
-            BiomeType.Shallows => 2,
-            _ => 0,
-        };
-
         var best = neighbors
-            .Where(n => n.Biome != selfBiome && Score(n.Biome) > 0)
-            .OrderByDescending(n => Score(n.Biome))
+            .Where(n => n.Biome != selfBiome)
+            .Select(n => (tile: n, def: _biomeProvider.GetByType(n.Biome)))
+            .Where(x => x.def != null && x.def.NeighborPriority > 0 && x.def.NeighborText.Length > 0)
+            .OrderByDescending(x => x.def!.NeighborPriority)
             .FirstOrDefault();
 
-        if (best == null) return string.Empty;
+        if (best.def == null) return string.Empty;
 
         int idx = Math.Abs(q * 19 + r * 43);
-        string[] options = best.Biome switch
-        {
-            BiomeType.Volcano => [
-                "Sulfur drifts in from somewhere it shouldn't.",
-                "The air on one side carries a warmth that has nothing to do with the sun.",
-                "Ash has settled here in fine gray layers from whatever burns nearby.",
-            ],
-            BiomeType.Ocean => [
-                "Salt air finds you from the direction of the water.",
-                "The sea is close enough to smell, maybe to hear.",
-                "Something maritime is in the air here — borrowed from wherever the water begins.",
-            ],
-            BiomeType.Glacier => [
-                "One direction is noticeably colder than the others.",
-                "Glacial air presses in from one side with quiet certainty.",
-                "The cold here has been traveling over ice to reach you.",
-            ],
-            BiomeType.Swamp or BiomeType.Marsh => [
-                "A wet, organic smell drifts in from somewhere low and still.",
-                "The air carries a note of standing water from somewhere nearby.",
-                "The edge of wetter ground is close enough to smell.",
-            ],
-            BiomeType.Desert => [
-                "Fine grit finds your teeth from the direction of the open dry land.",
-                "The air on one side is noticeably drier than the rest.",
-                "The desert's edge is close enough to taste.",
-            ],
-            BiomeType.River => [
-                "You can hear running water nearby if you listen for it.",
-                "The sound of a river reaches here — intermittent, comfortable.",
-                "Water is moving somewhere close. You can't see it, but the sound finds you.",
-            ],
-            BiomeType.Snow => [
-                "The air carries a clean cold from whatever is white on the horizon.",
-                "Snow is visible somewhere close, lending the air an edge.",
-                "The cold from nearby elevation finds this place reliably.",
-            ],
-            BiomeType.Tundra => [
-                "The wind from one direction has been traveling over open frozen ground.",
-                "A spare, cold air reaches here from the tundra nearby.",
-                "Something wide and cold is close. You feel its edge.",
-            ],
-            BiomeType.Jungle => [
-                "Dense green presses in from one direction.",
-                "The jungle is audible from here — layered, relentless.",
-                "Jungle heat and humidity find this place from one side.",
-            ],
-            BiomeType.Mountain => [
-                "The terrain rises sharply not far from here.",
-                "Elevation is visible in one direction, patient and permanent.",
-                "The shadow of higher ground passes through here at certain hours.",
-            ],
-            BiomeType.Forest => [
-                "The treeline is close enough to feel — a change in light and temperature.",
-                "Birdsong from the nearby forest finds this place.",
-                "The smell of damp wood and leaf litter drifts over from the trees.",
-            ],
-            BiomeType.Beach => [
-                "Surf sounds reach you on the right wind.",
-                "The ground is sandier here, borrowed from wherever the shore begins.",
-                "Something coastal is in the light here — reflected off water not far away.",
-            ],
-            BiomeType.Shallows => [
-                "The air smells faintly of shallow water and wet sand.",
-                "A coastal quality settles over the light here.",
-                "Water is close — shallow, warm, audible when the wind shifts.",
-            ],
-            _ => [],
-        };
-
-        return options.Length == 0 ? string.Empty : options[idx % options.Length];
+        return best.def.NeighborText[idx % best.def.NeighborText.Length];
     }
 
     // ── Rare events ───────────────────────────────────────────────────────────
@@ -450,81 +368,4 @@ public class InvestigateService
         "Something has organized the rocks in this area into neat piles while you were looking at something else. You were looking at the ground. You looked up. The piles are there.",
     ];
 
-    // ── Biome text (no feature) ───────────────────────────────────────────────
-
-    private static (string[] partA, string[] partB) GetBiomeParts(BiomeType biome) => biome switch
-    {
-        BiomeType.Ocean => (
-            ["The waves are relentless and patient.", "The water goes dark very quickly.", "The sea is doing what the sea does, which is everything and nothing."],
-            ["They have been doing this forever. They will do this forever after you. You are a brief event.", "You don't know what lives below. The water knows you don't know.", "You are here very briefly and it has no opinion about this."]
-        ),
-        BiomeType.Shallows => (
-            ["The water is clear enough to see every pebble on the bottom.", "Sunlight bends through the water and makes patterns on the sandy floor.", "Small fish move in purposeful formations around your feet."],
-            ["Small fish investigate your feet. One nudges deliberately. You have been studied.", "They almost look like writing. You squint. You're still not sure.", "One stops and faces you directly for an unreasonable amount of time."]
-        ),
-        BiomeType.Beach => (
-            ["The sand holds the warmth of the day.", "The surf pulls at the sand with each wave, making the ground briefly liquid.", "The tide has left a line of shells and kelp and small mysterious things."],
-            ["A crab assesses you from a respectful distance and decides you are probably not a threat. It is generous.", "You sink a little with each wave. You stay.", "You examine one of the small mysterious things. It examines you back with its many small eyes."]
-        ),
-        BiomeType.River => (
-            ["The current is patient and consistent.", "The water is cold and fast and clear.", "The river bends away ahead of you with great purpose."],
-            ["It does not care where you want to go — only where it's going. You consider letting it decide.", "Something silver passes beneath — too quick to be sure of.", "It knows where it is going and has known for a long time."]
-        ),
-        BiomeType.Swamp => (
-            ["Something bubbles from the mud nearby — steady, purposeful.", "The water here is the color of strong tea.", "The air here is complicated."],
-            ["You do not ask what it is reporting.", "It smells of things breaking down into other things. This is the natural order. You still find it unsettling.", "You breathe carefully through your nose and make a series of decisions."]
-        ),
-        BiomeType.Marsh => (
-            ["The ground makes complicated promises about being solid.", "A heron stands ahead of you, still as a carved thing.", "The water and land here have come to an arrangement that benefits neither."],
-            ["You test each step. The marsh tests back.", "It is watching for something with absolute focus. You stand still out of competitive instinct. It wins.", "You navigate it carefully and feel a modest but genuine pride at the other side."]
-        ),
-        BiomeType.Grassland => (
-            ["The grass bends in a wave when the wind comes through.", "Crickets start and stop in shifts across the field.", "The smell here is green and warm and uncomplicated."],
-            ["You are briefly part of the breath.", "You sit in the grass and listen to the negotiation.", "You stand in it for a while. It does not ask anything of you."]
-        ),
-        BiomeType.Plains => (
-            ["The horizon is very far away and perfectly flat.", "The wind crosses the plains with nothing to stop it.", "The sky here is enormous in a way you don't notice until you look up."],
-            ["You feel both significant and appropriately small. This is the correct ratio.", "It arrives at you carrying the smell of somewhere you haven't been yet.", "You look up. You stay looking up for a while."]
-        ),
-        BiomeType.Savanna => (
-            ["The golden grass stretches in every direction.", "The dry grass rasps in the wind, a continuous sound like sand over stone.", "Something large stands very still in the distance, watching."],
-            ["In the distance something stands very still watching you. When you look directly it moves.", "Somewhere a bird calls once. Nothing answers.", "When you look directly at it, it moves. When you look away, it stills again."]
-        ),
-        BiomeType.Forest => (
-            ["Light filters through the canopy in shifting columns.", "A branch moves with no wind behind it.", "The forest is doing what forests do — being enormous and absorbed in its own concerns."],
-            ["The forest is patient and absorbed in its own concerns. You are a brief parenthesis in something longer.", "Then another. Then the forest settles and is very still and you walk more carefully.", "You are a brief event here. The forest does not mind."]
-        ),
-        BiomeType.Jungle => (
-            ["Everything here is growing with total commitment.", "Something watches you from the canopy with large yellow eyes.", "The undergrowth presses in from every direction."],
-            ["The trees compete for the light overhead. The undergrowth competes for what's left. You are briefly disputed territory.", "You look up and lose it in the green. When you look down it has moved. When you look up it is where it started.", "You push through it carefully, borrowing space."]
-        ),
-        BiomeType.Desert => (
-            ["The heat is physical. It presses against you like a hand.", "Nothing moves here that doesn't have to.", "The silence and the heat are the same weight."],
-            ["The silence presses the same way. They weigh about the same.", "You move carefully, out of respect.", "You stand still for a moment and become briefly part of the landscape."]
-        ),
-        BiomeType.Mountain => (
-            ["The rock underfoot is very old and very sure of itself.", "The wind at this elevation is a different thing than the wind below.", "The view from here is significant."],
-            ["It makes no accommodations for you. You find your own way across it.", "Sharper, colder, more certain. It knows where it's been.", "You look at it for a while and feel correctly small."]
-        ),
-        BiomeType.Tundra => (
-            ["The permafrost is under your boots, ancient and silent and unimpressed.", "The wind on the tundra has been traveling for a long time.", "The landscape here is spare and specific."],
-            ["You are a warm soft thing walking briefly over something cold and very old.", "It still has somewhere to be. It passes through you on its way.", "It does not perform for visitors."]
-        ),
-        BiomeType.Snow => (
-            ["Your breath makes small clouds that vanish quickly.", "The snow absorbs sound completely.", "The world here is white and still and very deliberate about it."],
-            ["You name one of the clouds. This is the most important thing you'll do today.", "Each step falls into silence. You have the impression of a very large room that wants quiet.", "You move through it carefully, feeling like an intrusion."]
-        ),
-        BiomeType.Glacier => (
-            ["The ice groans somewhere beneath your feet — a sound like the world settling.", "The ice at this depth is a blue that doesn't exist in most languages.", "The glacier is moving. Imperceptibly. Every moment."],
-            ["The glacier is moving, imperceptibly, every moment. You are moving with it.", "It is a color that existed before anyone named colors.", "You are moving with it whether you mean to or not."]
-        ),
-        BiomeType.Volcano => (
-            ["The ground radiates an uncomfortable heat.", "The air here smells of sulfur and something older.", "The rock underfoot is dark and sharp and recent by geological standards."],
-            ["Everything here is communicating that you should not be here.", "You agree with the smell. You leave.", "You feel very strongly that this is not your biome."]
-        ),
-        _ => (
-            ["You look around carefully."],
-            ["There is not much to see. You look again to make sure."]
-        ),
-    };
 }
