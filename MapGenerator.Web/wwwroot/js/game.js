@@ -7,10 +7,18 @@ window.gameJs = (() => {
     let _playerQ = 0;
     let _playerR = 0;
 
+    function generateUUID() {
+        if (crypto.randomUUID) return crypto.randomUUID();
+        // Fallback for non-secure contexts (plain HTTP on LAN)
+        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+            (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+        );
+    }
+
     function getBrowserId() {
         let id = localStorage.getItem(BROWSER_ID_KEY);
         if (!id) {
-            id = crypto.randomUUID();
+            id = generateUUID();
             localStorage.setItem(BROWSER_ID_KEY, id);
         }
         return id;
