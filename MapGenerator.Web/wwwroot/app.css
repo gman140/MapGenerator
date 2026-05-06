@@ -122,11 +122,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .color-swatch-label:hover .color-swatch { border-color: white; }
 
 /* ── Actions Menu ─────────────────────────────────────────────────────────── */
-.actions-menu-wrapper { position: relative; }
-.actions-btn { background: var(--border); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: .4rem .8rem; font-size: .85rem; cursor: pointer; width: 100%; text-align: left; }
-.actions-btn:hover { background: var(--surface); border-color: var(--accent); color: var(--accent); }
-.actions-overlay { position: fixed; inset: 0; z-index: 50; }
-.actions-dropdown { position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; z-index: 51; display: flex; flex-direction: column; overflow: hidden; }
+.actions-menu { display: flex; flex-direction: column; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 .action-item { background: none; border: none; color: var(--text); padding: .5rem .75rem; font-size: .85rem; cursor: pointer; text-align: left; display: flex; align-items: center; gap: .4rem; }
 .action-item:not([disabled]):hover { background: var(--border); }
 .action-item[disabled] { opacity: .4; cursor: default; }

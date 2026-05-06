@@ -1,38 +1,30 @@
 @implements IDisposable
 
-<div class="actions-menu-wrapper">
-    <button class="actions-btn" @onclick="Toggle">Actions ▾</button>
-
-    @if (_open)
-    {
-        <div class="actions-overlay" @onclick="() => _open = false"></div>
-        <div class="actions-dropdown">
-            <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
-            <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
-            <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
-            <div class="action-divider"></div>
-            <button class="action-item" @onclick="HandleGather"
-                    disabled="@(!TileHasResources || GatherOnCooldown)">
-                ⛏ Gather
-                @if (GatherOnCooldown)
-                {
-                    <span class="action-cooldown">@_gatherCooldownText</span>
-                }
-                else if (!TileHasResources)
-                {
-                    <span class="action-cooldown">nothing here</span>
-                }
-            </button>
-            <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
-                🥚 Lay Egg
-                @if (EggOnCooldown)
-                {
-                    <span class="action-cooldown">@_eggCooldownText</span>
-                }
-            </button>
-            <button class="action-item" disabled>💃 Dance <span class="action-soon">soon</span></button>
-        </div>
-    }
+<div class="actions-menu">
+    <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
+    <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
+    <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
+    <div class="action-divider"></div>
+    <button class="action-item" @onclick="HandleGather"
+            disabled="@(!TileHasResources || GatherOnCooldown)">
+        ⛏ Gather
+        @if (GatherOnCooldown)
+        {
+            <span class="action-cooldown">@_gatherCooldownText</span>
+        }
+        else if (!TileHasResources)
+        {
+            <span class="action-cooldown">nothing here</span>
+        }
+    </button>
+    <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
+        🥚 Lay Egg
+        @if (EggOnCooldown)
+        {
+            <span class="action-cooldown">@_eggCooldownText</span>
+        }
+    </button>
+    <button class="action-item" disabled>💃 Dance <span class="action-soon">soon</span></button>
 </div>
 
 @code {
@@ -46,7 +38,6 @@
     [Parameter] public long GatherCooldownUntil { get; set; }
     [Parameter] public bool TileHasResources { get; set; }
 
-    private bool _open;
     private bool EggOnCooldown => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
     private bool GatherOnCooldown => !CooldownBypassed && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < GatherCooldownUntil;
     private string _eggCooldownText = "";
@@ -95,13 +86,11 @@
         }
     }
 
-    private async Task LayEgg()           { _open = false; await OnLayEgg.InvokeAsync(); }
-    private async Task HandleInvestigate(){ _open = false; await OnInvestigate.InvokeAsync(); }
-    private async Task HandleLeaveNote()  { _open = false; await OnLeaveNote.InvokeAsync(); }
-    private async Task HandlePlantSign()  { _open = false; await OnPlantSign.InvokeAsync(); }
-    private async Task HandleGather()     { _open = false; await OnGather.InvokeAsync(); }
-
-    private void Toggle() => _open = !_open;
+    private async Task LayEgg()            { await OnLayEgg.InvokeAsync(); }
+    private async Task HandleInvestigate() { await OnInvestigate.InvokeAsync(); }
+    private async Task HandleLeaveNote()   { await OnLeaveNote.InvokeAsync(); }
+    private async Task HandlePlantSign()   { await OnPlantSign.InvokeAsync(); }
+    private async Task HandleGather()      { await OnGather.InvokeAsync(); }
 
     public void Dispose() => _timer?.Dispose();
 }
