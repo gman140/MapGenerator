@@ -50,29 +50,45 @@
     }
 
     @{
-        var inventory = Player.Inventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
+        var materials = Player.Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null)
+                                        .OrderBy(kv => kv.Key).ToList();
+        var crafted   = Player.Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null)
+                                        .OrderBy(kv => kv.Key).ToList();
     }
     <div class="inventory-panel">
         <button class="inventory-toggle" @onclick="() => _inventoryOpen = !_inventoryOpen">
-            <span>⚙ Inventory (@inventory.Sum(kv => kv.Value))</span>
+            <span>⚙ Inventory (@Player.Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value))</span>
             <span>@(_inventoryOpen ? "▴" : "▾")</span>
         </button>
         @if (_inventoryOpen)
         {
-            @if (inventory.Count == 0)
+            @if (materials.Count == 0 && crafted.Count == 0)
             {
                 <p class="inventory-empty">Nothing gathered yet.</p>
             }
-            else
+            @if (materials.Count > 0)
             {
+                <p class="inventory-section-label">Materials</p>
                 <div class="inventory-grid">
-                    @foreach (var (id, qty) in inventory)
+                    @foreach (var (id, qty) in materials)
                     {
-                        var resDef = ResourceProvider.GetById(id);
-                        var label = resDef?.Name ?? RecipeProvider.GetById(id)?.Name ?? id;
-                        var desc = resDef?.Description ?? RecipeProvider.GetById(id)?.Description ?? string.Empty;
-                        <div class="inventory-item" title="@desc">
-                            <span class="inventory-name">@label</span>
+                        var def = ResourceProvider.GetById(id)!;
+                        <div class="inventory-item" title="@def.Description">
+                            <span class="inventory-name">@def.Name</span>
+                            <span class="inventory-qty">×@qty</span>
+                        </div>
+                    }
+                </div>
+            }
+            @if (crafted.Count > 0)
+            {
+                <p class="inventory-section-label">Crafted</p>
+                <div class="inventory-grid">
+                    @foreach (var (id, qty) in crafted)
+                    {
+                        var def = RecipeProvider.GetById(id)!;
+                        <div class="inventory-item" title="@def.Description">
+                            <span class="inventory-name">@def.Name</span>
                             <span class="inventory-qty">×@qty</span>
                         </div>
                     }
