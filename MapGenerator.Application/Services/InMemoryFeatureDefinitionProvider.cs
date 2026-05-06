@@ -30,6 +30,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Swamp],
             Probability  = 0.040f,
+            ResourceYields =
+            [
+                new() { ResourceId = "CrowFeather",  Probability = 0.12f },
+                new() { ResourceId = "PaleMushroom", Probability = 0.10f },
+            ],
             PartA =
             [
                 "The trees lean inward and their branches touch above your head, blocking the sky.",
@@ -52,6 +57,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Swamp, BiomeType.Marsh],
             Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "PaleMushroom", Probability = 0.50f },
+                new() { ResourceId = "Herbs",        Probability = 0.25f },
+            ],
             PartA =
             [
                 "The mushrooms here are enormous — the sitting kind — and they glow a gentle blue.",
@@ -74,6 +84,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Jungle],
             Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Amber", Probability = 0.20f },
+                new() { ResourceId = "Herbs", Probability = 0.20f },
+            ],
             PartA =
             [
                 "A shaft of light falls through the canopy at an angle that no sun position explains.",
@@ -96,6 +111,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Jungle, BiomeType.Grassland],
             Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Herbs", Probability = 0.25f },
+                new() { ResourceId = "Fiber", Probability = 0.20f },
+            ],
             PartA =
             [
                 "The ferns grow so tall here that the sky is only a green suggestion overhead.",
@@ -118,6 +138,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Grassland, BiomeType.Swamp],
             Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fiber",      Probability = 0.25f },
+                new() { ResourceId = "Herbs",      Probability = 0.15f },
+                new() { ResourceId = "CrowFeather",Probability = 0.08f },
+            ],
             PartA =
             [
                 "The thorns catch at your clothes and hold with great personal conviction.",
@@ -140,6 +166,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Swamp, BiomeType.Marsh],
             Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "PaleMushroom", Probability = 0.35f },
+                new() { ResourceId = "RottenSilks",  Probability = 0.08f },
+            ],
             PartA =
             [
                 "The ring of mushrooms is perfect. Too perfect. Mathematically perfect.",
@@ -162,6 +193,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Jungle, BiomeType.Beach],
             Probability  = 0.035f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Wood",     Probability = 0.30f },
+                new() { ResourceId = "Feathers", Probability = 0.20f },
+                new() { ResourceId = "Fiber",    Probability = 0.20f },
+            ],
             PartA =
             [
                 "The palms cast shade of a quality you haven't encountered before — dense and slightly golden.",
@@ -184,6 +221,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Nature,
             AllowedBiomes = [BiomeType.Grassland, BiomeType.Plains, BiomeType.Forest],
             Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fiber", Probability = 0.30f },
+                new() { ResourceId = "Herbs", Probability = 0.20f },
+                new() { ResourceId = "Amber", Probability = 0.10f },
+            ],
             PartA =
             [
                 "The fruit trees have had years to develop their own opinions and have done so enthusiastically.",
@@ -208,6 +251,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Grassland, BiomeType.Plains],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Ash",         Probability = 0.40f },
+                new() { ResourceId = "Coal",        Probability = 0.30f },
+                new() { ResourceId = "BoneFragment",Probability = 0.12f },
+            ],
             PartA =
             [
                 "One chimney still stands amid everything that fell, looking vaguely proud of the distinction.",
@@ -230,6 +279,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Forest, BiomeType.Mountain, BiomeType.Plains],
             Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "TarnishedRing", Probability = 0.08f },
+                new() { ResourceId = "CrackedOrb",    Probability = 0.05f },
+            ],
             PartA =
             [
                 "The offerings here span lifetimes: coins, a clay figure, a shoe, a lock of hair.",
@@ -252,6 +306,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Grassland, BiomeType.Plains, BiomeType.Mountain],
             Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone",        Probability = 0.30f },
+                new() { ResourceId = "TarnishedRing",Probability = 0.08f },
+                new() { ResourceId = "HollowStone",  Probability = 0.08f },
+            ],
             PartA =
             [
                 "At the very top of the rubble, impossibly balanced, a stone gargoyle still watches the horizon.",
@@ -274,6 +334,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Grassland, BiomeType.Plains],
             Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fiber", Probability = 0.30f },
+                new() { ResourceId = "Flint", Probability = 0.15f },
+            ],
             PartA =
             [
                 "The table inside is set as if someone left mid-meal, fully intending to return.",
@@ -296,6 +361,11 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Grassland, BiomeType.Plains, BiomeType.Desert],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "BoneFragment",  Probability = 0.20f },
+                new() { ResourceId = "TarnishedRing", Probability = 0.08f },
+            ],
             PartA =
             [
                 "A cairn of carefully chosen stones, stacked by someone sad and patient and thorough.",
@@ -318,6 +388,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Mountain, BiomeType.Plains],
             Probability  = 0.010f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone", Probability = 0.30f },
+                new() { ResourceId = "Ore",   Probability = 0.15f },
+                new() { ResourceId = "Coal",  Probability = 0.12f },
+            ],
             PartA =
             [
                 "The great hall is open to the sky now, birch trees growing up through the old flagstones.",
@@ -340,6 +416,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Plains, BiomeType.Grassland, BiomeType.Mountain],
             Probability  = 0.010f,
+            ResourceYields =
+            [
+                new() { ResourceId = "HollowStone", Probability = 0.15f },
+                new() { ResourceId = "Quartz",      Probability = 0.10f },
+                new() { ResourceId = "CrackedOrb",  Probability = 0.08f },
+            ],
             PartA =
             [
                 "The stones are older than any name you know, and they are aware of this.",
@@ -362,6 +444,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Plains, BiomeType.Desert, BiomeType.Grassland],
             Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Clay",      Probability = 0.25f },
+                new() { ResourceId = "RiverGlass",Probability = 0.12f },
+                new() { ResourceId = "TidalCoin", Probability = 0.06f },
+            ],
             PartA =
             [
                 "A stone-rimmed well, older than the nearest building, standing without context.",
@@ -384,6 +472,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Ruins,
             AllowedBiomes = [BiomeType.Swamp, BiomeType.Forest],
             Probability  = 0.010f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Herbs",       Probability = 0.35f },
+                new() { ResourceId = "PaleMushroom",Probability = 0.20f },
+                new() { ResourceId = "RottenSilks", Probability = 0.12f },
+                new() { ResourceId = "CrackedOrb",  Probability = 0.06f },
+            ],
             PartA =
             [
                 "The smoke from the chimney smells of lavender and burnt hair and something that has no name.",
@@ -408,6 +503,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Water,
             AllowedBiomes = [BiomeType.Mountain, BiomeType.Snow, BiomeType.Tundra],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Salt",   Probability = 0.30f },
+                new() { ResourceId = "Sulfur", Probability = 0.25f },
+                new() { ResourceId = "Quartz", Probability = 0.15f },
+            ],
             PartA =
             [
                 "The water is warm and perfectly clear and smells faintly of minerals and something peaceful.",
@@ -430,6 +531,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Water,
             AllowedBiomes = [BiomeType.Beach, BiomeType.Shallows],
             Probability  = 0.040f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fish",      Probability = 0.40f },
+                new() { ResourceId = "Salt",      Probability = 0.25f },
+                new() { ResourceId = "RiverGlass",Probability = 0.12f },
+            ],
             PartA =
             [
                 "The pools are full of small, improbable creatures committed entirely to their improbable lives.",
@@ -452,6 +559,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Water,
             AllowedBiomes = [BiomeType.Marsh, BiomeType.River],
             Probability  = 0.040f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Reed", Probability = 0.45f },
+                new() { ResourceId = "Fish", Probability = 0.20f },
+                new() { ResourceId = "Clay", Probability = 0.15f },
+            ],
             PartA =
             [
                 "The reeds grow taller than your head, turning the world into corridors of green.",
@@ -476,6 +589,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Desert,
             AllowedBiomes = [BiomeType.Desert, BiomeType.Beach],
             Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Salt",     Probability = 0.40f },
+                new() { ResourceId = "Flint",    Probability = 0.15f },
+                new() { ResourceId = "DeadGrass",Probability = 0.12f },
+            ],
             PartA =
             [
                 "The silence here is not an absence of sound but a presence of something old and dry and patient.",
@@ -498,6 +617,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Desert,
             AllowedBiomes = [BiomeType.Desert],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Herbs",    Probability = 0.35f },
+                new() { ResourceId = "Fish",     Probability = 0.25f },
+                new() { ResourceId = "TidalCoin",Probability = 0.08f },
+            ],
             PartA =
             [
                 "The water appears suddenly between the palms, cold and clear and entirely real.",
@@ -520,6 +645,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Desert,
             AllowedBiomes = [BiomeType.Desert, BiomeType.Plains],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Driftwood", Probability = 0.30f },
+                new() { ResourceId = "Ash",       Probability = 0.20f },
+                new() { ResourceId = "DeadGrass", Probability = 0.20f },
+                new() { ResourceId = "CrowFeather",Probability = 0.08f },
+            ],
             PartA =
             [
                 "The bleached trees stand like columns of testimony to something thorough and final.",
@@ -542,6 +674,12 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Desert,
             AllowedBiomes = [BiomeType.Desert, BiomeType.Swamp, BiomeType.Marsh],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Clay", Probability = 0.25f },
+                new() { ResourceId = "Sand", Probability = 0.30f },
+                new() { ResourceId = "Peat", Probability = 0.15f },
+            ],
             PartA =
             [
                 "The ground here looks perfectly solid.",
@@ -566,6 +704,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Cold,
             AllowedBiomes = [BiomeType.Mountain, BiomeType.Glacier],
             Probability  = 0.035f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone", Probability = 0.35f },
+                new() { ResourceId = "Flint", Probability = 0.20f },
+                new() { ResourceId = "Ore",   Probability = 0.20f },
+                new() { ResourceId = "Coal",  Probability = 0.15f },
+            ],
             PartA =
             [
                 "The cave breathes. One long, slow breath in, one out — cool, mineral-smelling.",
@@ -588,6 +733,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Cold,
             AllowedBiomes = [BiomeType.Snow, BiomeType.Glacier, BiomeType.Tundra],
             Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "FrozenFlower",Probability = 0.15f },
+                new() { ResourceId = "Ice",         Probability = 0.25f },
+                new() { ResourceId = "Quartz",      Probability = 0.12f },
+                new() { ResourceId = "CrackedOrb",  Probability = 0.06f },
+            ],
             PartA =
             [
                 "The altar is sealed in ice so clear the inscriptions are perfectly readable.",
@@ -610,6 +762,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Category     = FeatureCategory.Cold,
             AllowedBiomes = [BiomeType.Glacier, BiomeType.Snow],
             Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Ice",         Probability = 0.40f },
+                new() { ResourceId = "Quartz",      Probability = 0.20f },
+                new() { ResourceId = "HollowStone", Probability = 0.12f },
+                new() { ResourceId = "FrozenFlower",Probability = 0.10f },
+            ],
             PartA =
             [
                 "The ice is every shade of blue, from pale surface to something close to black at depth.",

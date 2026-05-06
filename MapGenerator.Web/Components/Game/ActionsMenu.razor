@@ -11,6 +11,18 @@
             <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
             <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
             <div class="action-divider"></div>
+            <button class="action-item" @onclick="HandleGather"
+                    disabled="@(!TileHasResources || GatherOnCooldown)">
+                ⛏ Gather
+                @if (GatherOnCooldown)
+                {
+                    <span class="action-cooldown">@_gatherCooldownText</span>
+                }
+                else if (!TileHasResources)
+                {
+                    <span class="action-cooldown">nothing here</span>
+                }
+            </button>
             <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
                 🥚 Lay Egg
                 @if (EggOnCooldown)
@@ -18,8 +30,6 @@
                     <span class="action-cooldown">@_eggCooldownText</span>
                 }
             </button>
-            <button class="action-item" disabled>🍖 Eat <span class="action-soon">soon</span></button>
-            <button class="action-item" disabled>⛏ Dig <span class="action-soon">soon</span></button>
             <button class="action-item" disabled>💃 Dance <span class="action-soon">soon</span></button>
         </div>
     }
@@ -30,20 +40,26 @@
     [Parameter] public EventCallback OnInvestigate { get; set; }
     [Parameter] public EventCallback OnLeaveNote { get; set; }
     [Parameter] public EventCallback OnPlantSign { get; set; }
+    [Parameter] public EventCallback OnGather { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
     [Parameter] public bool CooldownBypassed { get; set; }
+    [Parameter] public long GatherCooldownUntil { get; set; }
+    [Parameter] public bool TileHasResources { get; set; }
 
     private bool _open;
     private bool EggOnCooldown => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
+    private bool GatherOnCooldown => !CooldownBypassed && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < GatherCooldownUntil;
     private string _eggCooldownText = "";
+    private string _gatherCooldownText = "";
     private System.Threading.Timer? _timer;
 
     protected override void OnParametersSet()
     {
-        if (EggOnCooldown)
+        bool needsTimer = EggOnCooldown || GatherOnCooldown;
+        if (needsTimer)
         {
-            UpdateCooldownText();
-            _timer ??= new System.Threading.Timer(Tick, null, 1000, 1000);
+            UpdateCooldownTexts();
+            _timer ??= new System.Threading.Timer(Tick, null, 100, 100);
         }
         else
         {
@@ -54,22 +70,36 @@
 
     private void Tick(object? _)
     {
-        if (!EggOnCooldown) { _timer?.Dispose(); _timer = null; }
-        UpdateCooldownText();
+        UpdateCooldownTexts();
+        if (!EggOnCooldown && !GatherOnCooldown) { _timer?.Dispose(); _timer = null; }
         InvokeAsync(StateHasChanged);
     }
 
-    private void UpdateCooldownText()
+    private void UpdateCooldownTexts()
     {
-        if (!LastEggLaidAt.HasValue) return;
-        var remaining = TimeSpan.FromMinutes(1) - (DateTime.UtcNow - LastEggLaidAt.Value);
-        _eggCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
+        if (LastEggLaidAt.HasValue)
+        {
+            var remaining = TimeSpan.FromMinutes(1) - (DateTime.UtcNow - LastEggLaidAt.Value);
+            _eggCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
+        }
+
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (GatherCooldownUntil > now)
+        {
+            double secs = (GatherCooldownUntil - now) / 1000.0;
+            _gatherCooldownText = $"({secs:F1}s)";
+        }
+        else
+        {
+            _gatherCooldownText = "";
+        }
     }
 
-    private async Task LayEgg()        { _open = false; await OnLayEgg.InvokeAsync(); }
-    private async Task HandleInvestigate() { _open = false; await OnInvestigate.InvokeAsync(); }
-    private async Task HandleLeaveNote()   { _open = false; await OnLeaveNote.InvokeAsync(); }
-    private async Task HandlePlantSign()   { _open = false; await OnPlantSign.InvokeAsync(); }
+    private async Task LayEgg()           { _open = false; await OnLayEgg.InvokeAsync(); }
+    private async Task HandleInvestigate(){ _open = false; await OnInvestigate.InvokeAsync(); }
+    private async Task HandleLeaveNote()  { _open = false; await OnLeaveNote.InvokeAsync(); }
+    private async Task HandlePlantSign()  { _open = false; await OnPlantSign.InvokeAsync(); }
+    private async Task HandleGather()     { _open = false; await OnGather.InvokeAsync(); }
 
     private void Toggle() => _open = !_open;
 

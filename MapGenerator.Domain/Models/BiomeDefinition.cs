@@ -11,4 +11,5 @@ public class BiomeDefinition
     public string[] InvestigatePartB { get; init; } = [];
     public string[] NeighborText { get; init; } = [];
     public int NeighborPriority { get; init; }
+    public ResourceYield[] ResourceYields { get; init; } = [];
 }

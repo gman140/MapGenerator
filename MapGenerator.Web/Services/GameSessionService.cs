@@ -11,6 +11,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly MovementService _movementSvc;
     private readonly EggService _eggSvc;
     private readonly InvestigateService _investigateSvc;
+    private readonly GatherService _gatherSvc;
     private readonly PermissionService _permissionSvc;
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
@@ -28,6 +29,7 @@ public class GameSessionService : IAsyncDisposable
         MovementService movementSvc,
         EggService eggSvc,
         InvestigateService investigateSvc,
+        GatherService gatherSvc,
         PermissionService permissionSvc,
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
@@ -36,18 +38,19 @@ public class GameSessionService : IAsyncDisposable
         ITileNoteRepository noteRepo,
         IMapRepository mapRepo)
     {
-        _playerSvc = playerSvc;
-        _chatSvc = chatSvc;
-        _movementSvc = movementSvc;
-        _eggSvc = eggSvc;
+        _playerSvc      = playerSvc;
+        _chatSvc        = chatSvc;
+        _movementSvc    = movementSvc;
+        _eggSvc         = eggSvc;
         _investigateSvc = investigateSvc;
-        _permissionSvc = permissionSvc;
-        _mapCache = mapCache;
-        _broadcast = broadcast;
-        _playerRepo = playerRepo;
-        _visitRepo = visitRepo;
-        _noteRepo = noteRepo;
-        _mapRepo = mapRepo;
+        _gatherSvc      = gatherSvc;
+        _permissionSvc  = permissionSvc;
+        _mapCache       = mapCache;
+        _broadcast      = broadcast;
+        _playerRepo     = playerRepo;
+        _visitRepo      = visitRepo;
+        _noteRepo       = noteRepo;
+        _mapRepo        = mapRepo;
     }
 
     public async Task InitAsync(string browserId)
@@ -149,6 +152,23 @@ public class GameSessionService : IAsyncDisposable
     {
         if (Player == null) return ("You are not sure who you are.", []);
         return await _investigateSvc.InvestigateAsync(Player);
+    }
+
+    public async Task<GatherResult> GatherAsync()
+    {
+        if (Player == null) return new GatherResult { Success = false, ErrorMessage = "Not logged in." };
+        var permissions = _permissionSvc.GetPermissions(Player);
+        var result = await _gatherSvc.TryGatherAsync(Player, permissions);
+        if (result.Success)
+            Player.GatherCooldownUntil = result.CooldownUntil;
+        return result;
+    }
+
+    public bool TileHasResources()
+    {
+        if (Player == null) return false;
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        return tile != null && _gatherSvc.TileHasResources(tile);
     }
 
     public async Task LeaveNoteAsync(string content)

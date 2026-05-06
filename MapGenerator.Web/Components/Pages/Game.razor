@@ -35,9 +35,12 @@ else
                         OnColorChanged="HandleColorChangedAsync" />
             <ActionsMenu OnLayEgg="HandleLayEggAsync"
                          OnInvestigate="HandleInvestigateAsync"
+                         OnGather="HandleGatherAsync"
                          OnLeaveNote="() => { _showNoteModal = true; _noteText = string.Empty; }"
                          OnPlantSign="() => { _showSignModal = true; _signText = string.Empty; }"
                          LastEggLaidAt="Session.Player.LastEggLaidAt"
+                         GatherCooldownUntil="_gatherCooldownUntil"
+                         TileHasResources="Session.TileHasResources()"
                          CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)" />
         </div>
         <div class="chat-area">
@@ -117,6 +120,7 @@ else
     private List<ChatMessage> _localMessages = [];
     private List<ChatMessage> _worldMessages = [];
     private long _cooldownUntil;
+    private long _gatherCooldownUntil;
     private bool _oceanWarning;
     private bool _drownedMessage;
     private string? _moveError;
@@ -142,7 +146,8 @@ else
             return;
         }
 
-        _cooldownUntil = Session.Player.MovementCooldownUntil;
+        _cooldownUntil       = Session.Player.MovementCooldownUntil;
+        _gatherCooldownUntil = Session.Player.GatherCooldownUntil;
         _localMessages = await Session.GetTileChatAsync();
         AddArrivalMessages(Session.Player.Q, Session.Player.R);
         _worldMessages = await Session.GetWorldChatAsync();
@@ -237,6 +242,29 @@ else
     private async Task HandleLayEggAsync()
     {
         var (_, message, _) = await Session.LayEggAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleGatherAsync()
+    {
+        var result = await Session.GatherAsync();
+        _gatherCooldownUntil = Session.Player?.GatherCooldownUntil ?? 0;
+
+        if (!result.Success)
+        {
+            ShowToast(result.ErrorMessage ?? "Cannot gather here.");
+            return;
+        }
+
+        var message = result.Gathered.Count == 0
+            ? "You search carefully but find nothing worth taking."
+            : "You gather: " + string.Join(", ", result.Gathered.Select(g => $"{g.Quantity}× {g.Name}")) + ".";
+
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World", Content = message,

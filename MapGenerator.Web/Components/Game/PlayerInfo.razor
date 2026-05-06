@@ -2,6 +2,7 @@
 @using MapGenerator.Domain.Interfaces
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
+@inject IResourceDefinitionProvider ResourceProvider
 @implements IDisposable
 
 <div class="player-info">
@@ -47,6 +48,38 @@
         </div>
     }
 
+    @{
+        var inventory = Player.Inventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
+    }
+    <div class="inventory-panel">
+        <button class="inventory-toggle" @onclick="() => _inventoryOpen = !_inventoryOpen">
+            <span>⚙ Inventory (@inventory.Sum(kv => kv.Value))</span>
+            <span>@(_inventoryOpen ? "▴" : "▾")</span>
+        </button>
+        @if (_inventoryOpen)
+        {
+            @if (inventory.Count == 0)
+            {
+                <p class="inventory-empty">Nothing gathered yet.</p>
+            }
+            else
+            {
+                <div class="inventory-grid">
+                    @foreach (var (id, qty) in inventory)
+                    {
+                        var resDef = ResourceProvider.GetById(id);
+                        var label = resDef?.Name ?? id;
+                        var desc = resDef?.Description ?? string.Empty;
+                        <div class="inventory-item" title="@desc">
+                            <span class="inventory-name">@label</span>
+                            <span class="inventory-qty">×@qty</span>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
     @if (Player.IsAdmin)
     {
         <a href="/admin" class="admin-link">Admin Panel</a>
@@ -63,6 +96,7 @@
     private double _fillPct;
     private System.Threading.Timer? _timer;
     private long _cooldownDuration;
+    private bool _inventoryOpen;
 
     protected override void OnParametersSet()
     {

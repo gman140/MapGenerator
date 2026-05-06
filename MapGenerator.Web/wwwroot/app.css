@@ -241,6 +241,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .back-link { color: var(--accent); text-decoration: none; font-size: .9rem; }
 .back-link:hover { text-decoration: underline; }
 
+/* ── Inventory Panel ──────────────────────────────────────────────────────── */
+.inventory-panel { margin-top: 4px; border-top: 1px solid var(--border); }
+.inventory-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: none; color: var(--text-dim); font-size: .78rem; padding: .35rem .5rem; cursor: pointer; border-radius: 4px; }
+.inventory-toggle:hover { background: rgba(255,255,255,.05); color: var(--text); }
+.inventory-empty { font-size: .78rem; color: var(--text-dim); padding: .4rem .5rem; font-style: italic; }
+.inventory-grid { display: flex; flex-direction: column; gap: 2px; padding: .25rem .25rem .4rem; max-height: 160px; overflow-y: auto; }
+.inventory-item { display: flex; justify-content: space-between; align-items: center; padding: .2rem .5rem; border-radius: 3px; font-size: .8rem; cursor: default; }
+.inventory-item:hover { background: rgba(255,255,255,.06); }
+.inventory-name { color: var(--text); }
+.inventory-qty  { color: var(--accent); font-weight: 600; font-size: .75rem; }
+
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

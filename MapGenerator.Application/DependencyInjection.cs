@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IFeatureDefinitionProvider, InMemoryFeatureDefinitionProvider>();
         services.AddSingleton<IBiomeDefinitionProvider, InMemoryBiomeDefinitionProvider>();
+        services.AddSingleton<IResourceDefinitionProvider, InMemoryResourceDefinitionProvider>();
         services.AddSingleton<MapGeneratorService>();
         services.AddSingleton<PermissionService>();
         services.AddScoped<MovementService>();
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<AdminService>();
         services.AddScoped<EggService>();
         services.AddScoped<InvestigateService>();
+        services.AddScoped<GatherService>();
         return services;
     }
 }
