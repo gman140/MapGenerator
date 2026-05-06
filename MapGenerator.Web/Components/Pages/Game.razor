@@ -26,10 +26,12 @@ else
         <div class="map-area">
             <HexMapView Player="Session.Player"
                         OnTileClicked="HandleTileClickAsync"
-                        OnlinePlayers="Broadcast.GetOnlinePlayers()" />
+                        OnlinePlayers="Broadcast.GetOnlinePlayers()"
+                        RevealedTiles="_revealedTiles" />
         </div>
         <div class="sidebar">
-            <MiniMap Player="Session.Player" MapVersion="_mapVersion" />
+            <MiniMap Player="Session.Player" MapVersion="_mapVersion"
+                     RevealedTiles="_revealedTiles" RevealedVersion="_revealedVersion" />
             <PlayerInfo Player="Session.Player"
                         CooldownUntil="_cooldownUntil"
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
@@ -136,6 +138,9 @@ else
     private System.Threading.Timer? _toastTimer;
     private int _mapVersion;
 
+    private HashSet<(int, int)>? _revealedTiles;
+    private int _revealedVersion;
+
     private bool _showNoteModal;
     private bool _showSignModal;
     private string _noteText = string.Empty;
@@ -159,6 +164,7 @@ else
         _localMessages = await Session.GetTileChatAsync();
         AddArrivalMessages(Session.Player.Q, Session.Player.R);
         _worldMessages = await Session.GetWorldChatAsync();
+        _revealedTiles = await Session.LoadRevealedTilesAsync();
 
         Broadcast.PlayerMoved        += OnPlayerMoved;
         Broadcast.MessageReceived    += OnMessageReceived;
@@ -201,8 +207,18 @@ else
         _cooldownUntil = result.CooldownUntil ?? 0;
         _localMessages = await Session.GetTileChatAsync();
         AddArrivalMessages(Session.Player!.Q, Session.Player.R);
+        RevealTile(Session.Player.Q, Session.Player.R);
         await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         StateHasChanged();
+    }
+
+    private void RevealTile(int q, int r)
+    {
+        if (_revealedTiles == null) return;
+        _revealedTiles.Add((q, r));
+        foreach (var (dq, dr) in MapGeneratorService.HexNeighborOffsets())
+            _revealedTiles.Add((q + dq, r + dr));
+        _revealedVersion++;
     }
 
     private void AddArrivalMessages(int q, int r)
@@ -255,7 +271,14 @@ else
         {
             _drownedMessage = true;
             StateHasChanged();
+            return;
         }
+        if (result.Success && Session.Player != null)
+        {
+            RevealTile(Session.Player.Q, Session.Player.R);
+            await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
+        }
+        StateHasChanged();
     }
 
     private async Task HandleDrownedAsync()
@@ -469,6 +492,8 @@ else
                 Content = "You saw a bright flash, and the world faded away. You woke up here.",
                 IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
+            _revealedTiles = await Session.LoadRevealedTilesAsync();
+            _revealedVersion++;
             _mapVersion++;
             StateHasChanged();
         });

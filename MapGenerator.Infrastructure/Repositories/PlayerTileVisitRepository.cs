@@ -62,4 +62,13 @@ public class PlayerTileVisitRepository : IPlayerTileVisitRepository
         var update = Builders<PlayerTileVisit>.Update.Set(v => v.LeftAt, DateTime.UtcNow);
         return _ctx.Visits.UpdateManyAsync(filter, update);
     }
+
+    public async Task<List<(int Q, int R)>> GetVisitedCoordsAsync(string playerId)
+    {
+        var docs = await _ctx.Visits
+            .Find(v => v.PlayerId == playerId)
+            .Project(v => new { v.Q, v.R })
+            .ToListAsync();
+        return docs.Select(d => (d.Q, d.R)).Distinct().ToList();
+    }
 }

@@ -10,4 +10,5 @@ public interface IPlayerTileVisitRepository
     Task<int> CountVisitsAsync(string playerId, int q, int r);
     Task DeleteAllForPlayerAsync(string playerId);
     Task CloseAllOpenVisitsAsync(string playerId);
+    Task<List<(int Q, int R)>> GetVisitedCoordsAsync(string playerId);
 }

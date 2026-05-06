@@ -23,18 +23,26 @@
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public int MapVersion { get; set; }
+    [Parameter] public IReadOnlySet<(int, int)>? RevealedTiles { get; set; }
+    [Parameter] public int RevealedVersion { get; set; }
 
     private ElementReference _canvas;
     private ElementReference _popupCanvas;
     private bool _showPopup;
     private bool _needsFullRedraw = true;
     private int _lastMapVersion = -1;
+    private int _lastRevealedVersion = -1;
 
     protected override void OnParametersSet()
     {
         if (MapVersion != _lastMapVersion)
         {
             _lastMapVersion = MapVersion;
+            _needsFullRedraw = true;
+        }
+        if (RevealedVersion != _lastRevealedVersion)
+        {
+            _lastRevealedVersion = RevealedVersion;
             _needsFullRedraw = true;
         }
     }
@@ -46,7 +54,7 @@
             var config = MapCache.GetCachedConfig();
             if (config == null) return;
 
-            var rgbData = MapCache.GetMinimapData();
+            var rgbData = MapCache.GetMinimapData(RevealedTiles);
             if (rgbData.Length == 0) return;
 
             await JS.InvokeVoidAsync("gameJs.drawMinimap",

@@ -216,6 +216,24 @@ public class GameSessionService : IAsyncDisposable
         return tile != null && _gatherSvc.TileHasResources(tile);
     }
 
+    public async Task<HashSet<(int, int)>?> LoadRevealedTilesAsync()
+    {
+        if (Player == null || Player.IsAdmin) return null;
+        var coords = await _visitRepo.GetVisitedCoordsAsync(Player.Id);
+        var set = new HashSet<(int, int)>();
+        foreach (var (q, r) in coords)
+        {
+            set.Add((q, r));
+            foreach (var (dq, dr) in MapGeneratorService.HexNeighborOffsets())
+                set.Add((q + dq, r + dr));
+        }
+        // Always ensure current position is revealed
+        set.Add((Player.Q, Player.R));
+        foreach (var (dq, dr) in MapGeneratorService.HexNeighborOffsets())
+            set.Add((Player.Q + dq, Player.R + dr));
+        return set;
+    }
+
     public async Task LeaveNoteAsync(string content)
     {
         if (Player == null || string.IsNullOrWhiteSpace(content)) return;

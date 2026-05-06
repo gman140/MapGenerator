@@ -17,7 +17,8 @@
                 int tq = Player.Q + dq, tr = Player.R + dr;
                 var (cx, cy) = TileCenter(tq, tr);
 
-                if (hexDist > ViewRadius || !_tileMap.TryGetValue((tq, tr), out var tile))
+                bool inFog = RevealedTiles != null && !RevealedTiles.Contains((tq, tr));
+                if (hexDist > ViewRadius || !_tileMap.TryGetValue((tq, tr), out var tile) || inFog)
                 {
                     <polygon @key="@($"fog_{tq}_{tr}")"
                              points="@HexPoints(cx, cy)"
@@ -91,6 +92,7 @@
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public EventCallback<(int q, int r)> OnTileClicked { get; set; }
     [Parameter] public List<(string Id, string Username, int Q, int R, string Color)> OnlinePlayers { get; set; } = [];
+    [Parameter] public IReadOnlySet<(int, int)>? RevealedTiles { get; set; }
 
     private const double HexSize = 32;
     private const int ViewRadius = 9;
@@ -143,7 +145,8 @@
 
         int dq = q - Player.Q, dr = r - Player.R;
         int hexDist = Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
-        _hoveredTile = hexDist <= ViewRadius ? MapCache.GetCachedTile(q, r) : null;
+        bool revealed = RevealedTiles == null || RevealedTiles.Contains((q, r));
+        _hoveredTile = hexDist <= ViewRadius && revealed ? MapCache.GetCachedTile(q, r) : null;
     }
 
     private static (int q, int r) AxialRound(double fq, double fr)

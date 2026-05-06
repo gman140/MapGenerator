@@ -179,7 +179,9 @@ public class MapGeneratorService
         return result;
     }
 
-    public byte[] GetMinimapData()
+    public byte[] GetMinimapData() => GetMinimapData(null);
+
+    public byte[] GetMinimapData(IReadOnlySet<(int, int)>? revealedTiles)
     {
         if (_cache == null || _configCache == null) return [];
         int w = _configCache.Width, h = _configCache.Height;
@@ -187,10 +189,15 @@ public class MapGeneratorService
         for (int r = 0; r < h; r++)
             for (int q = 0; q < w; q++)
             {
+                int idx = (r * w + q) * 3;
+                if (revealedTiles != null && !revealedTiles.Contains((q, r)))
+                {
+                    data[idx] = data[idx + 1] = data[idx + 2] = 0;
+                    continue;
+                }
                 var tile = _cache[q, r];
                 var biome = tile?.Biome ?? BiomeType.Ocean;
                 var (red, green, blue) = _biomeProvider.GetByType(biome)?.MinimapRgb ?? (28, 78, 140);
-                int idx = (r * w + q) * 3;
                 if (tile?.Structure?.Type == StructureType.Beacon)
                     (red, green, blue) = (255, 215, 0);
                 data[idx] = red; data[idx + 1] = green; data[idx + 2] = blue;
