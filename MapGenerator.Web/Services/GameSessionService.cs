@@ -167,6 +167,21 @@ public class GameSessionService : IAsyncDisposable
         return result;
     }
 
+    public async Task<bool> UsePoulticeAsync()
+    {
+        if (Player == null) return false;
+        Player.Inventory.TryGetValue("Poultice", out int qty);
+        if (qty <= 0) return false;
+
+        if (qty == 1) Player.Inventory.Remove("Poultice");
+        else Player.Inventory["Poultice"] = qty - 1;
+
+        Player.MovementCooldownUntil = 0;
+        Player.LastSeen = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+        return true;
+    }
+
     public async Task<CraftingResult> CraftAsync(string recipeId)
     {
         if (Player == null) return new CraftingResult { Success = false, ErrorMessage = "Not logged in." };

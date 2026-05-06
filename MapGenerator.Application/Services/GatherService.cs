@@ -9,6 +9,7 @@ public class GatherService
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly IBiomeDefinitionProvider _biomeProvider;
     private readonly IFeatureDefinitionProvider _featureProvider;
+    private readonly ICraftingRecipeProvider _recipeProvider;
     private readonly IPlayerRepository _playerRepo;
     private readonly MapGeneratorService _mapCache;
 
@@ -18,12 +19,14 @@ public class GatherService
         IResourceDefinitionProvider resourceProvider,
         IBiomeDefinitionProvider biomeProvider,
         IFeatureDefinitionProvider featureProvider,
+        ICraftingRecipeProvider recipeProvider,
         IPlayerRepository playerRepo,
         MapGeneratorService mapCache)
     {
         _resourceProvider = resourceProvider;
         _biomeProvider    = biomeProvider;
         _featureProvider  = featureProvider;
+        _recipeProvider   = recipeProvider;
         _playerRepo       = playerRepo;
         _mapCache         = mapCache;
     }
@@ -42,7 +45,9 @@ public class GatherService
         if (tile == null) return Fail("Cannot gather here.");
 
         var pool = BuildYieldPool(tile);
-        var rng  = new Random();
+        ApplyItemEffects(player, tile, pool);
+
+        var rng      = new Random();
         var gathered = new List<GatheredItem>();
 
         foreach (var yield in pool)
@@ -84,6 +89,42 @@ public class GatherService
         var featureDef = _featureProvider.GetById(tile.FeatureId);
         if (featureDef != null) pool.AddRange(featureDef.ResourceYields);
         return pool;
+    }
+
+    private void ApplyItemEffects(Player player, HexTile tile, List<ResourceYield> pool)
+    {
+        if (pool.Count == 0) return;
+
+        bool isAquatic = tile.Biome is BiomeType.Ocean or BiomeType.Lake or BiomeType.Shallows
+                         or BiomeType.River or BiomeType.Swamp or BiomeType.Marsh;
+        bool isAquaticFeature    = tile.FeatureId is "TidePools" or "ReedBeds" or "HotSpring" or "OasisGrove";
+        bool isMineral           = tile.Biome is BiomeType.Mountain or BiomeType.Volcano;
+        bool isMineralFeature    = tile.FeatureId is "CaveEntrance" or "CrumbledFortress" or "RuinedTower" or "StoneCircle";
+        bool isUndergroundFeature = tile.FeatureId is "CaveEntrance" or "IcyCavern" or "FrozenShrine";
+
+        float mult     = 1.0f;
+        float rareMult = 1.0f;
+
+        if ((isAquatic || isAquaticFeature) && _recipeProvider.PlayerHasEffect(player, ItemEffect.ImproveAquaticGather))
+            mult *= 1.5f;
+        if ((isMineral || isMineralFeature) && _recipeProvider.PlayerHasEffect(player, ItemEffect.ImproveMineralGather))
+            mult *= 1.5f;
+        if (isUndergroundFeature && _recipeProvider.PlayerHasEffect(player, ItemEffect.ImproveUndergroundGather))
+            mult *= 1.5f;
+        if (_recipeProvider.PlayerHasEffect(player, ItemEffect.CharmNearbyCreatures))
+            mult *= 1.2f;
+        if (_recipeProvider.PlayerHasEffect(player, ItemEffect.PreserveRareFinds))
+            rareMult = 2.0f;
+
+        if (mult == 1.0f && rareMult == 1.0f) return;
+
+        for (int i = 0; i < pool.Count; i++)
+        {
+            float p = pool[i].Probability;
+            if (rareMult != 1.0f && p < 0.10f) p *= rareMult;
+            p *= mult;
+            pool[i] = new ResourceYield { ResourceId = pool[i].ResourceId, Probability = Math.Min(1.0f, p) };
+        }
     }
 
     private static GatherResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };

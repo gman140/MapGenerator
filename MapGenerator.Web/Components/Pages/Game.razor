@@ -34,9 +34,11 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
-            <ActionsMenu OnLayEgg="HandleLayEggAsync"
+            <ActionsMenu Player="Session.Player"
+                         OnLayEgg="HandleLayEggAsync"
                          OnInvestigate="HandleInvestigateAsync"
                          OnGather="HandleGatherAsync"
+                         OnUsePoultice="HandleUsePoulticeAsync"
                          OnLeaveNote="() => { _showNoteModal = true; _noteText = string.Empty; }"
                          OnPlantSign="() => { _showSignModal = true; _signText = string.Empty; }"
                          LastEggLaidAt="Session.Player.LastEggLaidAt"
@@ -262,6 +264,19 @@ else
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World", Content = $"You craft: {result.CraftedItemName}.",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleUsePoulticeAsync()
+    {
+        var success = await Session.UsePoulticeAsync();
+        if (!success) return;
+        _cooldownUntil = 0;
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = "You apply the poultice. The ache fades.",
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
         StateHasChanged();

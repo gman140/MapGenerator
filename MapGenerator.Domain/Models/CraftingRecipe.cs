@@ -1,3 +1,5 @@
+using MapGenerator.Domain.Enums;
+
 namespace MapGenerator.Domain.Models;
 
 public class CraftingRecipe
@@ -7,4 +9,5 @@ public class CraftingRecipe
     public string Description { get; init; } = string.Empty;
     public bool IsConsumable { get; init; }
     public CraftingIngredient[] Ingredients { get; init; } = [];
+    public ItemEffect[] Effects { get; init; } = [];
 }

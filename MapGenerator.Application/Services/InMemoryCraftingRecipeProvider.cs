@@ -1,3 +1,4 @@
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 
@@ -19,6 +20,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Fiber",     Quantity = 4 },
                 new() { ResourceId = "Reed",      Quantity = 3 },
             ],
+            Effects = [ItemEffect.AllowOceanTraversal, ItemEffect.AllowLakeTraversal],
         },
         new()
         {
@@ -31,6 +33,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Fiber",    Quantity = 3 },
                 new() { ResourceId = "Feathers", Quantity = 1 },
             ],
+            Effects = [ItemEffect.ImproveAquaticGather],
         },
         new()
         {
@@ -43,6 +46,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Feathers", Quantity = 3 },
                 new() { ResourceId = "Moss",     Quantity = 2 },
             ],
+            Effects = [ItemEffect.ReduceColdBiomeCooldown],
         },
         new()
         {
@@ -55,6 +59,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Wood",  Quantity = 2 },
                 new() { ResourceId = "Fiber", Quantity = 2 },
             ],
+            Effects = [ItemEffect.ImproveMineralGather],
         },
         new()
         {
@@ -67,6 +72,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Clay",   Quantity = 2 },
                 new() { ResourceId = "Coal",   Quantity = 2 },
             ],
+            Effects = [ItemEffect.ImproveUndergroundGather],
         },
         new()
         {
@@ -80,6 +86,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Moss",  Quantity = 2 },
                 new() { ResourceId = "Reed",  Quantity = 1 },
             ],
+            Effects = [ItemEffect.ClearMovementCooldown],
         },
         new()
         {
@@ -92,6 +99,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Fiber", Quantity = 5 },
                 new() { ResourceId = "Reed",  Quantity = 3 },
             ],
+            Effects = [ItemEffect.AllowCliffTraversal],
         },
         new()
         {
@@ -104,6 +112,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "RiverGlass",Quantity = 1 },
                 new() { ResourceId = "CrackedOrb",Quantity = 1 },
             ],
+            Effects = [ItemEffect.ReduceMovementCooldown],
         },
         new()
         {
@@ -115,6 +124,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "BoneFragment", Quantity = 2 },
                 new() { ResourceId = "Reed",         Quantity = 2 },
             ],
+            Effects = [ItemEffect.CharmNearbyCreatures],
         },
         new()
         {
@@ -127,6 +137,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "HollowStone",Quantity = 1 },
                 new() { ResourceId = "Herbs",      Quantity = 2 },
             ],
+            Effects = [ItemEffect.PreserveRareFinds],
         },
     ];
 
@@ -137,4 +148,9 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
 
     public CraftingRecipe? GetById(string? id) =>
         id != null && _byId.TryGetValue(id, out var recipe) ? recipe : null;
+
+    public bool PlayerHasEffect(Player player, ItemEffect effect) =>
+        _recipes.Any(r =>
+            r.Effects.Contains(effect) &&
+            player.Inventory.TryGetValue(r.Id, out int qty) && qty > 0);
 }

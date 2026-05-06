@@ -11,19 +11,22 @@ public class MovementService
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly MapGeneratorService _mapCache;
     private readonly IBiomeDefinitionProvider _biomeProvider;
+    private readonly ICraftingRecipeProvider _recipeProvider;
 
     public MovementService(
         IMapRepository mapRepo,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo,
         MapGeneratorService mapCache,
-        IBiomeDefinitionProvider biomeProvider)
+        IBiomeDefinitionProvider biomeProvider,
+        ICraftingRecipeProvider recipeProvider)
     {
-        _mapRepo       = mapRepo;
-        _playerRepo    = playerRepo;
-        _visitRepo     = visitRepo;
-        _mapCache      = mapCache;
-        _biomeProvider = biomeProvider;
+        _mapRepo        = mapRepo;
+        _playerRepo     = playerRepo;
+        _visitRepo      = visitRepo;
+        _mapCache       = mapCache;
+        _biomeProvider  = biomeProvider;
+        _recipeProvider = recipeProvider;
     }
 
     public static bool AreAdjacent(int q1, int r1, int q2, int r2)
@@ -56,13 +59,13 @@ public class MovementService
         if (tile == null)
             return Fail("That tile does not exist.");
 
-        if (tile.Biome == BiomeType.Lake)
+        if (tile.Biome == BiomeType.Lake && !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowLakeTraversal))
             return Fail("The lake is too deep to cross without a boat.");
 
-        if (tile.Biome == BiomeType.Volcano)
+        if (tile.Biome == BiomeType.Volcano && !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowCliffTraversal))
             return Fail("The volcanic terrain is impassable.");
 
-        if (tile.Biome == BiomeType.Ocean)
+        if (tile.Biome == BiomeType.Ocean && !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowOceanTraversal))
         {
             if (!oceanConfirmed)
                 return new MovementResult { Success = false, RequiresOceanConfirmation = true };
@@ -76,6 +79,16 @@ public class MovementService
         long cooldown = permissions.Contains(Permission.IgnoreCooldowns)
             ? 0
             : (_biomeProvider.GetByType(tile.Biome)?.CooldownMs ?? 400);
+
+        if (cooldown > 0)
+        {
+            if (_recipeProvider.PlayerHasEffect(player, ItemEffect.ReduceMovementCooldown))
+                cooldown = (long)(cooldown * 0.70);
+
+            bool isColdBiome = tile.Biome is BiomeType.Tundra or BiomeType.Snow or BiomeType.Glacier;
+            if (isColdBiome && _recipeProvider.PlayerHasEffect(player, ItemEffect.ReduceColdBiomeCooldown))
+                cooldown = (long)(cooldown * 0.60);
+        }
 
         await _visitRepo.RecordDepartureAsync(player.Id, player.Q, player.R);
 

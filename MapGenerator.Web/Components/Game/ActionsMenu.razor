@@ -1,3 +1,4 @@
+@using MapGenerator.Domain.Models
 @implements IDisposable
 
 <div class="actions-menu">
@@ -24,15 +25,24 @@
             <span class="action-cooldown">@_eggCooldownText</span>
         }
     </button>
+    @if (Player.Inventory.GetValueOrDefault("Poultice") > 0)
+    {
+        <button class="action-item" @onclick="HandleUsePoultice">
+            🌿 Use Poultice
+            <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
+        </button>
+    }
     <button class="action-item" disabled>💃 Dance <span class="action-soon">soon</span></button>
 </div>
 
 @code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public EventCallback OnLayEgg { get; set; }
     [Parameter] public EventCallback OnInvestigate { get; set; }
     [Parameter] public EventCallback OnLeaveNote { get; set; }
     [Parameter] public EventCallback OnPlantSign { get; set; }
     [Parameter] public EventCallback OnGather { get; set; }
+    [Parameter] public EventCallback OnUsePoultice { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
     [Parameter] public bool CooldownBypassed { get; set; }
     [Parameter] public long GatherCooldownUntil { get; set; }
@@ -86,11 +96,12 @@
         }
     }
 
-    private async Task LayEgg()            { await OnLayEgg.InvokeAsync(); }
-    private async Task HandleInvestigate() { await OnInvestigate.InvokeAsync(); }
-    private async Task HandleLeaveNote()   { await OnLeaveNote.InvokeAsync(); }
-    private async Task HandlePlantSign()   { await OnPlantSign.InvokeAsync(); }
-    private async Task HandleGather()      { await OnGather.InvokeAsync(); }
+    private async Task LayEgg()             { await OnLayEgg.InvokeAsync(); }
+    private async Task HandleInvestigate()  { await OnInvestigate.InvokeAsync(); }
+    private async Task HandleLeaveNote()    { await OnLeaveNote.InvokeAsync(); }
+    private async Task HandlePlantSign()    { await OnPlantSign.InvokeAsync(); }
+    private async Task HandleGather()       { await OnGather.InvokeAsync(); }
+    private async Task HandleUsePoultice()  { await OnUsePoultice.InvokeAsync(); }
 
     public void Dispose() => _timer?.Dispose();
 }
