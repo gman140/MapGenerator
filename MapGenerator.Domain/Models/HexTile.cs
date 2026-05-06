@@ -14,4 +14,5 @@ public class HexTile
     public int EggCount { get; set; }
     public string? SignText { get; set; }
     public string? SignAuthor { get; set; }
+    public TileStructure? Structure { get; set; }
 }

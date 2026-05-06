@@ -59,13 +59,18 @@ public class MovementService
         if (tile == null)
             return Fail("That tile does not exist.");
 
-        if (tile.Biome == BiomeType.Lake && !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowLakeTraversal))
+        var originTile = _mapCache.GetCachedTile(player.Q, player.R);
+        bool hasDock = originTile?.Structure?.Type == StructureType.Dock;
+
+        if (tile.Biome == BiomeType.Lake &&
+            !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowLakeTraversal) && !hasDock)
             return Fail("The lake is too deep to cross without a boat.");
 
         if (tile.Biome == BiomeType.Volcano && !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowCliffTraversal))
             return Fail("The volcanic terrain is impassable.");
 
-        if (tile.Biome == BiomeType.Ocean && !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowOceanTraversal))
+        if (tile.Biome == BiomeType.Ocean &&
+            !_recipeProvider.PlayerHasEffect(player, ItemEffect.AllowOceanTraversal) && !hasDock)
         {
             if (!oceanConfirmed)
                 return new MovementResult { Success = false, RequiresOceanConfirmation = true };

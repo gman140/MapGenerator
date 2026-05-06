@@ -162,6 +162,12 @@ public class MapGeneratorService
         if (tile != null) { tile.SignText = text; tile.SignAuthor = authorName; }
     }
 
+    public void UpdateCachedStructure(int q, int r, TileStructure? structure)
+    {
+        var tile = GetCachedTile(q, r);
+        if (tile != null) tile.Structure = structure;
+    }
+
     public List<HexTile> GetViewportTiles(int centerQ, int centerR, int qRadius, int rRadius)
     {
         if (_cache == null) return [];
@@ -181,9 +187,12 @@ public class MapGeneratorService
         for (int r = 0; r < h; r++)
             for (int q = 0; q < w; q++)
             {
-                var biome = _cache[q, r]?.Biome ?? BiomeType.Ocean;
+                var tile = _cache[q, r];
+                var biome = tile?.Biome ?? BiomeType.Ocean;
                 var (red, green, blue) = _biomeProvider.GetByType(biome)?.MinimapRgb ?? (28, 78, 140);
                 int idx = (r * w + q) * 3;
+                if (tile?.Structure?.Type == StructureType.Beacon)
+                    (red, green, blue) = (255, 215, 0);
                 data[idx] = red; data[idx + 1] = green; data[idx + 2] = blue;
             }
         return data;

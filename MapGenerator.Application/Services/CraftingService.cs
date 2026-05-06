@@ -1,3 +1,4 @@
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 
@@ -8,15 +9,18 @@ public class CraftingService
     private readonly ICraftingRecipeProvider _recipeProvider;
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly IPlayerRepository _playerRepo;
+    private readonly MapGeneratorService _mapCache;
 
     public CraftingService(
         ICraftingRecipeProvider recipeProvider,
         IResourceDefinitionProvider resourceProvider,
-        IPlayerRepository playerRepo)
+        IPlayerRepository playerRepo,
+        MapGeneratorService mapCache)
     {
-        _recipeProvider  = recipeProvider;
+        _recipeProvider   = recipeProvider;
         _resourceProvider = resourceProvider;
-        _playerRepo      = playerRepo;
+        _playerRepo       = playerRepo;
+        _mapCache         = mapCache;
     }
 
     public async Task<CraftingResult> TryCraftAsync(Player player, string recipeId)
@@ -25,19 +29,21 @@ public class CraftingService
         if (recipe == null)
             return Fail("Unknown recipe.");
 
+        bool hasWorkshop = _mapCache.GetCachedTile(player.Q, player.R)?.Structure?.Type == StructureType.Workshop;
+
         foreach (var ingredient in recipe.Ingredients)
         {
+            int required = RequiredQty(ingredient.Quantity, hasWorkshop);
             player.Inventory.TryGetValue(ingredient.ResourceId, out int have);
-            if (have >= ingredient.Quantity) continue;
-
+            if (have >= required) continue;
             var res = _resourceProvider.GetById(ingredient.ResourceId);
-            string name = res?.Name ?? ingredient.ResourceId;
-            return Fail($"Not enough {name}. Need {ingredient.Quantity}, have {have}.");
+            return Fail($"Not enough {res?.Name ?? ingredient.ResourceId}. Need {required}, have {have}.");
         }
 
         foreach (var ingredient in recipe.Ingredients)
         {
-            player.Inventory[ingredient.ResourceId] -= ingredient.Quantity;
+            int required = RequiredQty(ingredient.Quantity, hasWorkshop);
+            player.Inventory[ingredient.ResourceId] -= required;
             if (player.Inventory[ingredient.ResourceId] <= 0)
                 player.Inventory.Remove(ingredient.ResourceId);
         }
@@ -50,6 +56,9 @@ public class CraftingService
 
         return new CraftingResult { Success = true, CraftedItemId = recipe.Id, CraftedItemName = recipe.Name };
     }
+
+    private static int RequiredQty(int baseQty, bool hasWorkshop) =>
+        hasWorkshop ? (int)Math.Ceiling(baseQty / 2.0) : baseQty;
 
     private static CraftingResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };
 }

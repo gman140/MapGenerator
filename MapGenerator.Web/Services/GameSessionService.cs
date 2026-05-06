@@ -1,4 +1,5 @@
 using MapGenerator.Application.Services;
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 
@@ -13,6 +14,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly InvestigateService _investigateSvc;
     private readonly GatherService _gatherSvc;
     private readonly CraftingService _craftingSvc;
+    private readonly StructureService _structureSvc;
     private readonly PermissionService _permissionSvc;
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
@@ -32,6 +34,7 @@ public class GameSessionService : IAsyncDisposable
         InvestigateService investigateSvc,
         GatherService gatherSvc,
         CraftingService craftingSvc,
+        StructureService structureSvc,
         PermissionService permissionSvc,
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
@@ -47,6 +50,7 @@ public class GameSessionService : IAsyncDisposable
         _investigateSvc = investigateSvc;
         _gatherSvc      = gatherSvc;
         _craftingSvc    = craftingSvc;
+        _structureSvc   = structureSvc;
         _permissionSvc  = permissionSvc;
         _mapCache       = mapCache;
         _broadcast      = broadcast;
@@ -179,6 +183,23 @@ public class GameSessionService : IAsyncDisposable
         Player.MovementCooldownUntil = 0;
         Player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(Player);
+        return true;
+    }
+
+    public async Task<(bool success, string? error)> BuildStructureAsync(StructureType type)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile == null) return (false, "Cannot build here.");
+        return await _structureSvc.TryBuildAsync(Player, type, tile);
+    }
+
+    public async Task<bool> DestroyStructureAsync()
+    {
+        if (Player == null) return false;
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile?.Structure == null) return false;
+        await _structureSvc.DestroyAsync(tile);
         return true;
     }
 

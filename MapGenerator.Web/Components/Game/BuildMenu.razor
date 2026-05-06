@@ -1,0 +1,99 @@
+@using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
+@inject IStructureDefinitionProvider StructureProvider
+@inject IResourceDefinitionProvider ResourceProvider
+
+<button class="crafting-toggle" @onclick="() => _open = true">
+    <span>🏗 Build</span>
+</button>
+
+@if (_open)
+{
+    <div class="modal-overlay" @onclick="() => _open = false">
+        <div class="modal-box crafting-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">Build</h3>
+                <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
+            </div>
+
+            @if (CurrentTile?.Structure != null)
+            {
+                var existing = StructureProvider.GetByType(CurrentTile.Structure.Type);
+                <div class="structure-existing">
+                    <div class="structure-existing-info">
+                        <span class="structure-existing-name">@(existing?.Name ?? CurrentTile.Structure.Type.ToString())</span>
+                        <span class="structure-existing-builder">built by @CurrentTile.Structure.BuilderName</span>
+                    </div>
+                    <button class="structure-destroy-btn" @onclick="HandleDestroy">Destroy</button>
+                </div>
+                <p class="structure-existing-desc">@existing?.Description</p>
+            }
+            else
+            {
+                <div class="crafting-recipes">
+                    @foreach (var def in StructureProvider.All)
+                    {
+                        bool wrongBiome = def.AllowedBiomes != null &&
+                                          (CurrentTile == null || !def.AllowedBiomes.Contains(CurrentTile.Biome));
+                        bool canAfford  = !wrongBiome && def.Ingredients.All(i =>
+                        {
+                            Player.Inventory.TryGetValue(i.ResourceId, out int have);
+                            return have >= i.Quantity;
+                        });
+                        bool canBuild = canAfford && !wrongBiome;
+
+                        <div class="recipe-card">
+                            <div class="recipe-header">
+                                <span class="recipe-name" title="@def.Description">@def.Name</span>
+                                <button class="recipe-craft-btn" disabled="@(!canBuild)"
+                                        @onclick="() => HandleBuild(def.Type)">
+                                    Build
+                                </button>
+                            </div>
+                            <div class="recipe-ingredients">
+                                @if (wrongBiome)
+                                {
+                                    <span class="ingredient ingredient-missing">wrong biome</span>
+                                }
+                                else
+                                {
+                                    @foreach (var ing in def.Ingredients)
+                                    {
+                                        Player.Inventory.TryGetValue(ing.ResourceId, out int have);
+                                        bool ok = have >= ing.Quantity;
+                                        var name = ResourceProvider.GetById(ing.ResourceId)?.Name ?? ing.ResourceId;
+                                        <span class="ingredient @(ok ? "ingredient-ok" : "ingredient-missing")">
+                                            @name @have/@ing.Quantity
+                                        </span>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public HexTile? CurrentTile { get; set; }
+    [Parameter] public EventCallback<StructureType> OnBuild { get; set; }
+    [Parameter] public EventCallback OnDestroy { get; set; }
+
+    private bool _open;
+
+    private async Task HandleBuild(StructureType type)
+    {
+        await OnBuild.InvokeAsync(type);
+        _open = false;
+    }
+
+    private async Task HandleDestroy()
+    {
+        await OnDestroy.InvokeAsync();
+        _open = false;
+    }
+}

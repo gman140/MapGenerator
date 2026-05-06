@@ -7,6 +7,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @using MapGenerator.Application.Services
+@using MapGenerator.Domain.Enums
 @implements IAsyncDisposable
 
 <PageTitle>@(Session.Player?.Username ?? "World Map")</PageTitle>
@@ -34,6 +35,10 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
+            <BuildMenu Player="Session.Player"
+                       CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
+                       OnBuild="HandleBuildStructureAsync"
+                       OnDestroy="HandleDestroyStructureAsync" />
             <ActionsMenu Player="Session.Player"
                          OnLayEgg="HandleLayEggAsync"
                          OnInvestigate="HandleInvestigateAsync"
@@ -219,7 +224,24 @@ else
                 Content = $"A sign planted by {tile.SignAuthor} reads: \"{tile.SignText}\"",
                 IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
+
+        if (tile.Structure != null)
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World",
+                Content = $"A {StructureNames[tile.Structure.Type]} stands here, built by {tile.Structure.BuilderName}.",
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
     }
+
+    private static readonly Dictionary<StructureType, string> StructureNames = new()
+    {
+        [StructureType.Beacon]    = "Beacon",
+        [StructureType.Garden]    = "Garden",
+        [StructureType.MineShaft] = "Mine Shaft",
+        [StructureType.Workshop]  = "Workshop",
+        [StructureType.Dock]      = "Dock",
+    };
 
     private async Task ConfirmOceanAsync()
     {
@@ -250,6 +272,41 @@ else
             SenderName = "World", Content = message,
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
+        StateHasChanged();
+    }
+
+    private async Task HandleBuildStructureAsync(StructureType type)
+    {
+        var (success, error) = await Session.BuildStructureAsync(type);
+        if (!success)
+        {
+            ShowToast(error ?? "Cannot build here.");
+            return;
+        }
+        var tile = MapCache.GetCachedTile(Session.Player!.Q, Session.Player.R);
+        var structureName = StructureNames.GetValueOrDefault(type, type.ToString());
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = $"You build a {structureName} here.",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        if (type == StructureType.Beacon) _mapVersion++;
+        StateHasChanged();
+    }
+
+    private async Task HandleDestroyStructureAsync()
+    {
+        var tile = MapCache.GetCachedTile(Session.Player!.Q, Session.Player.R);
+        var structureType = tile?.Structure?.Type;
+        var success = await Session.DestroyStructureAsync();
+        if (!success) return;
+        var structureName = structureType.HasValue ? StructureNames.GetValueOrDefault(structureType.Value, structureType.ToString()!) : "structure";
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = $"You tear down the {structureName}.",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        if (structureType == StructureType.Beacon) _mapVersion++;
         StateHasChanged();
     }
 

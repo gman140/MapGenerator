@@ -256,6 +256,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .ingredient { font-size: .72rem; padding: .1rem .3rem; border-radius: 3px; background: rgba(255,255,255,.05); }
 .ingredient-ok      { color: var(--accent); }
 .ingredient-missing { color: var(--danger); }
+.workshop-active    { font-size: .75rem; color: var(--accent); padding: .2rem .1rem; margin: 0; }
+.structure-existing { display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: rgba(255,255,255,.05); border-radius: 5px; padding: .5rem .75rem; }
+.structure-existing-info { display: flex; flex-direction: column; gap: .1rem; }
+.structure-existing-name { font-size: .9rem; font-weight: 600; color: var(--text); }
+.structure-existing-builder { font-size: .72rem; color: var(--text-dim); }
+.structure-existing-desc { font-size: .78rem; color: var(--text-dim); margin: 0; line-height: 1.5; }
+.structure-destroy-btn { font-size: .75rem; padding: .2rem .55rem; background: var(--danger); color: #fff; border: none; border-radius: 3px; cursor: pointer; white-space: nowrap; font-weight: 600; flex-shrink: 0; }
+.structure-destroy-btn:hover { filter: brightness(1.2); }
 
 /* ── Inventory Panel ──────────────────────────────────────────────────────── */
 .inventory-panel { margin-top: 4px; border-top: 1px solid var(--border); }

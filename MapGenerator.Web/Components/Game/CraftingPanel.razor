@@ -1,7 +1,10 @@
+@using MapGenerator.Application.Services
+@using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
 @inject ICraftingRecipeProvider RecipeProvider
 @inject IResourceDefinitionProvider ResourceProvider
+@inject MapGeneratorService MapCache
 
 <button class="crafting-toggle" @onclick="() => _open = true">
     <span>⚒ Crafting</span>
@@ -16,12 +19,20 @@
                 <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
             </div>
             <div class="crafting-recipes">
-                @foreach (var recipe in RecipeProvider.All)
+                @{
+            bool hasWorkshop = MapCache.GetCachedTile(Player.Q, Player.R)?.Structure?.Type == StructureType.Workshop;
+        }
+        @if (hasWorkshop)
+        {
+            <p class="workshop-active">⚒ Workshop active — costs halved</p>
+        }
+        @foreach (var recipe in RecipeProvider.All)
                 {
                     bool canCraft = recipe.Ingredients.All(i =>
                     {
                         Player.Inventory.TryGetValue(i.ResourceId, out int have);
-                        return have >= i.Quantity;
+                        int required = hasWorkshop ? (int)Math.Ceiling(i.Quantity / 2.0) : i.Quantity;
+                        return have >= required;
                     });
 
                     <div class="recipe-card">
@@ -39,10 +50,11 @@
                             @foreach (var ing in recipe.Ingredients)
                             {
                                 Player.Inventory.TryGetValue(ing.ResourceId, out int have);
-                                bool ok = have >= ing.Quantity;
+                                int required = hasWorkshop ? (int)Math.Ceiling(ing.Quantity / 2.0) : ing.Quantity;
+                                bool ok = have >= required;
                                 var resName = ResourceProvider.GetById(ing.ResourceId)?.Name ?? ing.ResourceId;
                                 <span class="ingredient @(ok ? "ingredient-ok" : "ingredient-missing")">
-                                    @resName @have/@ing.Quantity
+                                    @resName @have/@required
                                 </span>
                             }
                         </div>

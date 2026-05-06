@@ -116,6 +116,11 @@ public class GatherService
         if (_recipeProvider.PlayerHasEffect(player, ItemEffect.PreserveRareFinds))
             rareMult = 2.0f;
 
+        if (tile.Structure?.Type == StructureType.Garden)
+            mult *= 2.0f;
+        if (tile.Structure?.Type == StructureType.MineShaft)
+            mult *= 2.0f;
+
         if (mult == 1.0f && rareMult == 1.0f) return;
 
         for (int i = 0; i < pool.Count; i++)

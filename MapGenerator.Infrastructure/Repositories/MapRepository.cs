@@ -69,4 +69,22 @@ public class MapRepository : IMapRepository
             .Set(t => t.SignAuthor, authorName);
         return _ctx.Tiles.UpdateOneAsync(filter, update);
     }
+
+    public Task SetStructureAsync(int q, int r, TileStructure structure)
+    {
+        var filter = Builders<HexTile>.Filter.And(
+            Builders<HexTile>.Filter.Eq(t => t.Q, q),
+            Builders<HexTile>.Filter.Eq(t => t.R, r));
+        var update = Builders<HexTile>.Update.Set(t => t.Structure, structure);
+        return _ctx.Tiles.UpdateOneAsync(filter, update);
+    }
+
+    public Task RemoveStructureAsync(int q, int r)
+    {
+        var filter = Builders<HexTile>.Filter.And(
+            Builders<HexTile>.Filter.Eq(t => t.Q, q),
+            Builders<HexTile>.Filter.Eq(t => t.R, r));
+        var update = Builders<HexTile>.Update.Set(t => t.Structure, (TileStructure?)null);
+        return _ctx.Tiles.UpdateOneAsync(filter, update);
+    }
 }
