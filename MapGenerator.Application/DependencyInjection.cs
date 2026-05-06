@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddSingleton<IFeatureDefinitionProvider, InMemoryFeatureDefinitionProvider>();
         services.AddSingleton<IBiomeDefinitionProvider, InMemoryBiomeDefinitionProvider>();
         services.AddSingleton<IResourceDefinitionProvider, InMemoryResourceDefinitionProvider>();
+        services.AddSingleton<ICraftingRecipeProvider, InMemoryCraftingRecipeProvider>();
         services.AddSingleton<MapGeneratorService>();
         services.AddSingleton<PermissionService>();
         services.AddScoped<MovementService>();
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<EggService>();
         services.AddScoped<InvestigateService>();
         services.AddScoped<GatherService>();
+        services.AddScoped<CraftingService>();
         return services;
     }
 }

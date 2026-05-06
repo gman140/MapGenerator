@@ -12,6 +12,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly EggService _eggSvc;
     private readonly InvestigateService _investigateSvc;
     private readonly GatherService _gatherSvc;
+    private readonly CraftingService _craftingSvc;
     private readonly PermissionService _permissionSvc;
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
@@ -30,6 +31,7 @@ public class GameSessionService : IAsyncDisposable
         EggService eggSvc,
         InvestigateService investigateSvc,
         GatherService gatherSvc,
+        CraftingService craftingSvc,
         PermissionService permissionSvc,
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
@@ -44,6 +46,7 @@ public class GameSessionService : IAsyncDisposable
         _eggSvc         = eggSvc;
         _investigateSvc = investigateSvc;
         _gatherSvc      = gatherSvc;
+        _craftingSvc    = craftingSvc;
         _permissionSvc  = permissionSvc;
         _mapCache       = mapCache;
         _broadcast      = broadcast;
@@ -162,6 +165,12 @@ public class GameSessionService : IAsyncDisposable
         if (result.Success)
             Player.GatherCooldownUntil = result.CooldownUntil;
         return result;
+    }
+
+    public async Task<CraftingResult> CraftAsync(string recipeId)
+    {
+        if (Player == null) return new CraftingResult { Success = false, ErrorMessage = "Not logged in." };
+        return await _craftingSvc.TryCraftAsync(Player, recipeId);
     }
 
     public bool TileHasResources()

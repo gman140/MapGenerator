@@ -58,7 +58,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     padding: 4px;
 }
 .map-area  { grid-column: 1; grid-row: 1; overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-.sidebar   { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 4px; }
+.sidebar   { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
 .chat-area { grid-column: 1 / 3; grid-row: 2; }
 
 /* ── Hex Map ──────────────────────────────────────────────────────────────── */
@@ -236,6 +236,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .dim-text { color: var(--text-dim); font-size: .9rem; }
 .back-link { color: var(--accent); text-decoration: none; font-size: .9rem; }
 .back-link:hover { text-decoration: underline; }
+
+/* ── Crafting ─────────────────────────────────────────────────────────────── */
+.crafting-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); font-size: .78rem; padding: .35rem .5rem; cursor: pointer; }
+.crafting-toggle:hover { background: rgba(255,255,255,.05); color: var(--text); }
+.crafting-modal { max-width: 520px; padding: 1.25rem; gap: .75rem; }
+.crafting-modal-header { display: flex; align-items: center; justify-content: space-between; }
+.crafting-modal-close { background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer; padding: 0 .25rem; line-height: 1; }
+.crafting-modal-close:hover { color: var(--text); }
+.crafting-recipes { display: flex; flex-direction: column; gap: .4rem; overflow-y: auto; max-height: 70vh; }
+.recipe-card { border: 1px solid var(--border); border-radius: 5px; padding: .45rem .6rem; display: flex; flex-direction: column; gap: .25rem; }
+.recipe-header { display: flex; align-items: center; justify-content: space-between; gap: .4rem; }
+.recipe-name { font-size: .85rem; color: var(--text); flex: 1; }
+.recipe-consumable { font-size: .68rem; color: var(--text-dim); margin-left: .3rem; }
+.recipe-craft-btn { font-size: .75rem; padding: .2rem .55rem; background: var(--accent); color: #0e0e12; border: none; border-radius: 3px; cursor: pointer; white-space: nowrap; font-weight: 600; }
+.recipe-craft-btn:disabled { opacity: .35; cursor: default; }
+.recipe-craft-btn:not(:disabled):hover { filter: brightness(1.15); }
+.recipe-ingredients { display: flex; flex-wrap: wrap; gap: .2rem; }
+.ingredient { font-size: .72rem; padding: .1rem .3rem; border-radius: 3px; background: rgba(255,255,255,.05); }
+.ingredient-ok      { color: var(--accent); }
+.ingredient-missing { color: var(--danger); }
 
 /* ── Inventory Panel ──────────────────────────────────────────────────────── */
 .inventory-panel { margin-top: 4px; border-top: 1px solid var(--border); }

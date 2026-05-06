@@ -33,6 +33,7 @@ else
                         CooldownUntil="_cooldownUntil"
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync" />
+            <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
             <ActionsMenu OnLayEgg="HandleLayEggAsync"
                          OnInvestigate="HandleInvestigateAsync"
                          OnGather="HandleGatherAsync"
@@ -245,6 +246,22 @@ else
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleCraftAsync(string recipeId)
+    {
+        var result = await Session.CraftAsync(recipeId);
+        if (!result.Success)
+        {
+            ShowToast(result.ErrorMessage ?? "Could not craft that.");
+            return;
+        }
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = $"You craft: {result.CraftedItemName}.",
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
         StateHasChanged();

@@ -1,0 +1,61 @@
+@using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
+@inject ICraftingRecipeProvider RecipeProvider
+@inject IResourceDefinitionProvider ResourceProvider
+
+<button class="crafting-toggle" @onclick="() => _open = true">
+    <span>⚒ Crafting</span>
+</button>
+
+@if (_open)
+{
+    <div class="modal-overlay" @onclick="() => _open = false">
+        <div class="modal-box crafting-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">Crafting</h3>
+                <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
+            </div>
+            <div class="crafting-recipes">
+                @foreach (var recipe in RecipeProvider.All)
+                {
+                    bool canCraft = recipe.Ingredients.All(i =>
+                    {
+                        Player.Inventory.TryGetValue(i.ResourceId, out int have);
+                        return have >= i.Quantity;
+                    });
+
+                    <div class="recipe-card">
+                        <div class="recipe-header">
+                            <span class="recipe-name" title="@recipe.Description">
+                                @recipe.Name
+                                @if (recipe.IsConsumable) { <span class="recipe-consumable">consumable</span> }
+                            </span>
+                            <button class="recipe-craft-btn" disabled="@(!canCraft)"
+                                    @onclick="() => { OnCraft.InvokeAsync(recipe.Id); _open = false; }">
+                                Craft
+                            </button>
+                        </div>
+                        <div class="recipe-ingredients">
+                            @foreach (var ing in recipe.Ingredients)
+                            {
+                                Player.Inventory.TryGetValue(ing.ResourceId, out int have);
+                                bool ok = have >= ing.Quantity;
+                                var resName = ResourceProvider.GetById(ing.ResourceId)?.Name ?? ing.ResourceId;
+                                <span class="ingredient @(ok ? "ingredient-ok" : "ingredient-missing")">
+                                    @resName @have/@ing.Quantity
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnCraft { get; set; }
+
+    private bool _open;
+}
