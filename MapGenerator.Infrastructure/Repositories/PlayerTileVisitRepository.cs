@@ -63,6 +63,9 @@ public class PlayerTileVisitRepository : IPlayerTileVisitRepository
         return _ctx.Visits.UpdateManyAsync(filter, update);
     }
 
+    public Task DeleteAllAsync() =>
+        _ctx.Visits.DeleteManyAsync(Builders<PlayerTileVisit>.Filter.Empty);
+
     public async Task<List<(int Q, int R)>> GetVisitedCoordsAsync(string playerId)
     {
         var docs = await _ctx.Visits

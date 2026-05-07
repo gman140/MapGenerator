@@ -8,4 +8,5 @@ public interface IChatRepository
     Task<List<ChatMessage>> GetTileMessagesForVisitsAsync(List<PlayerTileVisit> visits);
     Task<List<ChatMessage>> GetWorldMessagesAsync(int limit = 100);
     Task RetainMessagesFromDeletedPlayerAsync(string playerId, string displayName);
+    Task DeleteAllAsync();
 }

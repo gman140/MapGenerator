@@ -23,4 +23,7 @@ public class TileNoteRepository : ITileNoteRepository
         _ctx.TileNotes.Find(n => n.Q == q && n.R == r)
             .SortBy(n => n.CreatedAt)
             .ToListAsync();
+
+    public Task DeleteAllAsync() =>
+        _ctx.TileNotes.DeleteManyAsync(Builders<TileNote>.Filter.Empty);
 }

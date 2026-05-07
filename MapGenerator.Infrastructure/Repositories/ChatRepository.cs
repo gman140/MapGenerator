@@ -63,4 +63,7 @@ public class ChatRepository : IChatRepository
         _ctx.ChatMessages.UpdateManyAsync(
             m => m.SenderId == playerId,
             Builders<ChatMessage>.Update.Set(m => m.SenderId, null));
+
+    public Task DeleteAllAsync() =>
+        _ctx.ChatMessages.DeleteManyAsync(Builders<ChatMessage>.Filter.Empty);
 }
