@@ -41,6 +41,11 @@ else
                        CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
                        OnBuild="HandleBuildStructureAsync"
                        OnDestroy="HandleDestroyStructureAsync" />
+            @if (Session.Player.IsAdmin)
+            {
+                <TileEditorPanel CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
+                                 OnSave="HandleEditTileAsync" />
+            }
             <ActionsMenu Player="Session.Player"
                          OnLayEgg="HandleLayEggAsync"
                          OnInvestigate="HandleInvestigateAsync"
@@ -431,6 +436,14 @@ else
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
         _signText = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task HandleEditTileAsync((BiomeType biome, string? featureId) args)
+    {
+        var (success, error) = await Session.EditTileAsync(args.biome, args.featureId);
+        if (!success) { ShowToast(error ?? "Could not edit tile."); return; }
+        _mapVersion++;
         StateHasChanged();
     }
 

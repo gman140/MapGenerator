@@ -168,6 +168,14 @@ public class MapGeneratorService
         if (tile != null) tile.Structure = structure;
     }
 
+    public void UpdateCachedBiomeAndFeature(int q, int r, BiomeType biome, string? featureId)
+    {
+        var tile = GetCachedTile(q, r);
+        if (tile == null) return;
+        tile.Biome     = biome;
+        tile.FeatureId = featureId;
+    }
+
     public List<HexTile> GetViewportTiles(int centerQ, int centerR, int qRadius, int rRadius)
     {
         if (_cache == null) return [];

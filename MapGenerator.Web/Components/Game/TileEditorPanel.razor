@@ -1,0 +1,71 @@
+@using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
+@inject IFeatureDefinitionProvider FeatureProvider
+
+<button class="crafting-toggle" @onclick="Open">
+    <span>🗺 Edit Tile</span>
+</button>
+
+@if (_open)
+{
+    <div class="modal-overlay" @onclick="() => _open = false">
+        <div class="modal-box crafting-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">Edit Tile (@CurrentTile?.Q, @CurrentTile?.R)</h3>
+                <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
+            </div>
+
+            <div class="tile-editor-fields">
+                <label class="tile-editor-label">
+                    Biome
+                    <select class="tile-editor-select" @bind="_selectedBiome">
+                        @foreach (var biome in Enum.GetValues<BiomeType>())
+                        {
+                            <option value="@biome">@biome</option>
+                        }
+                    </select>
+                </label>
+
+                <label class="tile-editor-label">
+                    Feature
+                    <select class="tile-editor-select" @bind="_selectedFeatureId">
+                        <option value="">None</option>
+                        @foreach (var feature in FeatureProvider.All)
+                        {
+                            <option value="@feature.Id">@feature.Id</option>
+                        }
+                    </select>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button @onclick="HandleSave">Save</button>
+                <button @onclick="() => _open = false">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public HexTile? CurrentTile { get; set; }
+    [Parameter] public EventCallback<(BiomeType biome, string? featureId)> OnSave { get; set; }
+
+    private bool _open;
+    private BiomeType _selectedBiome;
+    private string _selectedFeatureId = string.Empty;
+
+    private void Open()
+    {
+        _selectedBiome     = CurrentTile?.Biome ?? BiomeType.Grassland;
+        _selectedFeatureId = CurrentTile?.FeatureId ?? string.Empty;
+        _open = true;
+    }
+
+    private async Task HandleSave()
+    {
+        string? featureId = string.IsNullOrEmpty(_selectedFeatureId) ? null : _selectedFeatureId;
+        await OnSave.InvokeAsync((_selectedBiome, featureId));
+        _open = false;
+    }
+}

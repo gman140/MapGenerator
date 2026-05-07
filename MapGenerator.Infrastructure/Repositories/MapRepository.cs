@@ -1,3 +1,4 @@
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 using MongoDB.Driver;
@@ -85,6 +86,17 @@ public class MapRepository : IMapRepository
             Builders<HexTile>.Filter.Eq(t => t.Q, q),
             Builders<HexTile>.Filter.Eq(t => t.R, r));
         var update = Builders<HexTile>.Update.Set(t => t.Structure, (TileStructure?)null);
+        return _ctx.Tiles.UpdateOneAsync(filter, update);
+    }
+
+    public Task UpdateTileBiomeAndFeatureAsync(int q, int r, BiomeType biome, string? featureId)
+    {
+        var filter = Builders<HexTile>.Filter.And(
+            Builders<HexTile>.Filter.Eq(t => t.Q, q),
+            Builders<HexTile>.Filter.Eq(t => t.R, r));
+        var update = Builders<HexTile>.Update
+            .Set(t => t.Biome, biome)
+            .Set(t => t.FeatureId, featureId);
         return _ctx.Tiles.UpdateOneAsync(filter, update);
     }
 }

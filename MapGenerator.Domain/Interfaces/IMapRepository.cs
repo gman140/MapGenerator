@@ -1,3 +1,4 @@
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Models;
 
 namespace MapGenerator.Domain.Interfaces;
@@ -14,4 +15,5 @@ public interface IMapRepository
     Task PlaceSignAsync(int q, int r, string text, string authorName);
     Task SetStructureAsync(int q, int r, TileStructure structure);
     Task RemoveStructureAsync(int q, int r);
+    Task UpdateTileBiomeAndFeatureAsync(int q, int r, BiomeType biome, string? featureId);
 }

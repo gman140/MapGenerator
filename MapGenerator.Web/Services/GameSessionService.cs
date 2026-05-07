@@ -234,6 +234,17 @@ public class GameSessionService : IAsyncDisposable
         return set;
     }
 
+    public async Task<(bool success, string? error)> EditTileAsync(BiomeType biome, string? featureId)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (!Player.IsAdmin) return (false, "Insufficient permissions.");
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile == null) return (false, "Tile not found.");
+        await _mapRepo.UpdateTileBiomeAndFeatureAsync(Player.Q, Player.R, biome, featureId);
+        _mapCache.UpdateCachedBiomeAndFeature(Player.Q, Player.R, biome, featureId);
+        return (true, null);
+    }
+
     public async Task LeaveNoteAsync(string content)
     {
         if (Player == null || string.IsNullOrWhiteSpace(content)) return;
