@@ -361,8 +361,6 @@ public class MapGeneratorService
             for (int q = 0; q < width; q++)
             {
                 var tile = grid[q, r];
-                if (tile.Biome is BiomeType.Ocean or BiomeType.Lake or BiomeType.River
-                                or BiomeType.Shallows or BiomeType.Volcano) continue;
 
                 foreach (var def in _featureProvider.All)
                 {

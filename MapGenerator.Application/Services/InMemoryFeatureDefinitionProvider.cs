@@ -946,5 +946,661 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You stare at it until your eyes hurt. When you look away it is in a different position. You don't look again.",
             ],
         },
+
+        // ── Ocean & deep water ─────────────────────────────────────────────
+        new()
+        {
+            Id           = "Shipwreck",
+            DisplayNames = ["Shipwreck", "Sunken Hulk", "Lost Vessel", "Drowned Ship", "Salt-Eaten Hull", "Keel in the Deep", "Foundered Wreck", "Waterlogged Hulk"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.Ocean, BiomeType.Shallows],
+            Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Driftwood", Probability = 0.35f },
+                new() { ResourceId = "RiverGlass",Probability = 0.12f },
+                new() { ResourceId = "TidalCoin", Probability = 0.10f },
+            ],
+            PartA =
+            [
+                "The mast breaks the surface at low tide, wrapped in kelp and barnacles and old intention.",
+                "You can make out the hull through the water — a dark shape that is where it was going and not where it meant to be.",
+                "The crow's nest is still attached. Something has made a home in it.",
+                "The figurehead faces forward, still optimistic, still pointing somewhere it will never arrive.",
+                "Cargo spills from a broken hatch into the sand below — crates, rope, things that were important once.",
+                "The ship's bell is visible through the water, tilted, silted over, not ringing.",
+                "The name on the hull is almost legible. You squint. You get two letters. The rest has been taken.",
+            ],
+            PartB =
+            [
+                "The kelp has made it home. The barnacles have made it permanent. The sea has made it its.",
+                "The water carries it somewhere more slowly than intended. It will get there.",
+                "A gull lands on the remnant of the crow's nest and makes a noise of proprietary confidence.",
+                "You look at where it points for a while. The horizon is indifferent to what it wanted.",
+                "You search through the scattered things carefully. You find one thing that has kept. You keep it further.",
+                "You stare at it for a long time. It would ring if you asked it. You don't ask.",
+                "You decide the two letters are the beginning of something hopeful. This may not be accurate.",
+            ],
+        },
+        new()
+        {
+            Id           = "KelpForest",
+            DisplayNames = ["Kelp Forest", "Waving Canopy", "Underwater Grove", "Green Deep", "Frond Curtain", "Sea-Tree Stand", "Swaying Kelp", "Drift-Forest"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.Ocean, BiomeType.Shallows],
+            Probability  = 0.035f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fish", Probability = 0.40f },
+                new() { ResourceId = "Fiber",Probability = 0.20f },
+            ],
+            PartA =
+            [
+                "The kelp rises from the sea floor in long slow columns, reaching for a surface they never quite touch.",
+                "Light filters down through the canopy in shafts that shift and sway with the current.",
+                "A seal drifts between the fronds with complete boneless ease, watching you sideways.",
+                "The forest sways in one direction, then the other, as if considering two equally good answers.",
+                "Small fish move in coordinated schools between the kelp stalks with the efficiency of practiced commuters.",
+                "Looking down into the kelp from the surface, you see it go deep — deeper than makes obvious sense.",
+                "The smell here is specific and green and old and has been this smell for a long time.",
+            ],
+            PartB =
+            [
+                "They catch the current and make shapes you watch for a long time without wanting to look away.",
+                "A fish catches a shaft of light and turns once. It is briefly extraordinary. Then it isn't.",
+                "It tilts to look at you with one eye. It is deciding something. It decides to leave. You feel assessed.",
+                "You watch it for a while. The kelp seems unsurprised by both answers simultaneously.",
+                "One school passes through another. They rearrange without incident. They continue.",
+                "The depth holds no answer. You stop looking for one and just look.",
+                "You breathe it in. It settles in your lungs like something settled. You find this acceptable.",
+            ],
+        },
+        new()
+        {
+            Id           = "BioluminescentBloom",
+            DisplayNames = ["Bioluminescent Bloom", "Glowing Shallows", "Night Lantern", "Cold Glow", "Living Light", "Bloom of the Deep", "Light-Bloom", "Plankton Fire"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.Ocean, BiomeType.Lake],
+            Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Salt",     Probability = 0.20f },
+                new() { ResourceId = "TidalCoin",Probability = 0.05f },
+            ],
+            PartA =
+            [
+                "After dark the water lights up from within — cold blue-green, sourceless, alive.",
+                "Each wave that breaks leaves a glowing edge along the sand, brief and perfectly itself.",
+                "You disturb the surface with one finger and the light blooms out in a ring from the point of contact.",
+                "The glow pulses slowly — not in rhythm with the waves, in rhythm with something else.",
+                "Small creatures trail light as they move through the water, painting paths that fade behind them.",
+                "The whole surface glows faintly enough that you can read by it if you hold still.",
+                "You cannot see what is producing the light. You are not certain it is something small.",
+            ],
+            PartB =
+            [
+                "You stand at the edge of it and feel something close to awe and something close to unease and can't separate them.",
+                "You watch one break and fade and the next arrives. You stand here through several arrivals.",
+                "The ring expands and fades. You do it again. You do it several more times. You stop and feel briefly childish and not sorry.",
+                "You try to find the source of the pulse. You can't. It continues with or without your understanding.",
+                "You follow one with your eyes until the trail fades. The path it made existed and was gone. This feels significant.",
+                "You read nothing. You sit in the glow anyway. It asks nothing of you. You find this restful.",
+                "You look at the water for a long time. You decide you prefer not knowing.",
+            ],
+        },
+
+        // ── Lake ───────────────────────────────────────────────────────────
+        new()
+        {
+            Id           = "SunkenRuins",
+            DisplayNames = ["Sunken Ruins", "Drowned Settlement", "Submerged Walls", "Flooded Town", "Lost Foundation", "Underwater Remnants", "Drowned Stone", "Waterlogged Ruin"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.Lake, BiomeType.Shallows],
+            Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone",        Probability = 0.25f },
+                new() { ResourceId = "RiverGlass",   Probability = 0.12f },
+                new() { ResourceId = "TarnishedRing",Probability = 0.10f },
+                new() { ResourceId = "CrackedOrb",   Probability = 0.06f },
+            ],
+            PartA =
+            [
+                "A tower rises from the lake floor to just below the surface, its upper stones visible when the water is still.",
+                "The walls are fully legible from above — a square, a courtyard, a room that once had a purpose.",
+                "A road leads from the bank straight into the water, paved and deliberate and continuing.",
+                "Through the clear water you can see a threshold, a door frame, a window with no glass.",
+                "The water has preserved things below: pottery, timber, a cart, all softened by time and silt.",
+                "Fish school in the empty rooms below, moving between window and doorway with the ease of residents.",
+                "At the center of the sunken structure, still upright, a chimney. The hearth is thirty feet below the surface.",
+            ],
+            PartB =
+            [
+                "You look through the water at the stone for a long time. It looks back with the patience of something that has waited a while.",
+                "You trace the outline of the courtyard from above. It was a reasonable size. It held a reasonable amount of living.",
+                "You stand at the point where the road enters the water. Someone paved this very carefully.",
+                "You stare through the water at the window. What looked through it last is not available for comment.",
+                "You reach for something just below the surface. You pull back. It belongs here now.",
+                "You watch them for a while. They navigate the rooms with confidence. No walls mean anything to them.",
+                "You look at the chimney for a long time. The water above it is entirely still.",
+            ],
+        },
+        new()
+        {
+            Id           = "MirrorLake",
+            DisplayNames = ["Mirror Lake", "Glass Surface", "Still Water", "Reflective Mere", "Polished Mere", "Dead Calm Water", "The Still One", "Unbroken Surface"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.Lake],
+            Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "RiverGlass", Probability = 0.15f },
+            ],
+            PartA =
+            [
+                "The surface is so still it seems less like water than a decision about what water could be.",
+                "Your reflection arrives before you do and watches you approach with mild interest.",
+                "A bird crosses the far shore. Its reflection crosses in the opposite direction at the same speed.",
+                "Nothing breaks the surface. Not a ripple, not an insect. The stillness is not natural but it is not hostile.",
+                "The sky in the water is more detailed than the sky above. You check. You check again.",
+                "You toss a small stone. The ripples expand perfectly and take a long time to reach the edges.",
+                "The reflection shows a time of day different from the one you are standing in.",
+            ],
+            PartB =
+            [
+                "You stare into it for a while. It is doing an excellent impression of depth.",
+                "You look at the reflection for a moment before looking at yourself. The reflection seems more confident.",
+                "You watch until both birds are gone. The reflections stay a fraction longer.",
+                "You crouch and look straight down at your own face. It looks up at you with a perfectly acceptable expression.",
+                "You look back and forth until you stop being sure which is the original. You pick one and keep walking.",
+                "You watch the rings reach the bank and fade. The center of the lake remains perfectly centered.",
+                "You note the angle of the light in the reflection. You note the angle above. You do not reconcile them.",
+            ],
+        },
+
+        // ── Shallows ───────────────────────────────────────────────────────
+        new()
+        {
+            Id           = "CoralReef",
+            DisplayNames = ["Coral Reef", "Color Shelf", "Living Stone", "Reef Garden", "Brain Reef", "Staghorn Shallows", "Painted Shelf", "Warm Reef"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.Shallows],
+            Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fish",      Probability = 0.35f },
+                new() { ResourceId = "Salt",      Probability = 0.25f },
+                new() { ResourceId = "RiverGlass",Probability = 0.15f },
+                new() { ResourceId = "TidalCoin", Probability = 0.08f },
+            ],
+            PartA =
+            [
+                "The reef is more color than you were prepared for — every color you know and some you don't.",
+                "Something large and blue-gray moves through the reef slowly, sovereign and unimpressed.",
+                "A fish the exact color of the coral sits absolutely still on the coral, not hiding, just at home.",
+                "The coral makes small sounds — clicks and pops — a language for things that live underwater.",
+                "Brain coral rises from the reef floor in a shape that takes a moment to accept as natural.",
+                "A sea turtle moves through the reef with the unhurried certainty of something that has time.",
+                "The reef at its deepest edge drops into water that is a color for which there is no good word.",
+            ],
+            PartB =
+            [
+                "You stand at the edge for a long time. It is doing its best work without any audience. It has been doing this.",
+                "It passes through the reef and doesn't accelerate. The reef adjusts around it. You are acknowledged and filed.",
+                "You watch it for a while. It doesn't move. You aren't sure it's breathing. You decide it is and leave it to it.",
+                "You listen to it for a while. You don't understand it. You feel this is probably fine.",
+                "You put your hand near it. The size of the brain it resembles is unsettling. You move your hand.",
+                "It passes close enough that you could touch its shell. You don't. You watch it go. You feel good about not touching.",
+                "You look into the blue for a while. There is a lot of it.",
+            ],
+        },
+
+        // ── Savanna ────────────────────────────────────────────────────────
+        new()
+        {
+            Id           = "TermiteMounds",
+            DisplayNames = ["Termite Mounds", "Earthen Towers", "Red Columns", "Insect Citadels", "Clay Spires", "Builder's Colony", "Reddish Towers", "Active Mound City"],
+            Category     = FeatureCategory.Nature,
+            AllowedBiomes = [BiomeType.Savanna],
+            Probability  = 0.040f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Clay", Probability = 0.20f },
+                new() { ResourceId = "Peat", Probability = 0.30f },
+                new() { ResourceId = "BoneFragment", Probability = 0.10f },
+            ],
+            PartA =
+            [
+                "The mounds rise to shoulder height, reddish clay, hard as brick, perfectly engineered.",
+                "A mound has been broken open — not by you — and the interior is a city of the most practical variety.",
+                "The largest mound is taller than you and warmer than the surrounding air by several degrees.",
+                "A hundred thousand decisions made by ten thousand individuals have produced this exact shape.",
+                "Soldier termites have massed at the base, facing outward, arranged with military precision.",
+                "You knock on the tallest mound. Nothing answers. Everything inside continues.",
+                "The mounds cast long shadows at this hour. In the shadows, perfectly still, a lizard.",
+            ],
+            PartB =
+            [
+                "The engineering involved is considerable and no one involved has a title or a salary.",
+                "A civilization, clearly. A population, certainly. An agenda, yes. A name for any of it, no.",
+                "You press a hand against it. The warmth is from effort, ongoing, distributed.",
+                "You consider this for a while. You have decisions to make. You do not have this process.",
+                "You don't cross the line they've drawn. You step back one step. The line holds.",
+                "You put your ear against it. You hear the interior of something entirely occupied with itself.",
+                "The lizard becomes a feature of the landscape. You become a feature of its landscape. Mutually acknowledged.",
+            ],
+        },
+        new()
+        {
+            Id           = "WateringHole",
+            DisplayNames = ["Watering Hole", "Muddy Pool", "Animal Gathering", "Track-Ringed Pool", "Communal Water", "Herd Pool", "Low-Water Gathering", "Print-Ringed Puddle"],
+            Category     = FeatureCategory.Nature,
+            AllowedBiomes = [BiomeType.Savanna, BiomeType.Plains],
+            Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Clay", Probability = 0.30f },
+                new() { ResourceId = "Fish", Probability = 0.20f },
+            ],
+            PartA =
+            [
+                "The water is more mud than water, churned by a hundred sets of hooves and paws that came before you.",
+                "Tracks ring the pool — every shape and size. Something very large came here recently.",
+                "A stillness falls as you approach. You are the wrong shape for this gathering.",
+                "A crocodile occupies one side of the pool with the calm authority of having been here since before the pool.",
+                "Dozens of birds work the muddy edges in patient rotation, each with its own system.",
+                "The water is warm and the color of old tea and is clearly the best water available for fifty miles.",
+                "At dawn this place was full. You've arrived at the quiet hour. The prints are still fresh.",
+            ],
+            PartB =
+            [
+                "You drink carefully from the cleanest edge. You feel your assessment of 'clean' has been adjusted by circumstances.",
+                "You find the large tracks and follow them a short distance. They continue. You do not.",
+                "You wait at the edge until the stillness forgets you. Slowly, things return. You are accepted as furniture.",
+                "You give it the whole pool and stand back. Its patience is total. Its claim is total.",
+                "You watch the rotation for a while. No conflicts. Everyone knows their system.",
+                "You drink from it. It is, objectively, not good. It is, subjectively, exactly what was needed.",
+                "You crouch and look at the prints. Something had breakfast here. It was not concerned.",
+            ],
+        },
+        new()
+        {
+            Id           = "AcaciaStand",
+            DisplayNames = ["Acacia Stand", "Flat-Crowned Trees", "Thorn Tree Grove", "Savanna Canopy", "Umbrella Trees", "Wide-Limbed Stand", "Thorn-Armed Trees", "Sentinel Trees"],
+            Category     = FeatureCategory.Nature,
+            AllowedBiomes = [BiomeType.Savanna],
+            Probability  = 0.035f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Wood",     Probability = 0.30f },
+                new() { ResourceId = "Fiber",    Probability = 0.20f },
+                new() { ResourceId = "Feathers", Probability = 0.15f },
+            ],
+            PartA =
+            [
+                "The flat-topped canopy spreads above like a deliberate ceiling, its shade clean and even.",
+                "Thorns line every branch — long, white, specific. The tree has opinions about who touches it.",
+                "A weaver bird has filled every available branch with round woven nests, hundreds of them.",
+                "The trunk divides low and sends three arms wide in three directions, confident in the geometry.",
+                "A giraffe stands beyond the nearest tree, reaching the highest branches without difficulty or apology.",
+                "The shade here has a sound — insect and wind and the dry crack of settling wood.",
+                "Something has carved a single line into the bark, waist-high. No more and no less.",
+            ],
+            PartB =
+            [
+                "You stand under it and feel correctly placed. The shade has put some thought into its coverage.",
+                "You try to touch one carefully. Carefully is not carefully enough. You note this for later.",
+                "You examine one nest. The opening is exact. The engineering is exact. The bird who returns watches you with polite concern.",
+                "You stand in the angle of two branches and feel held without being touched.",
+                "It does not notice you. It has eaten today and is content. You feel the same.",
+                "You stand in it for a while and let it inform you about where you are.",
+                "You trace the line with one finger. It was made with intention. The intention is no longer available.",
+            ],
+        },
+
+        // ── Tundra ─────────────────────────────────────────────────────────
+        new()
+        {
+            Id           = "PermafrostPit",
+            DisplayNames = ["Permafrost Pit", "Sunken Ground", "Ancient Collapse", "Thermokarst Hollow", "Frozen Depth", "Collapsed Tundra", "Ice-Pit", "Ground-Fallen Hollow"],
+            Category     = FeatureCategory.Cold,
+            AllowedBiomes = [BiomeType.Tundra],
+            Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Ice",          Probability = 0.30f },
+                new() { ResourceId = "Peat",         Probability = 0.25f },
+                new() { ResourceId = "BoneFragment",  Probability = 0.20f },
+                new() { ResourceId = "FrozenFlower",  Probability = 0.08f },
+            ],
+            PartA =
+            [
+                "The ground has collapsed here into a shallow pit, exposing the frozen strata beneath — layers of time, compressed.",
+                "A mammoth tusk curves up from the exposed permafrost, yellow-white, enormous, patient.",
+                "Seeds in the frozen soil have not germinated. They are waiting for a condition that has not occurred for ten thousand years.",
+                "Bones visible in the wall of the pit belong to something large and something small and something you can't name.",
+                "The air rising from the pit is cold in a way that has nothing to do with the season.",
+                "Ancient plant matter is compressed in dark bands through the ice, a record of summers older than writing.",
+                "At the bottom of the pit, almost entirely encased, the shape of a small animal, perfectly preserved.",
+            ],
+            PartB =
+            [
+                "You read the layers from the top down. Each one is a year that is done. There are a great many.",
+                "You stand beside it and feel the scale of it and don't know what to do with the feeling.",
+                "You hold one in your palm until it thaws slightly. It does not germinate. It is waiting for something you cannot provide.",
+                "You crouch at the edge and look carefully. You find more than you expected. Some of it you do not identify.",
+                "You let it wash over your face. It is the cold of something kept, not the cold of something ambient.",
+                "You count the bands for as long as you can. You lose count somewhere in a summer from before agriculture.",
+                "You look at it for a long time. It has been preserved through effort that was not effort — just cold, just time.",
+            ],
+        },
+        new()
+        {
+            Id           = "CaribouTrail",
+            DisplayNames = ["Caribou Trail", "Migration Path", "Herd Road", "Worn Tundra Track", "Animal Highway", "Ancient Herd Path", "Beaten Ground", "Seasonal Route"],
+            Category     = FeatureCategory.Nature,
+            AllowedBiomes = [BiomeType.Tundra, BiomeType.Snow],
+            Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Feathers",    Probability = 0.20f },
+                new() { ResourceId = "BoneFragment", Probability = 0.15f },
+            ],
+            PartA =
+            [
+                "The trail is worn deep into the tundra — not by one passing but by ten thousand years of the same passing.",
+                "Antler velvet has been rubbed from a shrub beside the trail, leaving bright exposed wood.",
+                "The path continues north and south beyond sight, the most permanent feature of an otherwise featureless landscape.",
+                "Tracks in the mud along the trail are layered over each other — fresh prints, old prints, the ghost of older prints.",
+                "A few stragglers from the last migration pass in single file, their breath making small clouds.",
+                "The trail is wider than you expected. The width of it puts the number of animals in scale.",
+                "In a sheltered hollow beside the trail, a set of antlers, shed and weathered white.",
+            ],
+            PartB =
+            [
+                "You stand in it for a moment. You are a new print on a path of very old prints. The path accommodates you without comment.",
+                "You run a finger along the exposed wood. It is still pale. They were here very recently.",
+                "You follow it for a short distance north. It does not change. The land changes around it. The path stays.",
+                "You crouch over the layers. The oldest ones are still legible. Everything that came through here left a record.",
+                "You step aside and watch them pass. They don't look at you. You are furniture in a route they do not question.",
+                "You step off the trail and look at it from outside. It makes more sense from here.",
+                "You set them upright in the ground. They stand with more dignity than most things planted here.",
+            ],
+        },
+
+        // ── Miscellaneous ──────────────────────────────────────────────────
+        new()
+        {
+            Id           = "MeteorCrater",
+            DisplayNames = ["Meteor Crater", "Impact Site", "Sky-Fallen Bowl", "Star Scar", "Fallen Stone Bowl", "Heavenly Scar", "Ancient Impact", "The Bowl"],
+            Category     = FeatureCategory.Desert,
+            AllowedBiomes = [BiomeType.Desert, BiomeType.Plains],
+            Probability  = 0.010f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone",      Probability = 0.30f },
+                new() { ResourceId = "Flint",      Probability = 0.35f },
+                new() { ResourceId = "HollowStone",Probability = 0.20f },
+                new() { ResourceId = "Quartz",     Probability = 0.15f },
+            ],
+            PartA =
+            [
+                "The bowl is perfectly circular and old enough that the edges have softened but not gone.",
+                "At the center, half-buried, a mass of dark metal that has not corroded and has no intention of doing so.",
+                "The ground at the impact site is fused in places — glass beneath the surface wherever you dig.",
+                "The crater is larger than it looks from the rim. You understand this only once you are in it.",
+                "Nothing grows at the very center. It grows up to a certain distance and then it doesn't.",
+                "Standing at the rim you can see the ejecta field stretching away in an unmistakable pattern.",
+                "Someone has built a cairn at the center of the crater. It is very small and very deliberate.",
+            ],
+            PartB =
+            [
+                "You walk the rim. It holds its circle. It has been holding its circle since before you were a possibility.",
+                "You put your hand on it. It is cooler than the surrounding ground. It has been here since before people had words for 'from the sky.'",
+                "You find a piece. You turn it over. It is smooth on one side from the entry. You keep it.",
+                "You stand at the center for a while and think about the direction things can come from.",
+                "You stand at the exact center. You look at the ground. You look at the sky. You consider the journey.",
+                "You follow the scatter with your eyes. The geometry of it is legible and final.",
+                "You add a stone to the cairn. Someone thought it was important to mark the center. You think so too.",
+            ],
+        },
+        new()
+        {
+            Id           = "BanditCamp",
+            DisplayNames = ["Bandit Camp", "Abandoned Outlaw Camp", "Scattered Camp", "Robber's Rest", "Brigand's Rest", "Empty Camp", "Outlaw's Clearing", "Gone-to-Ground Camp"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.Plains, BiomeType.Grassland, BiomeType.Forest],
+            Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fiber", Probability = 0.30f },
+                new() { ResourceId = "Flint", Probability = 0.20f },
+                new() { ResourceId = "Coal",  Probability = 0.15f },
+            ],
+            PartA =
+            [
+                "The camp has been abandoned in a hurry — fire doused, gear left, the kind of departure that wasn't a choice.",
+                "A rope hangs from a tree at the edge of camp, tied with a specific and instructional knot.",
+                "Wanted notices have been pinned to a board. Some names are crossed off. The crossing-off was not done by the law.",
+                "The fire ring is cold but the ashes are recent. They were here within the week.",
+                "A playing card is nailed to a tree at eye level — the ace of spades — with a knife through it.",
+                "The food stores are still here. Whatever made them leave did not give them time for the food.",
+                "A lookout post is built into the crook of the tallest tree, with a clear view in three directions.",
+            ],
+            PartB =
+            [
+                "You search carefully. You find: a coin, a key, a map with one location circled and a date that has passed.",
+                "You leave it alone. Some things are a message and you are not the intended audience.",
+                "You read the names. You recognize one. You put the notice down and don't mention it to anyone.",
+                "You kick the ashes. They are, in fact, recent. You look around with renewed attention.",
+                "You pull the knife out. The card falls. You put the knife away. You leave the card on the ground.",
+                "You take a small amount of the food. You leave a coin. The arrangement feels reasonable given the circumstances.",
+                "You climb to it. From up here you see why they chose this spot. You also see that it didn't help in the end.",
+            ],
+        },
+        new()
+        {
+            Id           = "AncientRoad",
+            DisplayNames = ["Ancient Road", "Old Paving", "Forgotten Path", "Crumbled Highway", "Sunken Road", "Road of Somewhere", "Old Stone Way", "Half-Buried Path"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.Plains, BiomeType.Grassland, BiomeType.Desert],
+            Probability  = 0.020f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone",        Probability = 0.25f },
+                new() { ResourceId = "TarnishedRing", Probability = 0.08f },
+            ],
+            PartA =
+            [
+                "The paving stones still hold their line — cracked, grass-pushed, but resolutely going somewhere.",
+                "Wheel ruts worn into the stone mark the exact path of a thousand thousand journeys.",
+                "The road emerges from one hillside and disappears into another, both destinations invisible.",
+                "Milestones still stand at intervals — the numbers worn smooth, the intention clear.",
+                "The road is perfectly straight in both directions for as far as you can see.",
+                "The trees along the road's edge are all the same species and the same age, planted by the builders.",
+                "At a junction in the road, a waymarker post still stands, its directions worn to shapes.",
+            ],
+            PartB =
+            [
+                "You walk it for a while. It is going somewhere with more conviction than you are.",
+                "You crouch and run a hand along one rut. The stone has been compressed by the weight of repetition.",
+                "You stand between its appearances and try to understand what was on either side. The hills do not say.",
+                "You try to read the numbers. You get some of them. You find your location on someone's old road.",
+                "You follow it with your eyes in both directions. Someone built this very seriously.",
+                "They have been growing for a long time. They have forgotten the road. The road has not forgotten its purpose.",
+                "You turn the post. The shapes suggest something. You face one direction and decide it might as well be that.",
+            ],
+        },
+
+        // ── River ──────────────────────────────────────────────────────────
+        new()
+        {
+            Id           = "Waterfall",
+            DisplayNames = ["Waterfall", "Cascade", "Falling Water", "White Rush", "Plunge Fall", "Thundering Drop", "Curtain Fall", "Long Fall"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.River, BiomeType.Mountain],
+            Probability  = 0.025f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone",     Probability = 0.20f },
+                new() { ResourceId = "RiverGlass",Probability = 0.15f },
+                new() { ResourceId = "Quartz",    Probability = 0.10f },
+            ],
+            PartA =
+            [
+                "The water arrives at the edge and commits to the decision without hesitation.",
+                "The sound reaches you before the water does — white noise made of ten thousand small impacts.",
+                "A permanent mist hangs at the base, watering ferns that have lived here their whole fern lives.",
+                "Standing behind the curtain of water looking out, the world is a sheet of moving glass.",
+                "A rainbow holds its fixed position in the mist below, unwilling to move.",
+                "The pool at the base is deep and clear and cold and catches every drop with professional resignation.",
+                "Someone has scratched their initials into the rock beside the falls. The date is over a century ago.",
+            ],
+            PartB =
+            [
+                "You stand beside it for a while. The river had no choice in this. It did it well anyway.",
+                "You stand in it and let it be louder than everything you were thinking.",
+                "You crouch among the ferns. They are doing well. They are not thinking about the waterfall. They live here.",
+                "You stand behind it and look through the water at the world. Everything outside is moving and blurred and still there.",
+                "You stand in the mist and watch it be fixed. Nothing else about this place is fixed. It doesn't care.",
+                "You kneel and put your hand in. It is cold in the specific way that moving mountain water is cold.",
+                "You trace the initials. There is no way to know who. There is a way to know they stood exactly here.",
+            ],
+        },
+        new()
+        {
+            Id           = "RiverFord",
+            DisplayNames = ["River Ford", "Old Crossing", "Stepping Stones", "Shallow Crossing", "Worn Crossing", "Known Ford", "Traveler's Crossing", "Stepping Path"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.River],
+            Probability  = 0.030f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Flint",     Probability = 0.20f },
+                new() { ResourceId = "RiverGlass",Probability = 0.15f },
+                new() { ResourceId = "Clay",      Probability = 0.12f },
+            ],
+            PartA =
+            [
+                "Stepping stones cross the river at this point — placed deliberately, worn smooth by generations of feet.",
+                "The water is shallow here and clear and faster than it looks from the bank.",
+                "A rope has been strung across the river at chest height, knotted to two trees, frayed by use.",
+                "The ford is marked with cairns on both banks — a small pair on the left, a larger pair on the right.",
+                "The stones at the bottom are smooth and loose and make the crossing a negotiation.",
+                "This is where the road from the other side begins. There was a road on this side once.",
+                "Worn into the bank on both sides, the compressed ground of a thousand arrivals and departures.",
+            ],
+            PartB =
+            [
+                "You cross carefully. The water is cold and fast against your legs. The far bank feels earned.",
+                "You step off the bank and the current immediately tells you what it thinks. You cross anyway.",
+                "You test it before trusting it. It holds. It has held a lot of weight over a long time.",
+                "You find the line between the two cairns and cross it. You feel entered and confirmed.",
+                "You make the crossing. Each stone moves slightly. Each one holds. You feel each negotiation.",
+                "You stand on this side and look at where the road begins over there. You file this away.",
+                "You add your own arrival to the bank. Tomorrow the water will erase it. Today it is there.",
+            ],
+        },
+        new()
+        {
+            Id           = "FishingHole",
+            DisplayNames = ["Fishing Hole", "Calm Eddy", "Trout Pool", "Deep Bend", "Still Pocket", "Angler's Spot", "The Bend", "Quiet Pocket"],
+            Category     = FeatureCategory.Water,
+            AllowedBiomes = [BiomeType.River, BiomeType.Lake],
+            Probability  = 0.035f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fish", Probability = 0.60f },
+                new() { ResourceId = "Reed", Probability = 0.20f },
+            ],
+            PartA =
+            [
+                "The river bends here and slows into a pool behind a sunken log, clear and cold and full of movement.",
+                "You can see them from the bank — a dozen fish hovering in the current, doing the fish version of waiting.",
+                "A heron stands absolutely still at the pool's edge, a creature that has elevated patience to an art form.",
+                "Someone has worn a flat spot into the bank here — a place for sitting, used for a long time.",
+                "The eddy behind the bend collects things: leaves, seeds, a feather, one small perfect piece of driftwood.",
+                "A kingfisher lands on a branch over the pool, surveys it with professional focus, and departs.",
+                "The surface of the pool breaks in rings where fish rise to take insects you cannot see.",
+            ],
+            PartB =
+            [
+                "You sit at the edge for a while. The fish do not leave. They have things to do here.",
+                "You watch them hold in the current. The effort involved is invisible. The result is effortless.",
+                "You stand at the opposite bank and it does not move. You have met its patience limit.",
+                "You sit in it. It fits exactly. You understand all at once why someone came here regularly.",
+                "You examine what it has collected. Everything has come from somewhere upstream. You think about upstream.",
+                "You watch it for a while. It comes back. It finds nothing this time. It files that and continues.",
+                "You sit at the pool's edge and watch the rings arrive and spread and overlap and fade.",
+            ],
+        },
+        new()
+        {
+            Id           = "MillstoneRuins",
+            DisplayNames = ["Millstone Ruins", "Ruined Mill", "Broken Waterwheel", "Old Mill Site", "Mill Remains", "Waterwheel Remnants", "Collapsed Mill", "Grinding Stone Ruin"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.River],
+            Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone", Probability = 0.30f },
+                new() { ResourceId = "Wood",  Probability = 0.20f },
+                new() { ResourceId = "Flint", Probability = 0.15f },
+            ],
+            PartA =
+            [
+                "The millstone lies in the shallows, half-submerged, its grinding surface still legible.",
+                "One wall of the mill still stands beside the water, the wheel-mount bracket rusted but intact.",
+                "The channel that fed water to the wheel has silted over but its shape is still clear in the bank.",
+                "The millstone is still perfectly round, still perfectly flat. The rest of the mill is not here.",
+                "The water still runs through the gap where the wheel hung, doing the job the wheel was meant to do, unrewarded.",
+                "Wooden gears, swollen and rotted, lie in the shallows where they fell. They were complicated, once.",
+                "A grain of flour is lodged in a crack in the millstone. Very old. Still, technically, flour.",
+            ],
+            PartB =
+            [
+                "You press your hand against the flat surface. It has ground a great deal of grain. You feel the life of that.",
+                "You find the axle hole and try to understand the mechanism. You get most of it.",
+                "You trace its line with your foot. The geometry of it is still there under the silt.",
+                "You try to move it. It is extremely not moveable. It has opinions about where it is.",
+                "You stand where the wheel would have been. The water passes through you at mill-wheel height.",
+                "You hold one piece and try to assemble the simple machine in your head. You get it working. Then it fell. Then it was this.",
+                "You look at it for a while. A flour grain, still flour, in a ruin that is centuries old. This is something.",
+            ],
+        },
+        new()
+        {
+            Id           = "RiverShrine",
+            DisplayNames = ["River Shrine", "Water Offering Place", "Streamside Altar", "Riverside Sanctum", "Flowing Offering Stone", "Waterside Holy Place", "Current's Altar", "Riverman's Shrine"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.River, BiomeType.Marsh],
+            Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "RiverGlass",   Probability = 0.15f },
+                new() { ResourceId = "TidalCoin",    Probability = 0.08f },
+                new() { ResourceId = "TarnishedRing",Probability = 0.06f },
+            ],
+            PartA =
+            [
+                "A flat stone at the river's edge holds small offerings — a ring, a coin, a folded cloth — placed with obvious intention.",
+                "The shrine is small enough to miss if you aren't looking. Whoever built it was not looking to be seen.",
+                "Offerings have been made here across many years: the oldest are stone, the newest are wood, and there is everything between.",
+                "A small carved figure sits at the water's edge, facing the current, worn nearly smooth.",
+                "Fresh flowers have been placed here recently, their stems in the water to keep them.",
+                "The stone on which the offerings rest has been placed here deliberately — it is not a river stone.",
+                "A single candle has been burned here, down to nothing. The wax dripped into the water and was carried away.",
+            ],
+            PartB =
+            [
+                "You don't touch the offerings. You sit beside them for a while. The river moves past all of it.",
+                "You find it only because you are looking at the bank very carefully. You feel you've found something private.",
+                "You look at all the layers and feel the long conversation between this place and the people who found it.",
+                "You pick it up and feel the weight of the original detail. You set it back exactly.",
+                "You stand beside them and let the current reach your feet. Someone wanted something very specifically from this river.",
+                "You sit with it for a moment. It came from somewhere else. Someone wanted it here specifically.",
+                "You find the hardened wax at the base. The candle burned for a long time. The river took the ending.",
+            ],
+        },
     ];
 }
