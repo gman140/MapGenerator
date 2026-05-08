@@ -235,11 +235,11 @@ public class MapGeneratorService
         if (e < opts.SeaLevel) return BiomeType.Ocean;
 
         // Very high peaks → Glacier
-        if (e >= opts.SnowLevel + 0.04f) return BiomeType.Glacier;
+        if (e >= opts.SnowLevel + opts.GlacierElevationOffset) return BiomeType.Glacier;
         if (e >= opts.SnowLevel) return BiomeType.Snow;
 
-        // Rare dry volcanic peaks
-        if (e >= opts.MountainLevel + 0.06f && m < 0.12f) return BiomeType.Volcano;
+        // Dry volcanic peaks
+        if (e >= opts.MountainLevel + 0.06f && m < opts.VolcanoMoistureMax) return BiomeType.Volcano;
         if (e >= opts.MountainLevel) return BiomeType.Mountain;
 
         float landDepth = e - opts.SeaLevel;

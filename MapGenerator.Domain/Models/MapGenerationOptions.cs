@@ -25,4 +25,10 @@ public class MapGenerationOptions
 
     /// <summary>Number of rivers to generate. 0 = auto (roughly 1 per 2000 tiles).</summary>
     public int RiverCount { get; set; } = 0;
+
+    /// <summary>Moisture must be below this for a high-elevation tile to become Volcano instead of Mountain (0–1). Higher = more volcanoes.</summary>
+    public float VolcanoMoistureMax { get; set; } = 0.20f;
+
+    /// <summary>How far above SnowLevel elevation must reach to become Glacier instead of Snow (0–1). Lower = more glacier, less snow.</summary>
+    public float GlacierElevationOffset { get; set; } = 0.06f;
 }

@@ -60,6 +60,16 @@ else
                 </label>
             </div>
 
+            <h4>Presets</h4>
+            <div class="preset-buttons">
+                @foreach (var preset in Presets)
+                {
+                    <button class="preset-btn" title="@preset.Description" @onclick="() => ApplyPreset(preset)">
+                        @preset.Name
+                    </button>
+                }
+            </div>
+
             <h4>Terrain Options</h4>
             <div class="option-grid">
                 <label>
@@ -102,6 +112,16 @@ else
                     <input type="range" min="0" max="150" step="1"
                            @bind="_opts.RiverCount" @bind:event="oninput" />
                 </label>
+                <label>
+                    Volcano Moisture Max <small>(@_opts.VolcanoMoistureMax.ToString("F2")) — higher = more volcanoes</small>
+                    <input type="range" min="0.05" max="0.50" step="0.01"
+                           @bind="_opts.VolcanoMoistureMax" @bind:event="oninput" />
+                </label>
+                <label>
+                    Glacier Offset <small>(@_opts.GlacierElevationOffset.ToString("F2")) — gap above snow level that becomes glacier</small>
+                    <input type="range" min="0.02" max="0.20" step="0.01"
+                           @bind="_opts.GlacierElevationOffset" @bind:event="oninput" />
+                </label>
             </div>
 
             <button class="btn-danger" @onclick="RegenerateAsync" disabled="@_busy">
@@ -130,6 +150,75 @@ else
     private string? _message;
     private bool _isError;
 
+    private record PresetDef(string Name, string Description, MapGenerationOptions Opts);
+
+    private static readonly PresetDef[] Presets =
+    [
+        new("Varied World",
+            "Balanced settings tuned to produce all 18 biomes reliably.",
+            new MapGenerationOptions
+            {
+                SeaLevel              = 0.38f,
+                MountainLevel         = 0.66f,
+                SnowLevel             = 0.80f,
+                ElevationScale        = 2.5f,
+                MoistureScale         = 3.2f,
+                WarpStrength          = 1.5f,
+                MoistureBias          = 0.0f,
+                RiverCount            = 0,
+                VolcanoMoistureMax    = 0.20f,
+                GlacierElevationOffset = 0.06f,
+            }),
+
+        new("Arid Lands",
+            "Dry world dominated by desert, savanna, and badlands with common volcanoes.",
+            new MapGenerationOptions
+            {
+                SeaLevel              = 0.35f,
+                MountainLevel         = 0.68f,
+                SnowLevel             = 0.82f,
+                ElevationScale        = 3.0f,
+                MoistureScale         = 3.0f,
+                WarpStrength          = 0.8f,
+                MoistureBias          = -0.22f,
+                RiverCount            = 0,
+                VolcanoMoistureMax    = 0.30f,
+                GlacierElevationOffset = 0.06f,
+            }),
+
+        new("Archipelago",
+            "High sea level with many small islands, heavy coastal biomes, and tropical moisture.",
+            new MapGenerationOptions
+            {
+                SeaLevel              = 0.55f,
+                MountainLevel         = 0.72f,
+                SnowLevel             = 0.85f,
+                ElevationScale        = 1.6f,
+                MoistureScale         = 4.0f,
+                WarpStrength          = 2.0f,
+                MoistureBias          = 0.12f,
+                RiverCount            = 0,
+                VolcanoMoistureMax    = 0.20f,
+                GlacierElevationOffset = 0.06f,
+            }),
+
+        new("Alpine",
+            "Rugged high-altitude world with large mountain ranges, tundra, snow, and glacier.",
+            new MapGenerationOptions
+            {
+                SeaLevel              = 0.38f,
+                MountainLevel         = 0.58f,
+                SnowLevel             = 0.72f,
+                ElevationScale        = 2.0f,
+                MoistureScale         = 3.0f,
+                WarpStrength          = 1.2f,
+                MoistureBias          = -0.10f,
+                RiverCount            = 0,
+                VolcanoMoistureMax    = 0.20f,
+                GlacierElevationOffset = 0.06f,
+            }),
+    ];
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
@@ -146,6 +235,23 @@ else
             _opts   = _currentConfig.Options ?? new();
         }
         StateHasChanged();
+    }
+
+    private void ApplyPreset(PresetDef preset)
+    {
+        _opts = new MapGenerationOptions
+        {
+            SeaLevel               = preset.Opts.SeaLevel,
+            MountainLevel          = preset.Opts.MountainLevel,
+            SnowLevel              = preset.Opts.SnowLevel,
+            ElevationScale         = preset.Opts.ElevationScale,
+            MoistureScale          = preset.Opts.MoistureScale,
+            WarpStrength           = preset.Opts.WarpStrength,
+            MoistureBias           = preset.Opts.MoistureBias,
+            RiverCount             = preset.Opts.RiverCount,
+            VolcanoMoistureMax     = preset.Opts.VolcanoMoistureMax,
+            GlacierElevationOffset = preset.Opts.GlacierElevationOffset,
+        };
     }
 
     private async Task RegenerateAsync()
