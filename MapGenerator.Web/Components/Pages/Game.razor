@@ -41,6 +41,7 @@ else
                        CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
                        OnBuild="HandleBuildStructureAsync"
                        OnDestroy="HandleDestroyStructureAsync" />
+            <TileInventoryPanel Player="Session.Player" OnInventoryChanged="StateHasChanged" />
             @if (Session.Player.IsAdmin)
             {
                 <TileEditorPanel CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"

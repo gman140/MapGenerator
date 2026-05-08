@@ -1,0 +1,171 @@
+@using MapGenerator.Application.Services
+@using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
+@inject TileInventoryService TileInventorySvc
+@inject IResourceDefinitionProvider ResourceProvider
+@inject ICraftingRecipeProvider RecipeProvider
+@inject GameBroadcastService Broadcast
+@implements IDisposable
+
+<div class="tile-inv-panel">
+    <button class="inventory-toggle" @onclick="ToggleAsync">
+        <span>Ground Items@(_tileItems.Any() ? $" ({_tileItems.Values.Sum()})" : "")</span>
+        <span>@(_open ? "▴" : "▾")</span>
+    </button>
+
+    @if (_open)
+    {
+        <div class="tile-inv-content">
+            <div class="tile-inv-section">
+                <p class="inventory-section-label">On this tile</p>
+                @if (_tileItems.Count == 0)
+                {
+                    <p class="tile-inv-empty">Nothing here.</p>
+                }
+                else
+                {
+                    @foreach (var (itemId, qty) in _tileItems.OrderBy(kv => kv.Key))
+                    {
+                        var name = TileInventorySvc.GetItemName(itemId);
+                        var desc = TileInventorySvc.GetItemDescription(itemId);
+                        <div class="tile-inv-row" title="@desc">
+                            <span class="tile-inv-name">@name</span>
+                            <span class="tile-inv-qty">×@qty</span>
+                            <input type="number" class="tile-inv-input" min="1" max="@qty"
+                                   value="@GetPickupQty(itemId, qty)"
+                                   @onchange="e => SetPickupQty(itemId, qty, e.Value?.ToString())" />
+                            <button class="tile-inv-btn" @onclick="() => PickUpAsync(itemId)">Pick Up</button>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="tile-inv-section">
+                <p class="inventory-section-label">Your inventory</p>
+                @{
+                    var playerItems = Player.Inventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
+                }
+                @if (playerItems.Count == 0)
+                {
+                    <p class="tile-inv-empty">You're carrying nothing.</p>
+                }
+                else
+                {
+                    @foreach (var (itemId, qty) in playerItems)
+                    {
+                        var name = TileInventorySvc.GetItemName(itemId);
+                        var desc = TileInventorySvc.GetItemDescription(itemId);
+                        <div class="tile-inv-row" title="@desc">
+                            <span class="tile-inv-name">@name</span>
+                            <span class="tile-inv-qty">×@qty</span>
+                            <input type="number" class="tile-inv-input" min="1" max="@qty"
+                                   value="@GetDropQty(itemId, qty)"
+                                   @onchange="e => SetDropQty(itemId, qty, e.Value?.ToString())" />
+                            <button class="tile-inv-btn" @onclick="() => DropAsync(itemId)">Drop</button>
+                        </div>
+                    }
+                }
+            </div>
+
+            @if (_error != null)
+            {
+                <p class="error-text">@_error</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public EventCallback OnInventoryChanged { get; set; }
+
+    private bool _open;
+    private Dictionary<string, int> _tileItems = new();
+    private Dictionary<string, int> _pickupQty = new();
+    private Dictionary<string, int> _dropQty = new();
+    private string? _error;
+    private int _lastQ, _lastR;
+
+    protected override void OnInitialized()
+    {
+        Broadcast.TileInventoryChanged += OnTileInventoryChanged;
+    }
+
+    private void OnTileInventoryChanged(int q, int r)
+    {
+        if (!_open || q != Player.Q || r != Player.R) return;
+        InvokeAsync(async () => { await LoadTileItemsAsync(); StateHasChanged(); });
+    }
+
+    public void Dispose() => Broadcast.TileInventoryChanged -= OnTileInventoryChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Player.Q != _lastQ || Player.R != _lastR)
+        {
+            _lastQ = Player.Q;
+            _lastR = Player.R;
+            _pickupQty.Clear();
+            _error = null;
+            if (_open) await LoadTileItemsAsync();
+        }
+    }
+
+    private async Task ToggleAsync()
+    {
+        _open = !_open;
+        if (_open) await LoadTileItemsAsync();
+    }
+
+    private async Task LoadTileItemsAsync()
+    {
+        var inv = await TileInventorySvc.GetTileInventoryAsync(Player.Q, Player.R);
+        _tileItems = inv?.Items.Where(kv => kv.Value > 0).ToDictionary(kv => kv.Key, kv => kv.Value) ?? new();
+    }
+
+    private int GetPickupQty(string itemId, int max)
+    {
+        if (_pickupQty.TryGetValue(itemId, out int qty) && qty >= 1 && qty <= max) return qty;
+        return Math.Min(1, max);
+    }
+
+    private void SetPickupQty(string itemId, int max, string? value)
+    {
+        if (int.TryParse(value, out int qty))
+            _pickupQty[itemId] = Math.Clamp(qty, 1, max);
+    }
+
+    private int GetDropQty(string itemId, int max)
+    {
+        if (_dropQty.TryGetValue(itemId, out int qty) && qty >= 1 && qty <= max) return qty;
+        return Math.Min(1, max);
+    }
+
+    private void SetDropQty(string itemId, int max, string? value)
+    {
+        if (int.TryParse(value, out int qty))
+            _dropQty[itemId] = Math.Clamp(qty, 1, max);
+    }
+
+    private async Task PickUpAsync(string itemId)
+    {
+        _error = null;
+        _tileItems.TryGetValue(itemId, out int max);
+        int qty = GetPickupQty(itemId, max);
+        var error = await TileInventorySvc.PickUpItemsAsync(Player, itemId, qty);
+        if (error != null) { _error = error; return; }
+        await OnInventoryChanged.InvokeAsync();
+        Broadcast.NotifyTileInventoryChanged(Player.Q, Player.R);
+    }
+
+    private async Task DropAsync(string itemId)
+    {
+        _error = null;
+        Player.Inventory.TryGetValue(itemId, out int max);
+        int qty = GetDropQty(itemId, max);
+        var error = await TileInventorySvc.DropItemsAsync(Player, itemId, qty);
+        if (error != null) { _error = error; return; }
+        await OnInventoryChanged.InvokeAsync();
+        Broadcast.NotifyTileInventoryChanged(Player.Q, Player.R);
+    }
+}

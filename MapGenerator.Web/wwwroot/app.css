@@ -285,6 +285,21 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .inventory-name { color: var(--text); }
 .inventory-qty  { color: var(--accent); font-weight: 600; font-size: .75rem; }
 
+/* ── Tile Inventory Panel ─────────────────────────────────────────────────── */
+.tile-inv-panel { border-top: 1px solid var(--border); }
+.tile-inv-content { padding: .25rem 0 .5rem; }
+.tile-inv-section { margin-bottom: .25rem; }
+.tile-inv-section + .tile-inv-section { border-top: 1px solid var(--border); padding-top: .15rem; margin-top: .15rem; }
+.tile-inv-empty { font-size: .78rem; color: var(--text-dim); padding: .25rem .5rem; font-style: italic; }
+.tile-inv-row { display: flex; align-items: center; gap: .35rem; padding: .2rem .5rem; border-radius: 3px; font-size: .8rem; }
+.tile-inv-row:hover { background: rgba(255,255,255,.05); }
+.tile-inv-name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-inv-qty { color: var(--accent); font-weight: 600; font-size: .75rem; white-space: nowrap; }
+.tile-inv-input { width: 46px; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; color: var(--text); font-size: .78rem; padding: .1rem .25rem; text-align: center; -moz-appearance: textfield; }
+.tile-inv-input::-webkit-inner-spin-button, .tile-inv-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.tile-inv-btn { font-size: .72rem; padding: .15rem .4rem; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.tile-inv-btn:hover { background: rgba(255,255,255,.08); color: var(--text); border-color: var(--accent); }
+
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

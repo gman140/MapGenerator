@@ -15,6 +15,7 @@ public class GameBroadcastService
     public event Action<MapConfig>? MapRegenerated;
     public event Action<string, string>? PlayerColorChanged;         // playerId, newColor
     public event Action<string, int, int, int>? EggLaid;             // playerId, q, r, eggCount
+    public event Action<int, int>? TileInventoryChanged;             // q, r
 
     // playerId -> (username, q, r, color)
     private readonly Dictionary<string, (string Username, int Q, int R, string Color)> _online = [];
@@ -95,5 +96,10 @@ public class GameBroadcastService
     public void NotifyEggLaid(string playerId, int q, int r, int eggCount)
     {
         EggLaid?.Invoke(playerId, q, r, eggCount);
+    }
+
+    public void NotifyTileInventoryChanged(int q, int r)
+    {
+        TileInventoryChanged?.Invoke(q, r);
     }
 }

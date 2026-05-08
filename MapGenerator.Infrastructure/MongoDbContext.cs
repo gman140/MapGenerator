@@ -18,6 +18,7 @@ public class MongoDbContext
         RegisterMap<MapConfig>();
         RegisterMap<MapGenerationOptions>();
         RegisterMap<TileNote>();
+        RegisterMap<TileInventory>();
     }
 
     private static void RegisterMap<T>() where T : class
@@ -52,4 +53,5 @@ public class MongoDbContext
     public IMongoCollection<PlayerTileVisit> Visits => _db.GetCollection<PlayerTileVisit>("visits");
     public IMongoCollection<MapConfig> MapConfigs => _db.GetCollection<MapConfig>("mapConfigs");
     public IMongoCollection<TileNote> TileNotes => _db.GetCollection<TileNote>("tileNotes");
+    public IMongoCollection<TileInventory> TileInventories => _db.GetCollection<TileInventory>("tileInventories");
 }
