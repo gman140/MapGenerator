@@ -2,6 +2,7 @@
 @using MapGenerator.Domain.Interfaces
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
+@inject SettlementCacheService SettlementCache
 @inject IResourceDefinitionProvider ResourceProvider
 @inject ICraftingRecipeProvider RecipeProvider
 @implements IDisposable
@@ -19,6 +20,7 @@
         @{
             var tile = MapCache.GetCachedTile(Player.Q, Player.R);
             var featureDef = FeatureProvider.GetById(tile?.FeatureId);
+            var (settlementName, _) = SettlementCache.GetSettlementTile(Player.Q, Player.R);
         }
         <span class="biome-tag biome-@(tile?.Biome.ToString().ToLower() ?? "unknown")">
             @(tile?.Biome.ToString() ?? "Unknown")
@@ -26,6 +28,10 @@
         @if (featureDef != null)
         {
             <span class="feature-tag">@featureDef.GetDisplayName(Player.Q, Player.R)</span>
+        }
+        @if (settlementName != null)
+        {
+            <span class="settlement-tag">@settlementName</span>
         }
         <span class="coords">(@Player.Q, @Player.R)</span>
     </div>

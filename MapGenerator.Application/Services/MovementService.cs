@@ -12,6 +12,7 @@ public class MovementService
     private readonly MapGeneratorService _mapCache;
     private readonly IBiomeDefinitionProvider _biomeProvider;
     private readonly ICraftingRecipeProvider _recipeProvider;
+    private readonly SettlementCacheService _settlementCache;
 
     public MovementService(
         IMapRepository mapRepo,
@@ -19,14 +20,16 @@ public class MovementService
         IPlayerTileVisitRepository visitRepo,
         MapGeneratorService mapCache,
         IBiomeDefinitionProvider biomeProvider,
-        ICraftingRecipeProvider recipeProvider)
+        ICraftingRecipeProvider recipeProvider,
+        SettlementCacheService settlementCache)
     {
-        _mapRepo        = mapRepo;
-        _playerRepo     = playerRepo;
-        _visitRepo      = visitRepo;
-        _mapCache       = mapCache;
-        _biomeProvider  = biomeProvider;
-        _recipeProvider = recipeProvider;
+        _mapRepo         = mapRepo;
+        _playerRepo      = playerRepo;
+        _visitRepo       = visitRepo;
+        _mapCache        = mapCache;
+        _biomeProvider   = biomeProvider;
+        _recipeProvider  = recipeProvider;
+        _settlementCache = settlementCache;
     }
 
     public static bool AreAdjacent(int q1, int r1, int q2, int r2)
@@ -84,6 +87,9 @@ public class MovementService
         long cooldown = permissions.Contains(Permission.IgnoreCooldowns)
             ? 0
             : (_biomeProvider.GetByType(tile.Biome)?.CooldownMs ?? 400);
+
+        if (cooldown > 0 && _settlementCache.IsRoadTile(targetQ, targetR))
+            cooldown = 0;
 
         if (cooldown > 0)
         {

@@ -154,7 +154,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .biome-tag.biome-glacier   { background: var(--glacier);   color: #0e0e12; }
 .biome-tag.biome-volcano   { background: var(--volcano);   color: #f0a080; }
 .coords { font-size: .75rem; color: var(--text-dim); }
-.feature-tag { font-size: .75rem; color: var(--text-dim); font-style: italic; }
+.feature-tag    { font-size: .75rem; color: var(--text-dim); font-style: italic; }
+.settlement-tag { font-size: .75rem; color: #c8a46e; font-weight: 600; }
 
 .cooldown-bar  { background: var(--border); border-radius: 4px; height: 14px; position: relative; overflow: hidden; }
 .cooldown-fill { background: var(--warn); height: 100%; transition: width .1s linear; }
@@ -299,6 +300,24 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .tile-inv-input::-webkit-inner-spin-button, .tile-inv-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 .tile-inv-btn { font-size: .72rem; padding: .15rem .4rem; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .tile-inv-btn:hover { background: rgba(255,255,255,.08); color: var(--text); border-color: var(--accent); }
+
+/* ── Roads ────────────────────────────────────────────────────────────────── */
+.road-line   { stroke: #c8a46e; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: .85; pointer-events: none; }
+.road-bridge { stroke: #c8b490; stroke-width: 2;   stroke-linecap: round; stroke-dasharray: 5,3;  fill: none; opacity: .9;  pointer-events: none; }
+
+/* ── Settlement shapes ────────────────────────────────────────────────────── */
+.settle-center          { fill: #d4904a; stroke: #8b5010; stroke-width: 1; pointer-events: none; }
+.settle-center-roof     { fill: #b06828; stroke: #8b5010; stroke-width: 1; pointer-events: none; }
+.settle-residential     { fill: #d4b07a; stroke: #8b6030; stroke-width: .8; pointer-events: none; }
+.settle-residential-roof{ fill: #b08040; stroke: #8b6030; stroke-width: .8; pointer-events: none; }
+.settle-market          { fill: #d4a030; stroke: #8b6000; stroke-width: .8; pointer-events: none; }
+.settle-market-awning   { stroke: #8b6000; stroke-width: 2; fill: none; pointer-events: none; }
+.settle-farm            { stroke: #70a858; stroke-width: 1.5; fill: none; pointer-events: none; }
+.settle-guard           { fill: #8090a0; stroke: #4a6070; stroke-width: .8; pointer-events: none; }
+.settle-inn             { fill: #c07c50; stroke: #8b4828; stroke-width: .8; pointer-events: none; }
+.settle-inn-roof        { fill: #9a5030; stroke: #8b4828; stroke-width: .8; pointer-events: none; }
+.settle-mill            { fill: #b8986a; stroke: #7a6030; stroke-width: .8; pointer-events: none; }
+.settle-mill-arm        { stroke: #7a6030; stroke-width: 1.5; fill: none; pointer-events: none; }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

@@ -1,13 +1,15 @@
 @using MapGenerator.Application.Services
+@using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
+@inject SettlementCacheService SettlementCache
 
 <div class="hex-map-container" @ref="_container">
     <svg width="@_svgWidth" height="@_svgHeight"
          class="hex-map-svg"
          @onmousemove="HandleMouseMove"
-         @onmouseleave="() => _hoveredTile = null">
+         @onmouseleave="() => { _hoveredTile = null; _hoveredSettlementName = null; }">
 
         @for (int dq = -ViewRadius; dq <= ViewRadius; dq++)
         {
@@ -27,9 +29,10 @@
                 else
                 {
                     bool isPlayerTile = tq == Player.Q && tr == Player.R;
-                    bool isAdjacent = MovementService.AreAdjacent(Player.Q, Player.R, tq, tr);
-                    bool isHovered = _hoveredTile?.Q == tq && _hoveredTile?.R == tr;
-                    var featureDef = FeatureProvider.GetById(tile.FeatureId);
+                    bool isAdjacent   = MovementService.AreAdjacent(Player.Q, Player.R, tq, tr);
+                    bool isHovered    = _hoveredTile?.Q == tq && _hoveredTile?.R == tr;
+                    var featureDef    = FeatureProvider.GetById(tile.FeatureId);
+                    var (sName, sRole) = SettlementCache.GetSettlementTile(tq, tr);
 
                     <g @key="@($"{tq}_{tr}")"
                        class="hex-group @(isHovered ? "hovered" : "") @(isAdjacent ? "adjacent" : "")"
@@ -42,6 +45,44 @@
                             <circle cx="@cx.ToString("F1")" cy="@((cy + HexSize * 0.52).ToString("F1"))"
                                     r="4"
                                     class="feature-dot feature-@featureDef.Category.ToString().ToLower()" />
+                        }
+
+                        @if (sRole == SettlementTileRole.Center)
+                        {
+                            <rect x="@F(cx-8)" y="@F(cy-2)" width="16" height="12" class="settle-center" rx="1"/>
+                            <polygon points="@F(cx-10),@F(cy-2) @F(cx),@F(cy-13) @F(cx+10),@F(cy-2)" class="settle-center-roof"/>
+                        }
+                        else if (sRole == SettlementTileRole.Residential)
+                        {
+                            <rect x="@F(cx-5)" y="@F(cy)" width="10" height="8" class="settle-residential" rx="1"/>
+                            <polygon points="@F(cx-7),@F(cy) @F(cx),@F(cy-9) @F(cx+7),@F(cy)" class="settle-residential-roof"/>
+                        }
+                        else if (sRole == SettlementTileRole.Market)
+                        {
+                            <rect x="@F(cx-7)" y="@F(cy-1)" width="14" height="8" class="settle-market" rx="1"/>
+                            <line x1="@F(cx-9)" y1="@F(cy-1)" x2="@F(cx+9)" y2="@F(cy-1)" class="settle-market-awning"/>
+                        }
+                        else if (sRole == SettlementTileRole.Farm)
+                        {
+                            <line x1="@F(cx-9)" y1="@F(cy-2)" x2="@F(cx+9)" y2="@F(cy-2)" class="settle-farm"/>
+                            <line x1="@F(cx-9)" y1="@F(cy+1)" x2="@F(cx+9)" y2="@F(cy+1)" class="settle-farm"/>
+                            <line x1="@F(cx-9)" y1="@F(cy+4)" x2="@F(cx+9)" y2="@F(cy+4)" class="settle-farm"/>
+                        }
+                        else if (sRole == SettlementTileRole.Guard)
+                        {
+                            <rect x="@F(cx-5)" y="@F(cy-12)" width="10" height="15" class="settle-guard"/>
+                            <rect x="@F(cx-7)" y="@F(cy-15)" width="14" height="4"  class="settle-guard"/>
+                        }
+                        else if (sRole == SettlementTileRole.Inn)
+                        {
+                            <rect x="@F(cx-7)" y="@F(cy-1)" width="14" height="10" class="settle-inn" rx="1"/>
+                            <polygon points="@F(cx-9),@F(cy-1) @F(cx),@F(cy-11) @F(cx+9),@F(cy-1)" class="settle-inn-roof"/>
+                        }
+                        else if (sRole == SettlementTileRole.Mill)
+                        {
+                            <circle cx="@F(cx)" cy="@F(cy-3)" r="6" class="settle-mill"/>
+                            <line x1="@F(cx)" y1="@F(cy-10)" x2="@F(cx)" y2="@F(cy+4)"   class="settle-mill-arm"/>
+                            <line x1="@F(cx-7)" y1="@F(cy-3)" x2="@F(cx+7)" y2="@F(cy-3)" class="settle-mill-arm"/>
                         }
 
                         @if (isPlayerTile)
@@ -72,17 +113,48 @@
             }
         }
 
+        @* Road lines drawn after tiles so they appear on top of biomes *@
+        @{
+            var roadPaths = SettlementCache.RoadPaths;
+        }
+        @foreach (var path in roadPaths)
+        {
+            for (int i = 0; i < path.Count - 1; i++)
+            {
+                int pq = path[i].Q,   pr = path[i].R;
+                int nq = path[i+1].Q, nr = path[i+1].R;
+
+                if (HexDistFromPlayer(pq, pr) > ViewRadius + 1 &&
+                    HexDistFromPlayer(nq, nr) > ViewRadius + 1) continue;
+
+                bool aRevealed = RevealedTiles == null || RevealedTiles.Contains((pq, pr));
+                bool bRevealed = RevealedTiles == null || RevealedTiles.Contains((nq, nr));
+                if (!aRevealed && !bRevealed) continue;
+
+                var (ax, ay) = TileCenter(pq, pr);
+                var (bx, by) = TileCenter(nq, nr);
+
+                bool isBridge = MapCache.GetCachedTile(pq, pr)?.Biome == BiomeType.River
+                             || MapCache.GetCachedTile(nq, nr)?.Biome == BiomeType.River;
+
+                <line x1="@ax.ToString("F1")" y1="@ay.ToString("F1")"
+                      x2="@bx.ToString("F1")" y2="@by.ToString("F1")"
+                      class="@(isBridge ? "road-bridge" : "road-line")" />
+            }
+        }
+
         @if (_hoveredTile != null)
         {
             var (hx, hy) = TileCenter(_hoveredTile.Q, _hoveredTile.R);
             double tx = hx + 4, ty = hy - HexSize - 4;
             var hoveredFeature = FeatureProvider.GetById(_hoveredTile.FeatureId);
-            var featurePart = hoveredFeature != null
+            var featurePart    = hoveredFeature != null
                 ? $" · {hoveredFeature.GetDisplayName(_hoveredTile.Q, _hoveredTile.R)}"
                 : "";
-            var eggPart = _hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "";
+            var settlementPart = _hoveredSettlementName != null ? $" · {_hoveredSettlementName}" : "";
+            var eggPart        = _hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "";
             <svg:text x="@tx.ToString("F0")" y="@ty.ToString("F0")" class="tile-tooltip">
-                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){featurePart}{eggPart}")
+                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){featurePart}{settlementPart}{eggPart}")
             </svg:text>
         }
     </svg>
@@ -94,13 +166,14 @@
     [Parameter] public List<(string Id, string Username, int Q, int R, string Color)> OnlinePlayers { get; set; } = [];
     [Parameter] public IReadOnlySet<(int, int)>? RevealedTiles { get; set; }
 
-    private const double HexSize = 32;
-    private const int ViewRadius = 9;
+    private const double HexSize    = 32;
+    private const int    ViewRadius  = 9;
 
     private double _svgWidth;
     private double _svgHeight;
     private Dictionary<(int, int), HexTile> _tileMap = [];
     private HexTile? _hoveredTile;
+    private string?  _hoveredSettlementName;
     private ElementReference _container;
 
     private static readonly double Sqrt3 = Math.Sqrt(3);
@@ -120,6 +193,12 @@
         return (cx, cy);
     }
 
+    private int HexDistFromPlayer(int q, int r)
+    {
+        int dq = q - Player.Q, dr = r - Player.R;
+        return Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
+    }
+
     private static string HexPoints(double cx, double cy)
     {
         var sb = new System.Text.StringBuilder();
@@ -134,6 +213,8 @@
         return sb.ToString();
     }
 
+    private static string F(double v) => v.ToString("F1");
+
     private void HandleMouseMove(MouseEventArgs e)
     {
         double mx = e.OffsetX - _svgWidth  / 2;
@@ -147,6 +228,9 @@
         int hexDist = Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
         bool revealed = RevealedTiles == null || RevealedTiles.Contains((q, r));
         _hoveredTile = hexDist <= ViewRadius && revealed ? MapCache.GetCachedTile(q, r) : null;
+        _hoveredSettlementName = _hoveredTile != null
+            ? SettlementCache.GetSettlementTile(q, r).Name
+            : null;
     }
 
     private static (int q, int r) AxialRound(double fq, double fr)

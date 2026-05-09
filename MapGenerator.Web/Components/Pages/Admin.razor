@@ -122,6 +122,11 @@ else
                     <input type="range" min="0.02" max="0.20" step="0.01"
                            @bind="_opts.GlacierElevationOffset" @bind:event="oninput" />
                 </label>
+                <label>
+                    Settlement Count <small>(@(_opts.SettlementCount == 0 ? "auto" : _opts.SettlementCount.ToString()))</small>
+                    <input type="range" min="0" max="100" step="1"
+                           @bind="_opts.SettlementCount" @bind:event="oninput" />
+                </label>
             </div>
 
             <button class="btn-danger" @onclick="RegenerateAsync" disabled="@_busy">
@@ -251,6 +256,7 @@ else
             RiverCount             = preset.Opts.RiverCount,
             VolcanoMoistureMax     = preset.Opts.VolcanoMoistureMax,
             GlacierElevationOffset = preset.Opts.GlacierElevationOffset,
+            SettlementCount        = preset.Opts.SettlementCount,
         };
     }
 

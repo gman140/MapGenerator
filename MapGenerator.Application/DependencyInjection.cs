@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddSingleton<IStructureDefinitionProvider, InMemoryStructureDefinitionProvider>();
         services.AddSingleton<MapGeneratorService>();
         services.AddSingleton<PermissionService>();
+        services.AddSingleton<SettlementCacheService>();
+        services.AddScoped<SettlementGenerationService>();
         services.AddScoped<MovementService>();
         services.AddScoped<PlayerService>();
         services.AddScoped<ChatService>();

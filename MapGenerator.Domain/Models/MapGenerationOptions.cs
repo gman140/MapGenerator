@@ -31,4 +31,7 @@ public class MapGenerationOptions
 
     /// <summary>How far above SnowLevel elevation must reach to become Glacier instead of Snow (0–1). Lower = more glacier, less snow.</summary>
     public float GlacierElevationOffset { get; set; } = 0.06f;
+
+    /// <summary>Number of settlements to generate. 0 = auto (~1 per 4000 tiles).</summary>
+    public int SettlementCount { get; set; } = 0;
 }

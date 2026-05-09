@@ -11,19 +11,22 @@ public class InvestigateService
     private readonly IFeatureDefinitionProvider _featureProvider;
     private readonly IBiomeDefinitionProvider _biomeProvider;
     private readonly MapGeneratorService _mapCache;
+    private readonly SettlementCacheService _settlementCache;
 
     public InvestigateService(
         ITileNoteRepository noteRepo,
         IPlayerTileVisitRepository visitRepo,
         IFeatureDefinitionProvider featureProvider,
         IBiomeDefinitionProvider biomeProvider,
-        MapGeneratorService mapCache)
+        MapGeneratorService mapCache,
+        SettlementCacheService settlementCache)
     {
         _noteRepo        = noteRepo;
         _visitRepo       = visitRepo;
         _featureProvider = featureProvider;
         _biomeProvider   = biomeProvider;
         _mapCache        = mapCache;
+        _settlementCache = settlementCache;
     }
 
     public async Task<(string flavorText, List<TileNote> notes)> InvestigateAsync(Player player)
@@ -34,6 +37,15 @@ public class InvestigateService
         var flavor     = tile != null
             ? BuildFlavorText(tile.Biome, tile.FeatureId, player.Q, player.R, visitCount, neighbors)
             : "You look around carefully. There is not much to see. You look again. Still nothing. You are thorough and it has not helped.";
+
+        var (sName, sRole, sType) = _settlementCache.GetSettlementInfo(player.Q, player.R);
+        if (sName != null && sRole.HasValue && sType.HasValue)
+        {
+            var settlementNote = GetSettlementNote(sName, sRole.Value, sType.Value, player.Q, player.R);
+            if (!string.IsNullOrEmpty(settlementNote))
+                flavor = flavor + " " + settlementNote;
+        }
+
         var notes = await _noteRepo.GetNotesForTileAsync(player.Q, player.R);
         return (flavor, notes);
     }
@@ -510,6 +522,77 @@ public class InvestigateService
 
         int idx = Math.Abs(q * 19 + r * 43);
         return best.def.NeighborText[idx % best.def.NeighborText.Length];
+    }
+
+    // ── Settlement context ────────────────────────────────────────────────────
+
+    private static string GetSettlementNote(string name, SettlementTileRole role, SettlementType type, int q, int r)
+    {
+        int idx = Math.Abs(q * 53 + r * 61);
+        string typeName = type switch
+        {
+            SettlementType.City    => "city",
+            SettlementType.Town    => "town",
+            SettlementType.Village => "village",
+            _                      => "hamlet",
+        };
+
+        string[] options = role switch
+        {
+            SettlementTileRole.Center =>
+            [
+                $"You are standing at the heart of {name}. The main hall here carries the particular weight of a building that has become the place people look toward.",
+                $"This is the center of {name}, a {typeName}. The building before you has been where decisions are made, or at least announced, for long enough that it looks settled into that purpose.",
+                $"The central hall of {name} stands here. It is not the largest thing you have seen, but it holds itself as if it were.",
+                $"You are at the center of {name}. A {typeName}'s main hall has a way of making you feel briefly official just by standing in front of it.",
+            ],
+            SettlementTileRole.Residential =>
+            [
+                $"The houses of {name} are close together here, as houses in a {typeName} tend to be. Lives are arranged behind these walls in ways you can only guess at.",
+                $"You are among the homes of {name}. The {typeName}'s residents have built close to one another — the way people do when they have decided a place is worth staying in.",
+                $"Residential {name}. The houses sit occupied and used. That much is clear from how they settle into the ground.",
+                $"These are the homes that make {name} a {typeName} rather than just a name on a map.",
+            ],
+            SettlementTileRole.Market =>
+            [
+                $"The market quarter of {name} occupies this space. Something has been bought or sold here so many times that the ground seems to remember it.",
+                $"Commerce happens here, in the market of {name}. The {typeName} trades in whatever it needs to trade in. The market gives the impression it always has.",
+                $"You are in the trading heart of {name}. The smell of transactions, past and present, hangs in the air without being unpleasant about it.",
+                $"The market of {name} has been here long enough to have opinions. You are standing in them.",
+            ],
+            SettlementTileRole.Farm =>
+            [
+                $"The farms that feed {name} extend here. The {typeName}'s survival is arranged in rows and takes no particular interest in being picturesque about it.",
+                $"Agricultural land belonging to {name}. Everything a {typeName} eats has to come from somewhere. This is where it comes from.",
+                $"These are the fields of {name}. They are not romantic. They are practical and they are working, which is the same thing in a different register.",
+                $"The farmland at the edge of {name}. The {typeName} depends on this ground more than the {typeName} center tends to acknowledge.",
+            ],
+            SettlementTileRole.Guard =>
+            [
+                $"A watchtower of {name} marks this ground — the {typeName}'s formal acknowledgment that it has things worth watching for.",
+                $"The guard post of {name}. Someone has always stood here, or somewhere near enough, for long enough that watching has become part of what the {typeName} is.",
+                $"You are at a defensive position belonging to {name}. The {typeName} has decided this corner is worth protecting and has committed the architecture to prove it.",
+                $"The garrison tower of {name}. Someone here is always watching the horizon. The job exists because the horizon is always there.",
+            ],
+            SettlementTileRole.Inn =>
+            [
+                $"The inn of {name} stands here — the {typeName}'s acknowledgment that people arrive and sometimes need somewhere to be before they move on.",
+                $"You are at the inn that {name} keeps for travelers. Whatever else the {typeName} is, it has decided to be the kind of place that expects visitors.",
+                $"The inn of {name} is where the {typeName} and the outside world negotiate their ongoing relationship. The terms seem reasonable.",
+                $"The inn of {name} — which is another way of saying the {typeName} has a settled theory about hospitality and has built it in wood and stone.",
+            ],
+            SettlementTileRole.Mill =>
+            [
+                $"The mill of {name} works here, converting one thing steadily into something more useful, without comment or interruption.",
+                $"A mill belonging to {name} occupies this space. Grain enters. Flour leaves. The {typeName} eats. This is the unglamorous arithmetic of how settlements persist.",
+                $"The mill of {name}. Something is always grinding here, or was, or will be. The mechanism does not observe days off.",
+                $"You are at {name}'s mill. The {typeName} processes what it grows at this point, which is the part of a settlement's survival that gets the least credit.",
+            ],
+            _ => [],
+        };
+
+        if (options.Length == 0) return string.Empty;
+        return options[idx % options.Length];
     }
 
     // ── Rare events ───────────────────────────────────────────────────────────
