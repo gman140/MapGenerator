@@ -124,8 +124,8 @@
                 int pq = path[i].Q,   pr = path[i].R;
                 int nq = path[i+1].Q, nr = path[i+1].R;
 
-                if (HexDistFromPlayer(pq, pr) > ViewRadius + 1 &&
-                    HexDistFromPlayer(nq, nr) > ViewRadius + 1) continue;
+                if (HexDistFromPlayer(pq, pr) > ViewRadius &&
+                    HexDistFromPlayer(nq, nr) > ViewRadius) continue;
 
                 bool aRevealed = RevealedTiles == null || RevealedTiles.Contains((pq, pr));
                 bool bRevealed = RevealedTiles == null || RevealedTiles.Contains((nq, nr));
