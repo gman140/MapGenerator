@@ -14,6 +14,8 @@ public class Player
     public long GatherCooldownUntil { get; set; }   // Unix ms
     public string Color { get; set; } = "#50a0f0";
     public DateTime? LastEggLaidAt { get; set; }
+    public DateTime? LastDancedAt { get; set; }
+    public int EggsDestroyed { get; set; }
     public Dictionary<string, int> Inventory { get; set; } = new();
     public Dictionary<string, int> CraftedItems { get; set; } = new();
 }

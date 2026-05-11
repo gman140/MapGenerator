@@ -60,6 +60,18 @@ public class MapRepository : IMapRepository
         return tile?.EggCount ?? 0;
     }
 
+    public async Task<int> DecrementEggCountAsync(int q, int r)
+    {
+        var filter = Builders<HexTile>.Filter.And(
+            Builders<HexTile>.Filter.Eq(t => t.Q, q),
+            Builders<HexTile>.Filter.Eq(t => t.R, r),
+            Builders<HexTile>.Filter.Gt(t => t.EggCount, 0));
+        var update = Builders<HexTile>.Update.Inc(t => t.EggCount, -1);
+        var opts = new FindOneAndUpdateOptions<HexTile> { ReturnDocument = ReturnDocument.After };
+        var tile = await _ctx.Tiles.FindOneAndUpdateAsync(filter, update, opts);
+        return tile?.EggCount ?? -1; // -1 = no egg was available
+    }
+
     public Task PlaceSignAsync(int q, int r, string text, string authorName)
     {
         var filter = Builders<HexTile>.Filter.And(

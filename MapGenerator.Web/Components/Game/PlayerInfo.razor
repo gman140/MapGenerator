@@ -3,6 +3,7 @@
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
 @inject SettlementCacheService SettlementCache
+@using static MapGenerator.Application.Services.DanceService
 @inject IResourceDefinitionProvider ResourceProvider
 @inject ICraftingRecipeProvider RecipeProvider
 @implements IDisposable
@@ -15,6 +16,8 @@
         </label>
         <span>@Player.Username</span>
         @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
+        @{ var selfTitle = GetTitle(Player.EggsDestroyed); }
+        @if (selfTitle != null) { <span class="egg-title">@selfTitle</span> }
     </div>
     <div class="tile-info">
         @{
@@ -48,9 +51,16 @@
     {
         <div class="players-here">
             <span class="section-label">Here:</span>
-            @foreach (var (id, username) in OnlinePlayers)
+            @foreach (var (id, username, eggsDestroyed) in OnlinePlayers)
             {
-                <span class="player-chip @(id == Player.Id ? "self" : "")">@username</span>
+                <span class="player-chip @(id == Player.Id ? "self" : "")">
+                    @username
+                    @{ var chipTitle = GetTitle(eggsDestroyed); }
+                    @if (chipTitle != null)
+                    {
+                        <span class="egg-title-small">@chipTitle</span>
+                    }
+                </span>
             }
         </div>
     }
@@ -112,7 +122,7 @@
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public long CooldownUntil { get; set; }
-    [Parameter] public List<(string Id, string Username)> OnlinePlayers { get; set; } = [];
+    [Parameter] public List<(string Id, string Username, int EggsDestroyed)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback<string> OnColorChanged { get; set; }
 
     private long _cooldownRemaining;

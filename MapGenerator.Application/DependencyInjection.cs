@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<CraftingService>();
         services.AddScoped<StructureService>();
         services.AddScoped<TileInventoryService>();
+        services.AddScoped<DanceService>();
         return services;
     }
 }

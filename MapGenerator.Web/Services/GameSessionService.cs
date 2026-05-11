@@ -11,6 +11,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly ChatService _chatSvc;
     private readonly MovementService _movementSvc;
     private readonly EggService _eggSvc;
+    private readonly DanceService _danceSvc;
     private readonly InvestigateService _investigateSvc;
     private readonly GatherService _gatherSvc;
     private readonly CraftingService _craftingSvc;
@@ -31,6 +32,7 @@ public class GameSessionService : IAsyncDisposable
         ChatService chatSvc,
         MovementService movementSvc,
         EggService eggSvc,
+        DanceService danceSvc,
         InvestigateService investigateSvc,
         GatherService gatherSvc,
         CraftingService craftingSvc,
@@ -47,6 +49,7 @@ public class GameSessionService : IAsyncDisposable
         _chatSvc        = chatSvc;
         _movementSvc    = movementSvc;
         _eggSvc         = eggSvc;
+        _danceSvc       = danceSvc;
         _investigateSvc = investigateSvc;
         _gatherSvc      = gatherSvc;
         _craftingSvc    = craftingSvc;
@@ -64,7 +67,7 @@ public class GameSessionService : IAsyncDisposable
     {
         Player = await _playerSvc.RestorePlayerAsync(browserId);
         if (Player != null)
-            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color);
+            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
         IsLoaded = true;
     }
 
@@ -73,7 +76,7 @@ public class GameSessionService : IAsyncDisposable
         var (player, error) = await _playerSvc.CreatePlayerAsync(username, browserId);
         if (player == null) return (false, error);
         Player = player;
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
         return (true, null);
     }
 
@@ -111,7 +114,21 @@ public class GameSessionService : IAsyncDisposable
         if (updated == null) return;
         Player = updated;
         await _visitRepo.RecordArrivalAsync(Player.Id, Player.Q, Player.R);
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
+    }
+
+    public async Task<(bool success, string message, bool eggDestroyed, int newEggCount)> DanceAsync()
+    {
+        if (Player == null) return (false, "Not logged in.", false, 0);
+        var permissions = _permissionSvc.GetPermissions(Player);
+        var result = await _danceSvc.DanceAsync(Player, permissions);
+        if (result.success)
+        {
+            if (result.eggDestroyed)
+                _broadcast.UpdatePlayerEggsDestroyed(Player.Id, Player.EggsDestroyed);
+            _broadcast.NotifyPlayerDanced(Player.Id, Player.Username, Player.Q, Player.R);
+        }
+        return result;
     }
 
     public async Task<(bool success, string message, int eggCount)> LayEggAsync()

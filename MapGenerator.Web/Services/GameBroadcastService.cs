@@ -15,17 +15,18 @@ public class GameBroadcastService
     public event Action<MapConfig>? MapRegenerated;
     public event Action<string, string>? PlayerColorChanged;         // playerId, newColor
     public event Action<string, int, int, int>? EggLaid;             // playerId, q, r, eggCount
+    public event Action<string, string, int, int>? PlayerDanced;     // playerId, username, q, r
     public event Action<int, int>? TileInventoryChanged;             // q, r
 
-    // playerId -> (username, q, r, color)
-    private readonly Dictionary<string, (string Username, int Q, int R, string Color)> _online = [];
+    // playerId -> (username, q, r, color, eggsDestroyed)
+    private readonly Dictionary<string, (string Username, int Q, int R, string Color, int EggsDestroyed)> _online = [];
     private readonly Lock _lock = new();
 
     public GameBroadcastService(IHubContext<GameHub> hub) => _hub = hub;
 
-    public void PlayerCameOnline(string playerId, string username, int q, int r, string color)
+    public void PlayerCameOnline(string playerId, string username, int q, int r, string color, int eggsDestroyed = 0)
     {
-        lock (_lock) _online[playerId] = (username, q, r, color);
+        lock (_lock) _online[playerId] = (username, q, r, color, eggsDestroyed);
         PlayerConnected?.Invoke(playerId, username);
     }
 
@@ -40,9 +41,18 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, color);
+                _online[playerId] = (p.Username, p.Q, p.R, color, p.EggsDestroyed);
         }
         PlayerColorChanged?.Invoke(playerId, color);
+    }
+
+    public void UpdatePlayerEggsDestroyed(string playerId, int eggsDestroyed)
+    {
+        lock (_lock)
+        {
+            if (_online.TryGetValue(playerId, out var p))
+                _online[playerId] = (p.Username, p.Q, p.R, p.Color, eggsDestroyed);
+        }
     }
 
     public List<(string Id, string Username, int Q, int R, string Color)> GetOnlinePlayers()
@@ -50,12 +60,12 @@ public class GameBroadcastService
         lock (_lock) return _online.Select(kv => (kv.Key, kv.Value.Username, kv.Value.Q, kv.Value.R, kv.Value.Color)).ToList();
     }
 
-    public List<(string Id, string Username)> GetOnlinePlayersOnTile(int q, int r)
+    public List<(string Id, string Username, int EggsDestroyed)> GetOnlinePlayersOnTile(int q, int r)
     {
         lock (_lock)
             return _online
                 .Where(kv => kv.Value.Q == q && kv.Value.R == r)
-                .Select(kv => (kv.Key, kv.Value.Username))
+                .Select(kv => (kv.Key, kv.Value.Username, kv.Value.EggsDestroyed))
                 .ToList();
     }
 
@@ -64,7 +74,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, newQ, newR, p.Color);
+                _online[playerId] = (p.Username, newQ, newR, p.Color, p.EggsDestroyed);
         }
         PlayerMoved?.Invoke(playerId, oldQ, oldR, newQ, newR);
 
@@ -96,6 +106,11 @@ public class GameBroadcastService
     public void NotifyEggLaid(string playerId, int q, int r, int eggCount)
     {
         EggLaid?.Invoke(playerId, q, r, eggCount);
+    }
+
+    public void NotifyPlayerDanced(string playerId, string username, int q, int r)
+    {
+        PlayerDanced?.Invoke(playerId, username, q, r);
     }
 
     public void NotifyTileInventoryChanged(int q, int r)

@@ -52,9 +52,11 @@ else
                          OnInvestigate="HandleInvestigateAsync"
                          OnGather="HandleGatherAsync"
                          OnUsePoultice="HandleUsePoulticeAsync"
+                         OnDance="HandleDanceAsync"
                          OnLeaveNote="() => { _showNoteModal = true; _noteText = string.Empty; }"
                          OnPlantSign="() => { _showSignModal = true; _signText = string.Empty; }"
                          LastEggLaidAt="Session.Player.LastEggLaidAt"
+                         LastDancedAt="Session.Player.LastDancedAt"
                          GatherCooldownUntil="_gatherCooldownUntil"
                          TileHasResources="Session.TileHasResources()"
                          CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)" />
@@ -176,6 +178,7 @@ else
         Broadcast.MessageReceived    += OnMessageReceived;
         Broadcast.MapRegenerated     += OnMapRegenerated;
         Broadcast.EggLaid            += OnEggLaid;
+        Broadcast.PlayerDanced       += OnPlayerDanced;
         Broadcast.PlayerColorChanged += OnPlayerColorChanged;
 
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
@@ -296,6 +299,18 @@ else
     private async Task HandleLayEggAsync()
     {
         var (_, message, _) = await Session.LayEggAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleDanceAsync()
+    {
+        var (success, message, _, _) = await Session.DanceAsync();
+        if (!success) return;
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World", Content = message,
@@ -487,6 +502,21 @@ else
             _localMessages.Add(new ChatMessage
             {
                 SenderName = "World", Content = EggService.GetEggDescriptor(eggCount),
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+            StateHasChanged();
+        });
+    }
+
+    private void OnPlayerDanced(string playerId, string username, int q, int r)
+    {
+        InvokeAsync(() =>
+        {
+            if (Session.Player == null || Session.Player.Q != q || Session.Player.R != r) return;
+            if (playerId == Session.Player.Id) return;
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = $"{username} is dancing.",
                 IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
             StateHasChanged();

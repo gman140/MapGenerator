@@ -32,7 +32,13 @@
             <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
         </button>
     }
-    <button class="action-item" disabled>💃 Dance <span class="action-soon">soon</span></button>
+    <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
+        💃 Dance
+        @if (DanceOnCooldown)
+        {
+            <span class="action-cooldown">@_danceCooldownText</span>
+        }
+    </button>
 </div>
 
 @code {
@@ -43,20 +49,24 @@
     [Parameter] public EventCallback OnPlantSign { get; set; }
     [Parameter] public EventCallback OnGather { get; set; }
     [Parameter] public EventCallback OnUsePoultice { get; set; }
+    [Parameter] public EventCallback OnDance { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
+    [Parameter] public DateTime? LastDancedAt { get; set; }
     [Parameter] public bool CooldownBypassed { get; set; }
     [Parameter] public long GatherCooldownUntil { get; set; }
     [Parameter] public bool TileHasResources { get; set; }
 
-    private bool EggOnCooldown => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
+    private bool EggOnCooldown   => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
+    private bool DanceOnCooldown => !CooldownBypassed && LastDancedAt.HasValue  && (DateTime.UtcNow - LastDancedAt.Value).TotalMinutes  < 1;
     private bool GatherOnCooldown => !CooldownBypassed && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < GatherCooldownUntil;
-    private string _eggCooldownText = "";
+    private string _eggCooldownText   = "";
+    private string _danceCooldownText = "";
     private string _gatherCooldownText = "";
     private System.Threading.Timer? _timer;
 
     protected override void OnParametersSet()
     {
-        bool needsTimer = EggOnCooldown || GatherOnCooldown;
+        bool needsTimer = EggOnCooldown || DanceOnCooldown || GatherOnCooldown;
         if (needsTimer)
         {
             UpdateCooldownTexts();
@@ -72,7 +82,7 @@
     private void Tick(object? _)
     {
         UpdateCooldownTexts();
-        if (!EggOnCooldown && !GatherOnCooldown) { _timer?.Dispose(); _timer = null; }
+        if (!EggOnCooldown && !DanceOnCooldown && !GatherOnCooldown) { _timer?.Dispose(); _timer = null; }
         InvokeAsync(StateHasChanged);
     }
 
@@ -82,6 +92,12 @@
         {
             var remaining = TimeSpan.FromMinutes(1) - (DateTime.UtcNow - LastEggLaidAt.Value);
             _eggCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
+        }
+
+        if (LastDancedAt.HasValue)
+        {
+            var remaining = TimeSpan.FromMinutes(1) - (DateTime.UtcNow - LastDancedAt.Value);
+            _danceCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
         }
 
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -102,6 +118,7 @@
     private async Task HandlePlantSign()    { await OnPlantSign.InvokeAsync(); }
     private async Task HandleGather()       { await OnGather.InvokeAsync(); }
     private async Task HandleUsePoultice()  { await OnUsePoultice.InvokeAsync(); }
+    private async Task HandleDance()        { await OnDance.InvokeAsync(); }
 
     public void Dispose() => _timer?.Dispose();
 }
