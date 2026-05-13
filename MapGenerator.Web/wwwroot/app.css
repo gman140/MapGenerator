@@ -165,8 +165,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 .section-label { font-size: .75rem; color: var(--text-dim); }
 .players-here  { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
-.player-chip      { background: var(--border); color: var(--text); font-size: .78rem; padding: .1rem .4rem; border-radius: 10px; }
+.player-chip      { background: var(--border); color: var(--text); font-size: .78rem; padding: .1rem .4rem; border-radius: 10px; display: inline-flex; align-items: center; gap: .25rem; }
 .player-chip.self { background: rgba(240,224,80,.2); color: #f0e050; }
+.kiss-btn { background: none; border: none; cursor: pointer; font-size: .78rem; padding: 0 .1rem; line-height: 1; opacity: .85; }
+.kiss-btn:disabled { opacity: .45; cursor: default; font-size: .65rem; }
 .admin-link { font-size: .8rem; color: var(--admin); text-decoration: none; margin-top: auto; }
 .admin-link:hover { text-decoration: underline; }
 
@@ -267,7 +269,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .ingredient { font-size: .72rem; padding: .1rem .3rem; border-radius: 3px; background: rgba(255,255,255,.05); }
 .ingredient-ok      { color: var(--accent); }
 .ingredient-missing { color: var(--danger); }
-.workshop-active    { font-size: .75rem; color: var(--accent); padding: .2rem .1rem; margin: 0; }
+.workshop-active         { font-size: .75rem; color: var(--accent); padding: .2rem .1rem; margin: 0; }
+.workshop-section-label  { font-size: .72rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-top: .4rem; margin-bottom: 0; padding: .15rem .1rem; border-top: 1px solid var(--border); }
+.recipe-card-workshop    { border-color: rgba(110,181,160,.35); }
 .structure-existing { display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: rgba(255,255,255,.05); border-radius: 5px; padding: .5rem .75rem; }
 .structure-existing-info { display: flex; flex-direction: column; gap: .1rem; }
 .structure-existing-name { font-size: .9rem; font-weight: 600; color: var(--text); }

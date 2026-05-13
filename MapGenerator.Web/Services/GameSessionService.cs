@@ -12,6 +12,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly MovementService _movementSvc;
     private readonly EggService _eggSvc;
     private readonly DanceService _danceSvc;
+    private readonly KissService _kissSvc;
     private readonly InvestigateService _investigateSvc;
     private readonly GatherService _gatherSvc;
     private readonly CraftingService _craftingSvc;
@@ -33,6 +34,7 @@ public class GameSessionService : IAsyncDisposable
         MovementService movementSvc,
         EggService eggSvc,
         DanceService danceSvc,
+        KissService kissSvc,
         InvestigateService investigateSvc,
         GatherService gatherSvc,
         CraftingService craftingSvc,
@@ -50,6 +52,7 @@ public class GameSessionService : IAsyncDisposable
         _movementSvc    = movementSvc;
         _eggSvc         = eggSvc;
         _danceSvc       = danceSvc;
+        _kissSvc        = kissSvc;
         _investigateSvc = investigateSvc;
         _gatherSvc      = gatherSvc;
         _craftingSvc    = craftingSvc;
@@ -115,6 +118,27 @@ public class GameSessionService : IAsyncDisposable
         Player = updated;
         await _visitRepo.RecordArrivalAsync(Player.Id, Player.Q, Player.R);
         _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
+    }
+
+    public async Task<(bool success, string kisserMsg)> KissAsync(string targetId, string targetName)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        var permissions = _permissionSvc.GetPermissions(Player);
+        var result = await _kissSvc.KissAsync(Player, permissions, targetId, targetName);
+        if (result.success)
+            _broadcast.NotifyPlayerKissed(Player.Id, Player.Username, targetId, targetName, Player.Q, Player.R, result.kisseeMsg, result.observerMsg);
+        return (result.success, result.kisserMsg);
+    }
+
+    public async Task ConsumeGardenProductionAsync()
+    {
+        if (Player == null) return;
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile?.Structure?.Type == StructureType.Garden)
+        {
+            await _structureSvc.GenerateGardenProductionAsync(tile);
+            _broadcast.NotifyTileInventoryChanged(tile.Q, tile.R);
+        }
     }
 
     public async Task<(bool success, string message, bool eggDestroyed, int newEggCount)> DanceAsync()

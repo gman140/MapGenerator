@@ -31,6 +31,9 @@ public class CraftingService
 
         bool hasWorkshop = _mapCache.GetCachedTile(player.Q, player.R)?.Structure?.Type == StructureType.Workshop;
 
+        if (recipe.RequiresWorkshop && !hasWorkshop)
+            return Fail("This recipe requires a Workshop.");
+
         foreach (var ingredient in recipe.Ingredients)
         {
             int required = RequiredQty(ingredient.Quantity, hasWorkshop);

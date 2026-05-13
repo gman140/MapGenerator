@@ -15,6 +15,7 @@ public class Player
     public string Color { get; set; } = "#50a0f0";
     public DateTime? LastEggLaidAt { get; set; }
     public DateTime? LastDancedAt { get; set; }
+    public DateTime? LastKissedAt { get; set; }
     public int EggsDestroyed { get; set; }
     public Dictionary<string, int> Inventory { get; set; } = new();
     public Dictionary<string, int> CraftedItems { get; set; } = new();

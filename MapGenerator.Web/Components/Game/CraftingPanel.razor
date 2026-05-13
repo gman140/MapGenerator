@@ -21,12 +21,14 @@
             <div class="crafting-recipes">
                 @{
             bool hasWorkshop = MapCache.GetCachedTile(Player.Q, Player.R)?.Structure?.Type == StructureType.Workshop;
+            var normalRecipes    = RecipeProvider.All.Where(r => !r.RequiresWorkshop).ToList();
+            var workshopRecipes  = RecipeProvider.All.Where(r => r.RequiresWorkshop).ToList();
         }
         @if (hasWorkshop)
         {
             <p class="workshop-active">⚒ Workshop active — costs halved</p>
         }
-        @foreach (var recipe in RecipeProvider.All)
+        @foreach (var recipe in normalRecipes)
                 {
                     bool canCraft = recipe.Ingredients.All(i =>
                     {
@@ -59,6 +61,45 @@
                             }
                         </div>
                     </div>
+                }
+
+                @if (hasWorkshop && workshopRecipes.Count > 0)
+                {
+                    <p class="workshop-section-label">Workshop Exclusive</p>
+                    @foreach (var recipe in workshopRecipes)
+                    {
+                        bool canCraft = recipe.Ingredients.All(i =>
+                        {
+                            Player.Inventory.TryGetValue(i.ResourceId, out int have);
+                            int required = (int)Math.Ceiling(i.Quantity / 2.0);
+                            return have >= required;
+                        });
+
+                        <div class="recipe-card recipe-card-workshop">
+                            <div class="recipe-header">
+                                <span class="recipe-name" title="@recipe.Description">
+                                    @recipe.Name
+                                    @if (recipe.IsConsumable) { <span class="recipe-consumable">consumable</span> }
+                                </span>
+                                <button class="recipe-craft-btn" disabled="@(!canCraft)"
+                                        @onclick="() => { OnCraft.InvokeAsync(recipe.Id); _open = false; }">
+                                    Craft
+                                </button>
+                            </div>
+                            <div class="recipe-ingredients">
+                                @foreach (var ing in recipe.Ingredients)
+                                {
+                                    Player.Inventory.TryGetValue(ing.ResourceId, out int have);
+                                    int required = (int)Math.Ceiling(ing.Quantity / 2.0);
+                                    bool ok = have >= required;
+                                    var resName = ResourceProvider.GetById(ing.ResourceId)?.Name ?? ing.ResourceId;
+                                    <span class="ingredient @(ok ? "ingredient-ok" : "ingredient-missing")">
+                                        @resName @have/@required
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
                 }
             </div>
         </div>

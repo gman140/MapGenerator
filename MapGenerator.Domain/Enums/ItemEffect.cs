@@ -13,4 +13,6 @@ public enum ItemEffect
     ReduceMovementCooldown,
     CharmNearbyCreatures,
     PreserveRareFinds,
+    ExtendRevealRadius,
+    ImproveAllGather,
 }

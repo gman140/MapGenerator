@@ -60,6 +60,15 @@
                     {
                         <span class="egg-title-small">@chipTitle</span>
                     }
+                    @if (id != Player.Id)
+                    {
+                        var capturedId = id;
+                        var capturedName = username;
+                        <button class="kiss-btn" disabled="@(_kissRemainingMs > 0)"
+                                @onclick="async () => await OnKissPlayer.InvokeAsync((capturedId, capturedName))">
+                            @(_kissRemainingMs > 0 ? $"💋 {(_kissRemainingMs / 1000.0):F0}s" : "💋")
+                        </button>
+                    }
                 </span>
             }
         </div>
@@ -120,15 +129,21 @@
 </div>
 
 @code {
+    private static readonly TimeSpan KissCooldown = TimeSpan.FromMinutes(1);
+
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public long CooldownUntil { get; set; }
+    [Parameter] public DateTime? LastKissedAt { get; set; }
     [Parameter] public List<(string Id, string Username, int EggsDestroyed)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback<string> OnColorChanged { get; set; }
+    [Parameter] public EventCallback<(string Id, string Username)> OnKissPlayer { get; set; }
 
     private long _cooldownRemaining;
     private double _fillPct;
-    private System.Threading.Timer? _timer;
     private long _cooldownDuration;
+    private long _kissRemainingMs;
+    private long _kissEndMs;
+    private System.Threading.Timer? _timer;
     private bool _inventoryOpen;
 
     protected override void OnParametersSet()
@@ -138,19 +153,36 @@
         _cooldownDuration = _cooldownRemaining > 0 ? _cooldownRemaining : _cooldownDuration;
         UpdateFill();
 
-        if (_cooldownRemaining > 0 && _timer == null)
+        if (LastKissedAt.HasValue)
+        {
+            _kissEndMs = new DateTimeOffset(LastKissedAt.Value.ToUniversalTime()).ToUnixTimeMilliseconds()
+                         + (long)KissCooldown.TotalMilliseconds;
+            _kissRemainingMs = Math.Max(0, _kissEndMs - now);
+        }
+        else
+        {
+            _kissRemainingMs = 0;
+            _kissEndMs = 0;
+        }
+
+        bool needsTimer = _cooldownRemaining > 0 || _kissRemainingMs > 0;
+        if (needsTimer && _timer == null)
             _timer = new System.Threading.Timer(Tick, null, 100, 100);
-        else if (_cooldownRemaining <= 0)
+        else if (!needsTimer)
+        {
             _timer?.Dispose();
+            _timer = null;
+        }
     }
 
     private void Tick(object? _)
     {
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         _cooldownRemaining = Math.Max(0, CooldownUntil - now);
+        _kissRemainingMs   = Math.Max(0, _kissEndMs - now);
         UpdateFill();
 
-        if (_cooldownRemaining <= 0)
+        if (_cooldownRemaining <= 0 && _kissRemainingMs <= 0)
         {
             _timer?.Dispose();
             _timer = null;

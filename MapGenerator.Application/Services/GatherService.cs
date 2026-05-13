@@ -66,7 +66,9 @@ public class GatherService
             player.Inventory[def.Id] = existing + qty;
         }
 
-        long cooldown = permissions.Contains(Permission.IgnoreCooldowns) ? 0 : CooldownMs;
+        long effectiveCooldown = CooldownMs;
+        if (tile.Structure?.Type == StructureType.MineShaft) effectiveCooldown /= 2;
+        long cooldown = permissions.Contains(Permission.IgnoreCooldowns) ? 0 : effectiveCooldown;
         player.GatherCooldownUntil = cooldown > 0 ? now + cooldown : 0;
         player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(player);
@@ -110,6 +112,8 @@ public class GatherService
         if ((isMineral || isMineralFeature) && _recipeProvider.PlayerHasEffect(player, ItemEffect.ImproveMineralGather))
             mult *= 1.5f;
         if (isUndergroundFeature && _recipeProvider.PlayerHasEffect(player, ItemEffect.ImproveUndergroundGather))
+            mult *= 1.5f;
+        if (_recipeProvider.PlayerHasEffect(player, ItemEffect.ImproveAllGather))
             mult *= 1.5f;
         if (_recipeProvider.PlayerHasEffect(player, ItemEffect.CharmNearbyCreatures))
             mult *= 1.2f;

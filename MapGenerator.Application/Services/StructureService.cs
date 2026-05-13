@@ -6,10 +6,14 @@ namespace MapGenerator.Application.Services;
 
 public class StructureService
 {
+    private const int GardenMaxHerbs   = 5;
+    private static readonly TimeSpan GardenRate = TimeSpan.FromHours(2); // 1 herb per 2 hours
+
     private readonly IStructureDefinitionProvider _structureProvider;
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly IPlayerRepository _playerRepo;
     private readonly IMapRepository _mapRepo;
+    private readonly ITileInventoryRepository _tileInventoryRepo;
     private readonly MapGeneratorService _mapCache;
 
     public StructureService(
@@ -17,13 +21,15 @@ public class StructureService
         IResourceDefinitionProvider resourceProvider,
         IPlayerRepository playerRepo,
         IMapRepository mapRepo,
+        ITileInventoryRepository tileInventoryRepo,
         MapGeneratorService mapCache)
     {
-        _structureProvider = structureProvider;
-        _resourceProvider  = resourceProvider;
-        _playerRepo        = playerRepo;
-        _mapRepo           = mapRepo;
-        _mapCache          = mapCache;
+        _structureProvider  = structureProvider;
+        _resourceProvider   = resourceProvider;
+        _playerRepo         = playerRepo;
+        _mapRepo            = mapRepo;
+        _tileInventoryRepo  = tileInventoryRepo;
+        _mapCache           = mapCache;
     }
 
     public async Task<(bool success, string? error)> TryBuildAsync(Player player, StructureType type, HexTile tile)
@@ -74,5 +80,26 @@ public class StructureService
         tile.Structure = null;
         await _mapRepo.RemoveStructureAsync(tile.Q, tile.R);
         _mapCache.UpdateCachedStructure(tile.Q, tile.R, null);
+    }
+
+    public async Task GenerateGardenProductionAsync(HexTile tile)
+    {
+        var structure = tile.Structure;
+        if (structure?.Type != StructureType.Garden) return;
+
+        var since   = structure.LastHarvestedAt ?? structure.BuiltAt;
+        int herbs   = (int)((DateTime.UtcNow - since).TotalHours / GardenRate.TotalHours);
+        if (herbs <= 0) return;
+
+        var tileInv = await _tileInventoryRepo.GetAsync(tile.Q, tile.R);
+        int current = tileInv?.Items.TryGetValue("Herbs", out int h) == true ? h : 0;
+        int toAdd   = Math.Min(herbs, GardenMaxHerbs - current);
+        if (toAdd <= 0) return;
+
+        await _tileInventoryRepo.AddItemsAsync(tile.Q, tile.R, "Herbs", toAdd);
+
+        structure.LastHarvestedAt = DateTime.UtcNow;
+        await _mapRepo.SetStructureAsync(tile.Q, tile.R, structure);
+        _mapCache.UpdateCachedStructure(tile.Q, tile.R, structure);
     }
 }

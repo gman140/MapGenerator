@@ -139,6 +139,51 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             ],
             Effects = [ItemEffect.PreserveRareFinds],
         },
+
+        // ── Workshop-exclusive ────────────────────────────────────────────────────
+        new()
+        {
+            Id               = "Spyglass",
+            Name             = "Spyglass",
+            Description      = "Quartz ground to a lens, set in a wood-and-amber casing. You can see further than you should be able to. That feels like a gift you should use carefully.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",   Quantity = 2 },
+                new() { ResourceId = "Quartz", Quantity = 2 },
+                new() { ResourceId = "Amber",  Quantity = 1 },
+            ],
+            Effects = [ItemEffect.ExtendRevealRadius],
+        },
+        new()
+        {
+            Id               = "SteelIngot",
+            Name             = "Steel Ingot",
+            Description      = "Four ore, three coal, one flint to strike the heat right. The forge does most of the work. You just had to know to ask it.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Ore",   Quantity = 4 },
+                new() { ResourceId = "Coal",  Quantity = 3 },
+                new() { ResourceId = "Flint", Quantity = 1 },
+            ],
+            Effects = [ItemEffect.ImproveMineralGather],
+        },
+        new()
+        {
+            Id               = "ApothecaryKit",
+            Name             = "Apothecary Kit",
+            Description      = "Herbs, amber, a hollow stone, and quartz ground fine as dust. The kit does not tell you what to do. It assumes you already know.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Herbs",      Quantity = 3 },
+                new() { ResourceId = "Amber",      Quantity = 2 },
+                new() { ResourceId = "HollowStone",Quantity = 1 },
+                new() { ResourceId = "Quartz",     Quantity = 1 },
+            ],
+            Effects = [ItemEffect.ImproveAllGather],
+        },
     ];
 
     private static readonly Dictionary<string, CraftingRecipe> _byId =

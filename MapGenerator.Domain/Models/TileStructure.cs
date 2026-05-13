@@ -8,4 +8,5 @@ public class TileStructure
     public string BuilderId { get; set; } = string.Empty;
     public string BuilderName { get; set; } = string.Empty;
     public DateTime BuiltAt { get; set; }
+    public DateTime? LastHarvestedAt { get; set; }
 }

@@ -16,6 +16,7 @@ public class GameBroadcastService
     public event Action<string, string>? PlayerColorChanged;         // playerId, newColor
     public event Action<string, int, int, int>? EggLaid;             // playerId, q, r, eggCount
     public event Action<string, string, int, int>? PlayerDanced;     // playerId, username, q, r
+    public event Action<string, string, string, string, int, int, string, string>? PlayerKissed; // kisserId, kisserName, kisseeId, kisseeName, q, r, kisseeMsg, observerMsg
     public event Action<int, int>? TileInventoryChanged;             // q, r
 
     // playerId -> (username, q, r, color, eggsDestroyed)
@@ -111,6 +112,11 @@ public class GameBroadcastService
     public void NotifyPlayerDanced(string playerId, string username, int q, int r)
     {
         PlayerDanced?.Invoke(playerId, username, q, r);
+    }
+
+    public void NotifyPlayerKissed(string kisserId, string kisserName, string kisseeId, string kisseeName, int q, int r, string kisseeMsg, string observerMsg)
+    {
+        PlayerKissed?.Invoke(kisserId, kisserName, kisseeId, kisseeName, q, r, kisseeMsg, observerMsg);
     }
 
     public void NotifyTileInventoryChanged(int q, int r)
