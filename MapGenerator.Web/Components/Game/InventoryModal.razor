@@ -1,0 +1,78 @@
+@using MapGenerator.Domain.Interfaces
+@inject IResourceDefinitionProvider ResourceProvider
+@inject ICraftingRecipeProvider RecipeProvider
+
+@{
+    int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value);
+}
+<button class="crafting-toggle" @onclick="() => _open = true">
+    <span>📋 Inventory@(totalItems > 0 ? $" ({totalItems})" : "")</span>
+</button>
+
+@{
+    var materials = Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null)
+                             .OrderBy(kv => kv.Key).ToList();
+    var crafted   = Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null)
+                             .OrderBy(kv => kv.Key).ToList();
+}
+@if (_open)
+{
+    <div class="modal-overlay" @onclick="() => _open = false">
+        <div class="modal-box inv-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">Inventory</h3>
+                <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
+            </div>
+            @if (materials.Count == 0 && crafted.Count == 0)
+            {
+                <p class="inventory-empty">Nothing gathered yet.</p>
+            }
+            @if (materials.Count > 0)
+            {
+                <p class="inventory-section-label">Materials</p>
+                <div class="inv-modal-list">
+                    @foreach (var (id, qty) in materials)
+                    {
+                        var def = ResourceProvider.GetById(id)!;
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@def.Name</span>
+                                <span class="inv-modal-qty">×@qty</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(def.Description))
+                            {
+                                <p class="inv-modal-desc">@def.Description</p>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @if (crafted.Count > 0)
+            {
+                <p class="inventory-section-label">Crafted</p>
+                <div class="inv-modal-list">
+                    @foreach (var (id, qty) in crafted)
+                    {
+                        var def = RecipeProvider.GetById(id)!;
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@def.Name</span>
+                                <span class="inv-modal-qty">×@qty</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(def.Description))
+                            {
+                                <p class="inv-modal-desc">@def.Description</p>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Dictionary<string, int> Inventory { get; set; } = null!;
+
+    private bool _open;
+}

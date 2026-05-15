@@ -40,6 +40,7 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync"
                         OnKissPlayer="HandleKissPlayerAsync" />
+            <InventoryModal Inventory="Session.Player.Inventory" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
             <BuildMenu Player="Session.Player"
                        CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"

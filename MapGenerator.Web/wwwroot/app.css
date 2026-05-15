@@ -282,8 +282,6 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 
 /* ── Inventory Panel ──────────────────────────────────────────────────────── */
 .inventory-panel { margin-top: 4px; border-top: 1px solid var(--border); }
-.inventory-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: none; color: var(--text-dim); font-size: .78rem; padding: .35rem .5rem; cursor: pointer; border-radius: 4px; }
-.inventory-toggle:hover { background: rgba(255,255,255,.05); color: var(--text); }
 .inventory-empty { font-size: .78rem; color: var(--text-dim); padding: .4rem .5rem; font-style: italic; }
 .inventory-section-label { font-size: .7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; padding: .3rem .5rem .1rem; margin: 0; }
 .inventory-grid { display: flex; flex-direction: column; gap: 2px; padding: .1rem .25rem .3rem; max-height: 160px; overflow-y: auto; }
