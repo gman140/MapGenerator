@@ -315,6 +315,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .road-line   { stroke: #685844; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: .85; pointer-events: none; }
 .road-bridge { stroke: #685844; stroke-width: 2;   stroke-linecap: round; stroke-dasharray: 5,3;  fill: none; opacity: .9;  pointer-events: none; }
 
+
 /* ── Settlement shapes ────────────────────────────────────────────────────── */
 .settle-center          { fill: #d4904a; stroke: #8b5010; stroke-width: 1; pointer-events: none; }
 .settle-center-roof     { fill: #b06828; stroke: #8b5010; stroke-width: 1; pointer-events: none; }

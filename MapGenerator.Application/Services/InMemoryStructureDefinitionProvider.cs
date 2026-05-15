@@ -19,6 +19,7 @@ public class InMemoryStructureDefinitionProvider : IStructureDefinitionProvider
                 new() { ResourceId = "Coal",   Quantity = 2 },
                 new() { ResourceId = "Quartz", Quantity = 1 },
             ],
+            MapIcon = "<line x1='0' y1='5' x2='0' y2='-3' stroke='#c8a040' stroke-width='1.5' stroke-linecap='round'/><circle cx='0' cy='-7' r='3.5' fill='#e06820' opacity='0.9'/><circle cx='0' cy='-7' r='1.8' fill='#f8e060'/>",
         },
         new()
         {
@@ -37,6 +38,7 @@ public class InMemoryStructureDefinitionProvider : IStructureDefinitionProvider
                 BiomeType.Grassland, BiomeType.Plains, BiomeType.Forest,
                 BiomeType.Jungle, BiomeType.Swamp, BiomeType.Marsh, BiomeType.Savanna,
             ],
+            MapIcon = "<circle cx='0' cy='-5' r='3.5' fill='#4a8830' opacity='0.95'/><circle cx='-4' cy='-1' r='3' fill='#5a9840' opacity='0.9'/><circle cx='4' cy='-1' r='3' fill='#5a9840' opacity='0.9'/><line x1='0' y1='1' x2='0' y2='5' stroke='#7a5030' stroke-width='1.3' stroke-linecap='round'/>",
         },
         new()
         {
@@ -50,6 +52,7 @@ public class InMemoryStructureDefinitionProvider : IStructureDefinitionProvider
                 new() { ResourceId = "Wood",  Quantity = 3 },
             ],
             AllowedBiomes = [BiomeType.Mountain, BiomeType.Volcano],
+            MapIcon = "<rect x='-6' y='-1' width='12' height='7' fill='#3a2818' rx='1'/><rect x='-3' y='-5' width='6' height='5' fill='#2a1808' rx='1'/><ellipse cx='0' cy='3' rx='3' ry='3.5' fill='#0e0e12'/>",
         },
         new()
         {
@@ -62,6 +65,7 @@ public class InMemoryStructureDefinitionProvider : IStructureDefinitionProvider
                 new() { ResourceId = "Stone", Quantity = 3 },
                 new() { ResourceId = "Flint", Quantity = 2 },
             ],
+            MapIcon = "<rect x='-5' y='2' width='10' height='4' fill='#506080' rx='1'/><rect x='-4' y='-2' width='8' height='5' fill='#607090' rx='1'/><rect x='-2' y='-5' width='4' height='4' fill='#4a5870'/>",
         },
         new()
         {
@@ -76,6 +80,7 @@ public class InMemoryStructureDefinitionProvider : IStructureDefinitionProvider
                 new() { ResourceId = "Reed",      Quantity = 3 },
             ],
             AllowedBiomes = [BiomeType.Beach, BiomeType.Shallows, BiomeType.River, BiomeType.Marsh],
+            MapIcon = "<line x1='-6' y1='-1' x2='6' y2='-1' stroke='#8b5a30' stroke-width='2.5' stroke-linecap='round'/><line x1='-4' y1='-1' x2='-4' y2='6' stroke='#8b5a30' stroke-width='1.5' stroke-linecap='round'/><line x1='0' y1='-1' x2='0' y2='6' stroke='#8b5a30' stroke-width='1.5' stroke-linecap='round'/><line x1='4' y1='-1' x2='4' y2='6' stroke='#8b5a30' stroke-width='1.5' stroke-linecap='round'/>",
         },
     ];
 

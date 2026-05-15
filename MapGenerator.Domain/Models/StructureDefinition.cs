@@ -9,4 +9,5 @@ public class StructureDefinition
     public string Description { get; init; } = string.Empty;
     public CraftingIngredient[] Ingredients { get; init; } = [];
     public BiomeType[]? AllowedBiomes { get; init; }
+    public string MapIcon { get; init; } = string.Empty;
 }

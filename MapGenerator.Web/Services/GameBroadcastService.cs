@@ -18,6 +18,7 @@ public class GameBroadcastService
     public event Action<string, string, int, int>? PlayerDanced;     // playerId, username, q, r
     public event Action<string, string, string, string, int, int, string, string>? PlayerKissed; // kisserId, kisserName, kisseeId, kisseeName, q, r, kisseeMsg, observerMsg
     public event Action<int, int>? TileInventoryChanged;             // q, r
+    public event Action? RoadsChanged;
 
     // playerId -> (username, q, r, color, eggsDestroyed)
     private readonly Dictionary<string, (string Username, int Q, int R, string Color, int EggsDestroyed)> _online = [];
@@ -123,4 +124,6 @@ public class GameBroadcastService
     {
         TileInventoryChanged?.Invoke(q, r);
     }
+
+    public void NotifyRoadsChanged() => RoadsChanged?.Invoke();
 }

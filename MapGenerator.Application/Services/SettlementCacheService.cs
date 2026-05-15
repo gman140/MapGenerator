@@ -5,6 +5,9 @@ namespace MapGenerator.Application.Services;
 
 public class SettlementCacheService
 {
+    private static readonly (int dq, int dr)[] HexOffsets =
+        [(1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)];
+
     private readonly Lock _lock = new();
 
     private List<Settlement> _settlements = [];
@@ -12,6 +15,8 @@ public class SettlementCacheService
     private Dictionary<(int Q, int R), (Settlement Settlement, SettlementTileRole Role)> _tileMap = new();
     private HashSet<(int Q, int R)> _roadTileSet = new();
     private List<List<(int Q, int R)>> _roadPaths = [];
+    private Dictionary<(int Q, int R), string> _roadTileToRoadId = new();
+    private Dictionary<string, int> _roadIndexById = new();
 
     public void UpdateCache(List<Settlement> settlements, List<Road> roads)
     {
@@ -22,26 +27,78 @@ public class SettlementCacheService
 
         var roadTileSet = new HashSet<(int, int)>();
         var roadPaths = new List<List<(int Q, int R)>>();
-        foreach (var road in roads)
+        var roadTileToRoadId = new Dictionary<(int, int), string>();
+        var roadIndexById = new Dictionary<string, int>();
+
+        for (int i = 0; i < roads.Count; i++)
         {
+            var road = roads[i];
             var path = road.Path.Select(p => (p.Q, p.R)).ToList();
             roadPaths.Add(path);
-            foreach (var p in path) roadTileSet.Add(p);
+            roadIndexById[road.Id] = i;
+            foreach (var p in path)
+            {
+                roadTileSet.Add(p);
+                roadTileToRoadId[p] = road.Id;
+            }
         }
 
         lock (_lock)
         {
-            _settlements  = settlements;
-            _roads        = roads;
-            _tileMap      = tileMap;
-            _roadTileSet  = roadTileSet;
-            _roadPaths    = roadPaths;
+            _settlements       = settlements;
+            _roads             = roads;
+            _tileMap           = tileMap;
+            _roadTileSet       = roadTileSet;
+            _roadPaths         = roadPaths;
+            _roadTileToRoadId  = roadTileToRoadId;
+            _roadIndexById     = roadIndexById;
         }
     }
 
     public bool IsRoadTile(int q, int r)
     {
         lock (_lock) return _roadTileSet.Contains((q, r));
+    }
+
+    public string? FindAdjacentRoadId(int q, int r)
+    {
+        lock (_lock)
+        {
+            foreach (var (dq, dr) in HexOffsets)
+            {
+                if (_roadTileToRoadId.TryGetValue((q + dq, r + dr), out var id))
+                    return id;
+            }
+            return null;
+        }
+    }
+
+    public void AddRoad(Road road)
+    {
+        var path = road.Path.Select(p => (p.Q, p.R)).ToList();
+        lock (_lock)
+        {
+            int idx = _roadPaths.Count;
+            _roadPaths.Add(path);
+            _roads.Add(road);
+            _roadIndexById[road.Id] = idx;
+            foreach (var p in path)
+            {
+                _roadTileSet.Add(p);
+                _roadTileToRoadId[p] = road.Id;
+            }
+        }
+    }
+
+    public void ExtendRoad(string roadId, int q, int r)
+    {
+        lock (_lock)
+        {
+            _roadTileSet.Add((q, r));
+            _roadTileToRoadId[(q, r)] = roadId;
+            if (_roadIndexById.TryGetValue(roadId, out var idx) && idx < _roadPaths.Count)
+                _roadPaths[idx].Add((q, r));
+        }
     }
 
     public (string? Name, SettlementTileRole? Role) GetSettlementTile(int q, int r)

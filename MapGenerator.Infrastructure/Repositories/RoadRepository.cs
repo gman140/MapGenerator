@@ -13,6 +13,16 @@ public class RoadRepository : IRoadRepository
     public Task<List<Road>> GetAllAsync() =>
         _ctx.Roads.Find(Builders<Road>.Filter.Empty).ToListAsync();
 
+    public Task AddAsync(Road road) =>
+        _ctx.Roads.InsertOneAsync(road);
+
+    public Task AppendPointAsync(string id, RoadPoint point)
+    {
+        var filter = Builders<Road>.Filter.Eq(r => r.Id, id);
+        var update = Builders<Road>.Update.Push(r => r.Path, point);
+        return _ctx.Roads.UpdateOneAsync(filter, update);
+    }
+
     public Task SaveManyAsync(IEnumerable<Road> roads) =>
         _ctx.Roads.InsertManyAsync(roads);
 

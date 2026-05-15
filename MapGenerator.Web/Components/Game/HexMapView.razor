@@ -4,6 +4,7 @@
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
 @inject SettlementCacheService SettlementCache
+@inject IStructureDefinitionProvider StructureProvider
 
 <div class="hex-map-container" @ref="_container">
     <svg width="@_svgWidth" height="@_svgHeight"
@@ -85,6 +86,17 @@
                             <line x1="@F(cx-7)" y1="@F(cy-3)" x2="@F(cx+7)" y2="@F(cy-3)" class="settle-mill-arm"/>
                         }
 
+                        @if (tile.Structure != null)
+                        {
+                            var structDef = StructureProvider.GetByType(tile.Structure.Type);
+                            if (structDef is { MapIcon.Length: > 0 })
+                            {
+                                <g transform="translate(@F(cx),@F(cy))" pointer-events="none">
+                                    @((MarkupString)structDef.MapIcon)
+                                </g>
+                            }
+                        }
+
                         @if (isPlayerTile)
                         {
                             <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
@@ -153,8 +165,11 @@
                 : "";
             var settlementPart = _hoveredSettlementName != null ? $" · {_hoveredSettlementName}" : "";
             var eggPart        = _hoveredTile.EggCount > 0 ? $" 🥚×{_hoveredTile.EggCount}" : "";
+            var structPart     = _hoveredTile.Structure != null
+                ? $" · {StructureProvider.GetByType(_hoveredTile.Structure.Type)?.Name ?? _hoveredTile.Structure.Type.ToString()}"
+                : "";
             <svg:text x="@tx.ToString("F0")" y="@ty.ToString("F0")" class="tile-tooltip">
-                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){featurePart}{settlementPart}{eggPart}")
+                @($"{_hoveredTile.Biome} ({_hoveredTile.Q},{_hoveredTile.R}){featurePart}{settlementPart}{structPart}{eggPart}")
             </svg:text>
         }
     </svg>

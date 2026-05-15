@@ -20,10 +20,12 @@ public class GameSessionService : IAsyncDisposable
     private readonly PermissionService _permissionSvc;
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
+    private readonly SettlementCacheService _settlementCache;
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly ITileNoteRepository _noteRepo;
     private readonly IMapRepository _mapRepo;
+    private readonly IRoadRepository _roadRepo;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -42,28 +44,32 @@ public class GameSessionService : IAsyncDisposable
         PermissionService permissionSvc,
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
+        SettlementCacheService settlementCache,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo,
         ITileNoteRepository noteRepo,
-        IMapRepository mapRepo)
+        IMapRepository mapRepo,
+        IRoadRepository roadRepo)
     {
-        _playerSvc      = playerSvc;
-        _chatSvc        = chatSvc;
-        _movementSvc    = movementSvc;
-        _eggSvc         = eggSvc;
-        _danceSvc       = danceSvc;
-        _kissSvc        = kissSvc;
-        _investigateSvc = investigateSvc;
-        _gatherSvc      = gatherSvc;
-        _craftingSvc    = craftingSvc;
-        _structureSvc   = structureSvc;
-        _permissionSvc  = permissionSvc;
-        _mapCache       = mapCache;
-        _broadcast      = broadcast;
-        _playerRepo     = playerRepo;
-        _visitRepo      = visitRepo;
-        _noteRepo       = noteRepo;
-        _mapRepo        = mapRepo;
+        _playerSvc       = playerSvc;
+        _chatSvc         = chatSvc;
+        _movementSvc     = movementSvc;
+        _eggSvc          = eggSvc;
+        _danceSvc        = danceSvc;
+        _kissSvc         = kissSvc;
+        _investigateSvc  = investigateSvc;
+        _gatherSvc       = gatherSvc;
+        _craftingSvc     = craftingSvc;
+        _structureSvc    = structureSvc;
+        _permissionSvc   = permissionSvc;
+        _mapCache        = mapCache;
+        _broadcast       = broadcast;
+        _settlementCache = settlementCache;
+        _playerRepo      = playerRepo;
+        _visitRepo       = visitRepo;
+        _noteRepo        = noteRepo;
+        _mapRepo         = mapRepo;
+        _roadRepo        = roadRepo;
     }
 
     public async Task InitAsync(string browserId)
@@ -128,6 +134,47 @@ public class GameSessionService : IAsyncDisposable
         if (result.success)
             _broadcast.NotifyPlayerKissed(Player.Id, Player.Username, targetId, targetName, Player.Q, Player.R, result.kisseeMsg, result.observerMsg);
         return (result.success, result.kisserMsg);
+    }
+
+    public async Task<(bool success, string? error)> BuildRoadAsync()
+    {
+        if (Player == null) return (false, "Not logged in.");
+
+        const int woodCost = 3, stoneCost = 2;
+        Player.Inventory.TryGetValue("Wood", out int wood);
+        Player.Inventory.TryGetValue("Stone", out int stone);
+        if (wood < woodCost)  return (false, $"Not enough Wood. Need {woodCost}, have {wood}.");
+        if (stone < stoneCost) return (false, $"Not enough Stone. Need {stoneCost}, have {stone}.");
+
+        Player.Inventory["Wood"]  = wood  - woodCost;
+        if (Player.Inventory["Wood"]  <= 0) Player.Inventory.Remove("Wood");
+        Player.Inventory["Stone"] = stone - stoneCost;
+        if (Player.Inventory["Stone"] <= 0) Player.Inventory.Remove("Stone");
+
+        var point = new RoadPoint { Q = Player.Q, R = Player.R };
+        var adjacentId = _settlementCache.FindAdjacentRoadId(Player.Q, Player.R);
+
+        if (adjacentId != null)
+        {
+            await _roadRepo.AppendPointAsync(adjacentId, point);
+            _settlementCache.ExtendRoad(adjacentId, Player.Q, Player.R);
+        }
+        else
+        {
+            var road = new Road
+            {
+                FromSettlementId = string.Empty,
+                ToSettlementId   = string.Empty,
+                Path             = [point],
+            };
+            await _roadRepo.AddAsync(road);
+            _settlementCache.AddRoad(road);
+        }
+
+        Player.LastSeen = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+        _broadcast.NotifyRoadsChanged();
+        return (true, null);
     }
 
     public async Task ConsumeGardenProductionAsync()

@@ -17,6 +17,26 @@
                 <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
             </div>
 
+            @{
+                Player.Inventory.TryGetValue("Wood",  out int roadWood);
+                Player.Inventory.TryGetValue("Stone", out int roadStone);
+                bool canAffordRoad = roadWood >= 3 && roadStone >= 2;
+            }
+            <div class="recipe-card" style="margin-bottom:.25rem">
+                <div class="recipe-header">
+                    <span class="recipe-name">Road Segment</span>
+                    <button class="recipe-craft-btn" disabled="@(!canAffordRoad)"
+                            @onclick="async () => { await OnBuildRoad.InvokeAsync(); _open = false; }">
+                        Build
+                    </button>
+                </div>
+                <p class="inv-modal-desc">A short stretch of road to an adjacent tile. Click the target tile after building.</p>
+                <div class="recipe-ingredients">
+                    <span class="ingredient @(roadWood >= 3 ? "ingredient-ok" : "ingredient-missing")">Wood @roadWood/3</span>
+                    <span class="ingredient @(roadStone >= 2 ? "ingredient-ok" : "ingredient-missing")">Stone @roadStone/2</span>
+                </div>
+            </div>
+
             @if (CurrentTile?.Structure != null)
             {
                 var existing = StructureProvider.GetByType(CurrentTile.Structure.Type);
@@ -83,6 +103,7 @@
     [Parameter] public HexTile? CurrentTile { get; set; }
     [Parameter] public EventCallback<StructureType> OnBuild { get; set; }
     [Parameter] public EventCallback OnDestroy { get; set; }
+    [Parameter] public EventCallback OnBuildRoad { get; set; }
 
     private bool _open;
 

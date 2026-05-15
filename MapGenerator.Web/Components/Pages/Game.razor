@@ -45,7 +45,8 @@ else
             <BuildMenu Player="Session.Player"
                        CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
                        OnBuild="HandleBuildStructureAsync"
-                       OnDestroy="HandleDestroyStructureAsync" />
+                       OnDestroy="HandleDestroyStructureAsync"
+                       OnBuildRoad="HandleBuildRoadAsync" />
             <TileInventoryPanel Player="Session.Player" OnInventoryChanged="StateHasChanged" />
             @if (Session.Player.IsAdmin)
             {
@@ -186,8 +187,21 @@ else
         Broadcast.PlayerDanced       += OnPlayerDanced;
         Broadcast.PlayerKissed       += OnPlayerKissed;
         Broadcast.PlayerColorChanged += OnPlayerColorChanged;
+        Broadcast.RoadsChanged       += OnRoadsChanged;
 
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
+        StateHasChanged();
+    }
+
+    private async Task HandleBuildRoadAsync()
+    {
+        var (success, error) = await Session.BuildRoadAsync();
+        if (!success) { ShowToast(error ?? "Cannot build road here."); return; }
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = "You lay down a road here.",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
         StateHasChanged();
     }
 
@@ -226,6 +240,15 @@ else
         await Session.ConsumeGardenProductionAsync();
         await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         StateHasChanged();
+    }
+
+    private void RevealRadius(int centerQ, int centerR, int radius)
+    {
+        if (_revealedTiles == null) return;
+        for (int dq = -radius; dq <= radius; dq++)
+            for (int dr = Math.Max(-radius, -dq - radius); dr <= Math.Min(radius, -dq + radius); dr++)
+                _revealedTiles.Add((centerQ + dq, centerR + dr));
+        _revealedVersion++;
     }
 
     private void RevealTile(int q, int r)
@@ -437,6 +460,22 @@ else
                 IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
         }
+
+        if (Session.Player != null)
+        {
+            var tile = MapCache.GetCachedTile(Session.Player.Q, Session.Player.R);
+            if (tile?.Structure?.Type == StructureType.Beacon)
+            {
+                RevealRadius(Session.Player.Q, Session.Player.R, 9);
+                _localMessages.Add(new ChatMessage
+                {
+                    SenderName = "World",
+                    Content = "The beacon's light reaches far. You can see the surrounding land clearly now.",
+                    IsSystemMessage = true, SentAt = DateTime.UtcNow
+                });
+            }
+        }
+
         StateHasChanged();
     }
 
@@ -569,6 +608,8 @@ else
         StateHasChanged();
     }
 
+    private void OnRoadsChanged() => InvokeAsync(StateHasChanged);
+
     private void OnMapRegenerated(MapConfig config)
     {
         InvokeAsync(async () =>
@@ -610,6 +651,7 @@ else
         Broadcast.PlayerDanced       -= OnPlayerDanced;
         Broadcast.PlayerKissed       -= OnPlayerKissed;
         Broadcast.PlayerColorChanged -= OnPlayerColorChanged;
+        Broadcast.RoadsChanged       -= OnRoadsChanged;
         _toastTimer?.Dispose();
         await Session.DisposeAsync();
     }
