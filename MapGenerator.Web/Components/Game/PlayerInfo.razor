@@ -75,18 +75,32 @@
     }
 
     @{
-        var materials = Player.Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null)
-                                        .OrderBy(kv => kv.Key).ToList();
-        var crafted   = Player.Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null)
-                                        .OrderBy(kv => kv.Key).ToList();
+        int totalItems = Player.Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value);
     }
-    <div class="inventory-panel">
-        <button class="inventory-toggle" @onclick="() => _inventoryOpen = !_inventoryOpen">
-            <span>⚙ Inventory (@Player.Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value))</span>
-            <span>@(_inventoryOpen ? "▴" : "▾")</span>
-        </button>
-        @if (_inventoryOpen)
-        {
+    <button class="inventory-toggle" @onclick="() => _inventoryOpen = true">
+        <span>⚙ Inventory@(totalItems > 0 ? $" ({totalItems})" : "")</span>
+    </button>
+
+    @if (Player.IsAdmin)
+    {
+        <a href="/admin" class="admin-link">Admin Panel</a>
+    }
+</div>
+
+@{
+    var materials = Player.Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null)
+                                    .OrderBy(kv => kv.Key).ToList();
+    var crafted   = Player.Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null)
+                                    .OrderBy(kv => kv.Key).ToList();
+}
+@if (_inventoryOpen)
+{
+    <div class="modal-overlay" @onclick="() => _inventoryOpen = false">
+        <div class="modal-box inv-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">Inventory</h3>
+                <button class="crafting-modal-close" @onclick="() => _inventoryOpen = false">✕</button>
+            </div>
             @if (materials.Count == 0 && crafted.Count == 0)
             {
                 <p class="inventory-empty">Nothing gathered yet.</p>
@@ -94,13 +108,19 @@
             @if (materials.Count > 0)
             {
                 <p class="inventory-section-label">Materials</p>
-                <div class="inventory-grid">
+                <div class="inv-modal-list">
                     @foreach (var (id, qty) in materials)
                     {
                         var def = ResourceProvider.GetById(id)!;
-                        <div class="inventory-item" title="@def.Description">
-                            <span class="inventory-name">@def.Name</span>
-                            <span class="inventory-qty">×@qty</span>
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@def.Name</span>
+                                <span class="inv-modal-qty">×@qty</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(def.Description))
+                            {
+                                <p class="inv-modal-desc">@def.Description</p>
+                            }
                         </div>
                     }
                 </div>
@@ -108,25 +128,26 @@
             @if (crafted.Count > 0)
             {
                 <p class="inventory-section-label">Crafted</p>
-                <div class="inventory-grid">
+                <div class="inv-modal-list">
                     @foreach (var (id, qty) in crafted)
                     {
                         var def = RecipeProvider.GetById(id)!;
-                        <div class="inventory-item" title="@def.Description">
-                            <span class="inventory-name">@def.Name</span>
-                            <span class="inventory-qty">×@qty</span>
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@def.Name</span>
+                                <span class="inv-modal-qty">×@qty</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(def.Description))
+                            {
+                                <p class="inv-modal-desc">@def.Description</p>
+                            }
                         </div>
                     }
                 </div>
             }
-        }
+        </div>
     </div>
-
-    @if (Player.IsAdmin)
-    {
-        <a href="/admin" class="admin-link">Admin Panel</a>
-    }
-</div>
+}
 
 @code {
     private static readonly TimeSpan KissCooldown = TimeSpan.FromMinutes(1);

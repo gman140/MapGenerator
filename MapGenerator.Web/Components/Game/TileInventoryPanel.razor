@@ -7,73 +7,93 @@
 @inject GameBroadcastService Broadcast
 @implements IDisposable
 
-<div class="tile-inv-panel">
-    <button class="inventory-toggle" @onclick="ToggleAsync">
-        <span>Ground Items@(_tileItems.Any() ? $" ({_tileItems.Values.Sum()})" : "")</span>
-        <span>@(_open ? "▴" : "▾")</span>
-    </button>
+<button class="inventory-toggle" @onclick="OpenAsync">
+    <span>Ground Items@(_tileItems.Any() ? $" ({_tileItems.Values.Sum()})" : "")</span>
+</button>
 
-    @if (_open)
-    {
-        <div class="tile-inv-content">
-            <div class="tile-inv-section">
-                <p class="inventory-section-label">On this tile</p>
-                @if (_tileItems.Count == 0)
-                {
-                    <p class="tile-inv-empty">Nothing here.</p>
-                }
-                else
-                {
+@if (_open)
+{
+    <div class="modal-overlay" @onclick="() => _open = false">
+        <div class="modal-box inv-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">Ground Items</h3>
+                <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
+            </div>
+
+            <p class="inventory-section-label">On this tile</p>
+            @if (_tileItems.Count == 0)
+            {
+                <p class="tile-inv-empty">Nothing here.</p>
+            }
+            else
+            {
+                <div class="inv-modal-list">
                     @foreach (var (itemId, qty) in _tileItems.OrderBy(kv => kv.Key))
                     {
                         var name = TileInventorySvc.GetItemName(itemId);
                         var desc = TileInventorySvc.GetItemDescription(itemId);
-                        <div class="tile-inv-row" title="@desc">
-                            <span class="tile-inv-name">@name</span>
-                            <span class="tile-inv-qty">×@qty</span>
-                            <input type="number" class="tile-inv-input" min="1" max="@qty"
-                                   value="@GetPickupQty(itemId, qty)"
-                                   @onchange="e => SetPickupQty(itemId, qty, e.Value?.ToString())" />
-                            <button class="tile-inv-btn" @onclick="() => PickUpAsync(itemId)">Pick Up</button>
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@name</span>
+                                <div class="tile-inv-controls">
+                                    <span class="inv-modal-qty">×@qty</span>
+                                    <input type="number" class="tile-inv-input" min="1" max="@qty"
+                                           value="@GetPickupQty(itemId, qty)"
+                                           @onchange="e => SetPickupQty(itemId, qty, e.Value?.ToString())" />
+                                    <button class="tile-inv-btn" @onclick="() => PickUpAsync(itemId)">Pick Up</button>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(desc))
+                            {
+                                <p class="inv-modal-desc">@desc</p>
+                            }
                         </div>
                     }
-                }
-            </div>
+                </div>
+            }
 
-            <div class="tile-inv-section">
-                <p class="inventory-section-label">Your inventory</p>
-                @{
-                    var playerItems = Player.Inventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
-                }
-                @if (playerItems.Count == 0)
-                {
-                    <p class="tile-inv-empty">You're carrying nothing.</p>
-                }
-                else
-                {
+            <p class="inventory-section-label" style="margin-top:.5rem">Your inventory</p>
+            @{
+                var playerItems = Player.Inventory.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).ToList();
+            }
+            @if (playerItems.Count == 0)
+            {
+                <p class="tile-inv-empty">You're carrying nothing.</p>
+            }
+            else
+            {
+                <div class="inv-modal-list">
                     @foreach (var (itemId, qty) in playerItems)
                     {
                         var name = TileInventorySvc.GetItemName(itemId);
                         var desc = TileInventorySvc.GetItemDescription(itemId);
-                        <div class="tile-inv-row" title="@desc">
-                            <span class="tile-inv-name">@name</span>
-                            <span class="tile-inv-qty">×@qty</span>
-                            <input type="number" class="tile-inv-input" min="1" max="@qty"
-                                   value="@GetDropQty(itemId, qty)"
-                                   @onchange="e => SetDropQty(itemId, qty, e.Value?.ToString())" />
-                            <button class="tile-inv-btn" @onclick="() => DropAsync(itemId)">Drop</button>
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@name</span>
+                                <div class="tile-inv-controls">
+                                    <span class="inv-modal-qty">×@qty</span>
+                                    <input type="number" class="tile-inv-input" min="1" max="@qty"
+                                           value="@GetDropQty(itemId, qty)"
+                                           @onchange="e => SetDropQty(itemId, qty, e.Value?.ToString())" />
+                                    <button class="tile-inv-btn" @onclick="() => DropAsync(itemId)">Drop</button>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(desc))
+                            {
+                                <p class="inv-modal-desc">@desc</p>
+                            }
                         </div>
                     }
-                }
-            </div>
+                </div>
+            }
 
             @if (_error != null)
             {
-                <p class="error-text">@_error</p>
+                <p class="error-text" style="margin-top:.5rem">@_error</p>
             }
         </div>
-    }
-</div>
+    </div>
+}
 
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
@@ -107,14 +127,14 @@
             _lastR = Player.R;
             _pickupQty.Clear();
             _error = null;
-            if (_open) await LoadTileItemsAsync();
+            await LoadTileItemsAsync();
         }
     }
 
-    private async Task ToggleAsync()
+    private async Task OpenAsync()
     {
-        _open = !_open;
-        if (_open) await LoadTileItemsAsync();
+        await LoadTileItemsAsync();
+        _open = true;
     }
 
     private async Task LoadTileItemsAsync()

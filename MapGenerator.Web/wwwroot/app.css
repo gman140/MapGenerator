@@ -292,12 +292,18 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .inventory-name { color: var(--text); }
 .inventory-qty  { color: var(--accent); font-weight: 600; font-size: .75rem; }
 
+/* ── Inventory Modal ──────────────────────────────────────────────────────── */
+.inv-modal { max-width: 480px; padding: 1.25rem; gap: .6rem; max-height: 85vh; overflow-y: auto; }
+.inv-modal-list { display: flex; flex-direction: column; gap: .35rem; }
+.inv-modal-item { border: 1px solid var(--border); border-radius: 5px; padding: .4rem .6rem; display: flex; flex-direction: column; gap: .2rem; }
+.inv-modal-item-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.inv-modal-name { font-size: .85rem; color: var(--text); flex: 1; }
+.inv-modal-qty  { font-size: .78rem; color: var(--accent); font-weight: 600; white-space: nowrap; }
+.inv-modal-desc { font-size: .75rem; color: var(--text-dim); line-height: 1.5; margin: 0; font-style: italic; }
+.tile-inv-controls { display: flex; align-items: center; gap: .3rem; flex-shrink: 0; }
+
 /* ── Tile Inventory Panel ─────────────────────────────────────────────────── */
-.tile-inv-panel { border-top: 1px solid var(--border); }
-.tile-inv-content { padding: .25rem 0 .5rem; }
-.tile-inv-section { margin-bottom: .25rem; }
-.tile-inv-section + .tile-inv-section { border-top: 1px solid var(--border); padding-top: .15rem; margin-top: .15rem; }
-.tile-inv-empty { font-size: .78rem; color: var(--text-dim); padding: .25rem .5rem; font-style: italic; }
+.tile-inv-empty { font-size: .78rem; color: var(--text-dim); padding: .25rem 0; font-style: italic; }
 .tile-inv-row { display: flex; align-items: center; gap: .35rem; padding: .2rem .5rem; border-radius: 3px; font-size: .8rem; }
 .tile-inv-row:hover { background: rgba(255,255,255,.05); }
 .tile-inv-name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
