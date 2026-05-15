@@ -17,6 +17,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly GatherService _gatherSvc;
     private readonly CraftingService _craftingSvc;
     private readonly StructureService _structureSvc;
+    private readonly EggExplosionService _explosionSvc;
     private readonly PermissionService _permissionSvc;
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
@@ -29,6 +30,7 @@ public class GameSessionService : IAsyncDisposable
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
+    public bool IsStunned => Player != null && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < Player.StunnedUntil;
 
     public GameSessionService(
         PlayerService playerSvc,
@@ -41,6 +43,7 @@ public class GameSessionService : IAsyncDisposable
         GatherService gatherSvc,
         CraftingService craftingSvc,
         StructureService structureSvc,
+        EggExplosionService explosionSvc,
         PermissionService permissionSvc,
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
@@ -61,6 +64,7 @@ public class GameSessionService : IAsyncDisposable
         _gatherSvc       = gatherSvc;
         _craftingSvc     = craftingSvc;
         _structureSvc    = structureSvc;
+        _explosionSvc    = explosionSvc;
         _permissionSvc   = permissionSvc;
         _mapCache        = mapCache;
         _broadcast       = broadcast;
@@ -92,6 +96,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<MovementResult> MoveAsync(int targetQ, int targetR, bool oceanConfirmed = false)
     {
         if (Player == null) return new MovementResult { ErrorMessage = "Not logged in." };
+        if (IsStunned) return new MovementResult { ErrorMessage = "You are stunned and cannot move." };
 
         int oldQ = Player.Q, oldR = Player.R;
         var permissions = _permissionSvc.GetPermissions(Player);
@@ -129,6 +134,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string kisserMsg)> KissAsync(string targetId, string targetName)
     {
         if (Player == null) return (false, "Not logged in.");
+        if (IsStunned) return (false, "You are stunned and cannot act.");
         var permissions = _permissionSvc.GetPermissions(Player);
         var result = await _kissSvc.KissAsync(Player, permissions, targetId, targetName);
         if (result.success)
@@ -139,6 +145,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string? error)> BuildRoadAsync()
     {
         if (Player == null) return (false, "Not logged in.");
+        if (IsStunned) return (false, "You are stunned and cannot act.");
 
         const int woodCost = 3, stoneCost = 2;
         Player.Inventory.TryGetValue("Wood", out int wood);
@@ -177,6 +184,31 @@ public class GameSessionService : IAsyncDisposable
         return (true, null);
     }
 
+    public async Task<(bool exploded, string message)> TryExplodeEggsAsync()
+    {
+        if (Player == null) return (false, string.Empty);
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile == null || tile.EggCount <= 0) return (false, string.Empty);
+
+        var (exploded, message, biomeChanges) = _explosionSvc.TryExplode(Player, tile);
+        if (!exploded) return (false, string.Empty);
+
+        foreach (var (q, r, biome) in biomeChanges)
+        {
+            await _mapRepo.UpdateTileBiomeAndFeatureAsync(q, r, biome, null);
+            _mapCache.UpdateCachedBiomeAndFeature(q, r, biome, null);
+        }
+
+        var newCount = await _mapRepo.DecrementEggCountAsync(tile.Q, tile.R);
+        _mapCache.UpdateCachedEggCount(tile.Q, tile.R, newCount);
+
+        Player.LastSeen = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+        _broadcast.UpdatePlayerEggsDestroyed(Player.Id, Player.EggsDestroyed);
+        _broadcast.NotifyEggExploded(Player.Id, Player.Q, Player.R);
+        return (true, message);
+    }
+
     public async Task ConsumeGardenProductionAsync()
     {
         if (Player == null) return;
@@ -191,6 +223,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string message, bool eggDestroyed, int newEggCount)> DanceAsync()
     {
         if (Player == null) return (false, "Not logged in.", false, 0);
+        if (IsStunned) return (false, "You are stunned and cannot act.", false, 0);
         var permissions = _permissionSvc.GetPermissions(Player);
         var result = await _danceSvc.DanceAsync(Player, permissions);
         if (result.success)
@@ -205,6 +238,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string message, int eggCount)> LayEggAsync()
     {
         if (Player == null) return (false, "Not logged in.", 0);
+        if (IsStunned) return (false, "You are stunned and cannot act.", 0);
         var permissions = _permissionSvc.GetPermissions(Player);
         var result = await _eggSvc.LayEggAsync(Player, permissions);
         if (result.success)
@@ -246,12 +280,14 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(string flavorText, List<TileNote> notes)> InvestigateAsync()
     {
         if (Player == null) return ("You are not sure who you are.", []);
+        if (IsStunned) return ("You are stunned and cannot focus.", []);
         return await _investigateSvc.InvestigateAsync(Player);
     }
 
     public async Task<GatherResult> GatherAsync()
     {
         if (Player == null) return new GatherResult { Success = false, ErrorMessage = "Not logged in." };
+        if (IsStunned) return new GatherResult { Success = false, ErrorMessage = "You are stunned and cannot act." };
         var permissions = _permissionSvc.GetPermissions(Player);
         var result = await _gatherSvc.TryGatherAsync(Player, permissions);
         if (result.Success)
@@ -262,6 +298,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<bool> UsePoulticeAsync()
     {
         if (Player == null) return false;
+        if (IsStunned) return false;
         Player.Inventory.TryGetValue("Poultice", out int qty);
         if (qty <= 0) return false;
 
@@ -277,6 +314,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string? error)> BuildStructureAsync(StructureType type)
     {
         if (Player == null) return (false, "Not logged in.");
+        if (IsStunned) return (false, "You are stunned and cannot act.");
         var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
         if (tile == null) return (false, "Cannot build here.");
         return await _structureSvc.TryBuildAsync(Player, type, tile);
@@ -285,6 +323,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<bool> DestroyStructureAsync()
     {
         if (Player == null) return false;
+        if (IsStunned) return false;
         var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
         if (tile?.Structure == null) return false;
         await _structureSvc.DestroyAsync(tile);
@@ -294,6 +333,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<CraftingResult> CraftAsync(string recipeId)
     {
         if (Player == null) return new CraftingResult { Success = false, ErrorMessage = "Not logged in." };
+        if (IsStunned) return new CraftingResult { Success = false, ErrorMessage = "You are stunned and cannot act." };
         return await _craftingSvc.TryCraftAsync(Player, recipeId);
     }
 
@@ -325,6 +365,7 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string? error)> EditTileAsync(BiomeType biome, string? featureId)
     {
         if (Player == null) return (false, "Not logged in.");
+        if (IsStunned) return (false, "You are stunned and cannot act.");
         if (!Player.IsAdmin) return (false, "Insufficient permissions.");
         var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
         if (tile == null) return (false, "Tile not found.");
@@ -335,7 +376,7 @@ public class GameSessionService : IAsyncDisposable
 
     public async Task LeaveNoteAsync(string content)
     {
-        if (Player == null || string.IsNullOrWhiteSpace(content)) return;
+        if (Player == null || string.IsNullOrWhiteSpace(content) || IsStunned) return;
         content = content.Trim();
         if (content.Length > 200) content = content[..200];
         await _noteRepo.AddNoteAsync(new TileNote
@@ -348,7 +389,7 @@ public class GameSessionService : IAsyncDisposable
 
     public async Task PlantSignAsync(string content)
     {
-        if (Player == null || string.IsNullOrWhiteSpace(content)) return;
+        if (Player == null || string.IsNullOrWhiteSpace(content) || IsStunned) return;
         content = content.Trim();
         if (content.Length > 100) content = content[..100];
         await _mapRepo.PlaceSignAsync(Player.Q, Player.R, content, Player.Username);

@@ -188,6 +188,7 @@ else
         Broadcast.PlayerKissed       += OnPlayerKissed;
         Broadcast.PlayerColorChanged += OnPlayerColorChanged;
         Broadcast.RoadsChanged       += OnRoadsChanged;
+        Broadcast.EggExploded        += OnEggExploded;
 
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
         StateHasChanged();
@@ -238,6 +239,18 @@ else
         AddArrivalMessages(Session.Player!.Q, Session.Player.R);
         RevealTile(Session.Player.Q, Session.Player.R);
         await Session.ConsumeGardenProductionAsync();
+
+        var (exploded, explosionMsg) = await Session.TryExplodeEggsAsync();
+        if (exploded)
+        {
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = explosionMsg,
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+            _mapVersion++;
+        }
+
         await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         StateHasChanged();
     }
@@ -610,6 +623,22 @@ else
 
     private void OnRoadsChanged() => InvokeAsync(StateHasChanged);
 
+    private void OnEggExploded(string playerId, int q, int r)
+    {
+        InvokeAsync(() =>
+        {
+            if (Session.Player == null || Session.Player.Id == playerId) return;
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World",
+                Content = "You hear a distant explosion and feel a sudden, inexplicable sense of loss.",
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+            _mapVersion++;
+            StateHasChanged();
+        });
+    }
+
     private void OnMapRegenerated(MapConfig config)
     {
         InvokeAsync(async () =>
@@ -652,6 +681,7 @@ else
         Broadcast.PlayerKissed       -= OnPlayerKissed;
         Broadcast.PlayerColorChanged -= OnPlayerColorChanged;
         Broadcast.RoadsChanged       -= OnRoadsChanged;
+        Broadcast.EggExploded        -= OnEggExploded;
         _toastTimer?.Dispose();
         await Session.DisposeAsync();
     }

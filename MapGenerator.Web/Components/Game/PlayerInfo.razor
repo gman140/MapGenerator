@@ -37,6 +37,14 @@
         <span class="coords">(@Player.Q, @Player.R)</span>
     </div>
 
+    @if (_stunnedRemaining > 0)
+    {
+        <div class="stun-bar">
+            <div class="stun-fill" style="width: @(_stunnedRemaining / 60000.0 * 100.0)%"></div>
+            <span class="stun-text">💥 Stunned @((_stunnedRemaining / 1000.0).ToString("F1"))s</span>
+        </div>
+    }
+
     @if (_cooldownRemaining > 0)
     {
         <div class="cooldown-bar">
@@ -93,12 +101,15 @@
     private long _cooldownDuration;
     private long _kissRemainingMs;
     private long _kissEndMs;
+    private long _stunnedRemaining;
     private System.Threading.Timer? _timer;
+
     protected override void OnParametersSet()
     {
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         _cooldownRemaining = Math.Max(0, CooldownUntil - now);
-        _cooldownDuration = _cooldownRemaining > 0 ? _cooldownRemaining : _cooldownDuration;
+        _cooldownDuration  = _cooldownRemaining > 0 ? _cooldownRemaining : _cooldownDuration;
+        _stunnedRemaining  = Math.Max(0, Player.StunnedUntil - now);
         UpdateFill();
 
         if (LastKissedAt.HasValue)
@@ -113,7 +124,7 @@
             _kissEndMs = 0;
         }
 
-        bool needsTimer = _cooldownRemaining > 0 || _kissRemainingMs > 0;
+        bool needsTimer = _cooldownRemaining > 0 || _kissRemainingMs > 0 || _stunnedRemaining > 0;
         if (needsTimer && _timer == null)
             _timer = new System.Threading.Timer(Tick, null, 100, 100);
         else if (!needsTimer)
@@ -128,9 +139,10 @@
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         _cooldownRemaining = Math.Max(0, CooldownUntil - now);
         _kissRemainingMs   = Math.Max(0, _kissEndMs - now);
+        _stunnedRemaining  = Math.Max(0, Player.StunnedUntil - now);
         UpdateFill();
 
-        if (_cooldownRemaining <= 0 && _kissRemainingMs <= 0)
+        if (_cooldownRemaining <= 0 && _kissRemainingMs <= 0 && _stunnedRemaining <= 0)
         {
             _timer?.Dispose();
             _timer = null;
