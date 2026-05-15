@@ -167,7 +167,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .players-here  { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
 .player-chip      { background: var(--border); color: var(--text); font-size: .78rem; padding: .1rem .4rem; border-radius: 10px; display: inline-flex; align-items: center; gap: .25rem; }
 .player-chip.self { background: rgba(240,224,80,.2); color: #f0e050; }
-.kiss-btn { background: none; border: none; cursor: pointer; font-size: .78rem; padding: 0 .1rem; line-height: 1; opacity: .85; }
+.kiss-btn { background: none; border: none; cursor: pointer; font-size: .78rem; padding: 0 .1rem; line-height: 1; opacity: .85; color: var(--text); }
 .kiss-btn:disabled { opacity: .45; cursor: default; font-size: .65rem; }
 .admin-link { font-size: .8rem; color: var(--admin); text-decoration: none; margin-top: auto; }
 .admin-link:hover { text-decoration: underline; }
@@ -312,8 +312,8 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .tile-inv-btn:hover { background: rgba(255,255,255,.08); color: var(--text); border-color: var(--accent); }
 
 /* ── Roads ────────────────────────────────────────────────────────────────── */
-.road-line   { stroke: #c8a46e; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: .85; pointer-events: none; }
-.road-bridge { stroke: #c8b490; stroke-width: 2;   stroke-linecap: round; stroke-dasharray: 5,3;  fill: none; opacity: .9;  pointer-events: none; }
+.road-line   { stroke: #685844; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: .85; pointer-events: none; }
+.road-bridge { stroke: #685844; stroke-width: 2;   stroke-linecap: round; stroke-dasharray: 5,3;  fill: none; opacity: .9;  pointer-events: none; }
 
 /* ── Settlement shapes ────────────────────────────────────────────────────── */
 .settle-center          { fill: #d4904a; stroke: #8b5010; stroke-width: 1; pointer-events: none; }

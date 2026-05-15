@@ -39,7 +39,7 @@
 
                     <div class="recipe-card">
                         <div class="recipe-header">
-                            <span class="recipe-name" title="@recipe.Description">
+                            <span class="recipe-name">
                                 @recipe.Name
                                 @if (recipe.IsConsumable) { <span class="recipe-consumable">consumable</span> }
                             </span>
@@ -48,6 +48,7 @@
                                 Craft
                             </button>
                         </div>
+                        <p class="inv-modal-desc">@recipe.Description</p>
                         <div class="recipe-ingredients">
                             @foreach (var ing in recipe.Ingredients)
                             {
@@ -77,10 +78,11 @@
 
                         <div class="recipe-card recipe-card-workshop">
                             <div class="recipe-header">
-                                <span class="recipe-name" title="@recipe.Description">
+                                <span class="recipe-name">
                                     @recipe.Name
                                     @if (recipe.IsConsumable) { <span class="recipe-consumable">consumable</span> }
                                 </span>
+                        <p class="inv-modal-desc">@recipe.Description</p>
                                 <button class="recipe-craft-btn" disabled="@(!canCraft)"
                                         @onclick="() => { OnCraft.InvokeAsync(recipe.Id); _open = false; }">
                                     Craft

@@ -45,12 +45,13 @@
 
                         <div class="recipe-card">
                             <div class="recipe-header">
-                                <span class="recipe-name" title="@def.Description">@def.Name</span>
+                                <span class="recipe-name">@def.Name</span>
                                 <button class="recipe-craft-btn" disabled="@(!canBuild)"
                                         @onclick="() => HandleBuild(def.Type)">
                                     Build
                                 </button>
                             </div>
+                            <p class="inv-modal-desc">@def.Description</p>
                             <div class="recipe-ingredients">
                                 @if (wrongBiome)
                                 {
