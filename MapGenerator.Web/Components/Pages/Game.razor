@@ -33,7 +33,7 @@ else
         </div>
         <div class="sidebar">
             <MiniMap Player="Session.Player" MapVersion="_mapVersion"
-                     RevealedTiles="_revealedTiles" RevealedVersion="_revealedVersion" />
+                     RevealedTiles="_revealedTiles" />
             <PlayerInfo Player="Session.Player"
                         CooldownUntil="_cooldownUntil"
                         LastKissedAt="Session.Player.LastKissedAt"
@@ -153,7 +153,6 @@ else
     private int _mapVersion;
 
     private HashSet<(int, int)>? _revealedTiles;
-    private int _revealedVersion;
 
     private bool _showNoteModal;
     private bool _showSignModal;
@@ -237,7 +236,7 @@ else
         _cooldownUntil = result.CooldownUntil ?? 0;
         _localMessages = await Session.GetTileChatAsync();
         AddArrivalMessages(Session.Player!.Q, Session.Player.R);
-        RevealTile(Session.Player.Q, Session.Player.R);
+        await RevealTile(Session.Player.Q, Session.Player.R);
         await Session.ConsumeGardenProductionAsync();
 
         var (exploded, explosionMsg) = await Session.TryExplodeEggsAsync();
@@ -255,29 +254,24 @@ else
         StateHasChanged();
     }
 
-    private void RevealRadius(int centerQ, int centerR, int radius)
-    {
-        if (_revealedTiles == null) return;
-        for (int dq = -radius; dq <= radius; dq++)
-            for (int dr = Math.Max(-radius, -dq - radius); dr <= Math.Min(radius, -dq + radius); dr++)
-                _revealedTiles.Add((centerQ + dq, centerR + dr));
-        _revealedVersion++;
-    }
-
-    private void RevealTile(int q, int r)
+    private async Task RevealTile(int q, int r)
     {
         if (_revealedTiles == null) return;
         _revealedTiles.Add((q, r));
         bool extended = Session.Player != null && RecipeProvider.PlayerHasEffect(Session.Player, ItemEffect.ExtendRevealRadius);
+        var ring1 = new List<(int, int)>();
         foreach (var (dq, dr) in MapGeneratorService.HexNeighborOffsets())
         {
             int nq = q + dq, nr = r + dr;
             _revealedTiles.Add((nq, nr));
+            ring1.Add((nq, nr));
             if (extended)
                 foreach (var (dq2, dr2) in MapGeneratorService.HexNeighborOffsets())
                     _revealedTiles.Add((nq + dq2, nr + dr2));
         }
-        _revealedVersion++;
+        _mapVersion++;
+        if (extended)
+            await Session.PersistRevealedCoordsAsync(ring1);
     }
 
     private void AddArrivalMessages(int q, int r)
@@ -334,7 +328,7 @@ else
         }
         if (result.Success && Session.Player != null)
         {
-            RevealTile(Session.Player.Q, Session.Player.R);
+            await RevealTile(Session.Player.Q, Session.Player.R);
             await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         }
         StateHasChanged();
@@ -458,7 +452,7 @@ else
 
     private async Task HandleInvestigateAsync()
     {
-        var (flavorText, notes) = await Session.InvestigateAsync();
+        var (flavorText, notes, beaconMessage, beaconReveal) = await Session.InvestigateAsync();
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World", Content = flavorText,
@@ -474,20 +468,18 @@ else
             });
         }
 
-        if (Session.Player != null)
+        if (beaconReveal != null && _revealedTiles != null)
         {
-            var tile = MapCache.GetCachedTile(Session.Player.Q, Session.Player.R);
-            if (tile?.Structure?.Type == StructureType.Beacon)
-            {
-                RevealRadius(Session.Player.Q, Session.Player.R, 9);
-                _localMessages.Add(new ChatMessage
-                {
-                    SenderName = "World",
-                    Content = "The beacon's light reaches far. You can see the surrounding land clearly now.",
-                    IsSystemMessage = true, SentAt = DateTime.UtcNow
-                });
-            }
+            foreach (var coord in beaconReveal)
+                _revealedTiles.Add(coord);
+            _mapVersion++;
         }
+        if (beaconMessage != null)
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = beaconMessage,
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
 
         StateHasChanged();
     }
@@ -653,7 +645,6 @@ else
                 IsSystemMessage = true, SentAt = DateTime.UtcNow
             });
             _revealedTiles = await Session.LoadRevealedTilesAsync();
-            _revealedVersion++;
             _mapVersion++;
             StateHasChanged();
         });

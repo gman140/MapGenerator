@@ -74,4 +74,19 @@ public class PlayerTileVisitRepository : IPlayerTileVisitRepository
             .ToListAsync();
         return docs.Select(d => (d.Q, d.R)).Distinct().ToList();
     }
+
+    public async Task RecordRevealedCoordsAsync(string playerId, IEnumerable<(int Q, int R)> coords)
+    {
+        var now = DateTime.UtcNow;
+        var visits = coords.Select(c => new PlayerTileVisit
+        {
+            PlayerId  = playerId,
+            Q         = c.Q,
+            R         = c.R,
+            ArrivedAt = now,
+            LeftAt    = now,
+        }).ToList();
+        if (visits.Count > 0)
+            await _ctx.Visits.InsertManyAsync(visits);
+    }
 }

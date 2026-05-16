@@ -277,10 +277,11 @@ public class GameSessionService : IAsyncDisposable
 
     public Task<List<ChatMessage>> GetWorldChatAsync() => _chatSvc.GetWorldHistoryAsync();
 
-    public async Task<(string flavorText, List<TileNote> notes)> InvestigateAsync()
+    public async Task<(string flavorText, List<TileNote> notes, string? beaconMessage, HashSet<(int, int)>? beaconReveal)>
+        InvestigateAsync()
     {
-        if (Player == null) return ("You are not sure who you are.", []);
-        if (IsStunned) return ("You are stunned and cannot focus.", []);
+        if (Player == null) return ("You are not sure who you are.", [], null, null);
+        if (IsStunned) return ("You are stunned and cannot focus.", [], null, null);
         return await _investigateSvc.InvestigateAsync(Player);
     }
 
@@ -361,6 +362,9 @@ public class GameSessionService : IAsyncDisposable
             set.Add((Player.Q + dq, Player.R + dr));
         return set;
     }
+
+    public Task PersistRevealedCoordsAsync(IEnumerable<(int, int)> coords)
+        => Player != null ? _visitRepo.RecordRevealedCoordsAsync(Player.Id, coords) : Task.CompletedTask;
 
     public async Task<(bool success, string? error)> EditTileAsync(BiomeType biome, string? featureId)
     {

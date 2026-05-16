@@ -29,7 +29,8 @@ public class InvestigateService
         _settlementCache = settlementCache;
     }
 
-    public async Task<(string flavorText, List<TileNote> notes)> InvestigateAsync(Player player)
+    public async Task<(string flavorText, List<TileNote> notes, string? beaconMessage, HashSet<(int, int)>? beaconReveal)>
+        InvestigateAsync(Player player)
     {
         var tile       = _mapCache.GetCachedTile(player.Q, player.R);
         var visitCount = await _visitRepo.CountVisitsAsync(player.Id, player.Q, player.R);
@@ -47,7 +48,25 @@ public class InvestigateService
         }
 
         var notes = await _noteRepo.GetNotesForTileAsync(player.Q, player.R);
-        return (flavor, notes);
+
+        string? beaconMessage = null;
+        HashSet<(int, int)>? beaconReveal = null;
+        if (tile?.Structure?.Type == StructureType.Beacon)
+        {
+            var coords = HexRadius(player.Q, player.R, 9).ToList();
+            await _visitRepo.RecordRevealedCoordsAsync(player.Id, coords);
+            beaconReveal  = coords.ToHashSet();
+            beaconMessage = "The beacon's light reaches far. You can see the surrounding land clearly now.";
+        }
+
+        return (flavor, notes, beaconMessage, beaconReveal);
+    }
+
+    private static IEnumerable<(int Q, int R)> HexRadius(int centerQ, int centerR, int radius)
+    {
+        for (int dq = -radius; dq <= radius; dq++)
+            for (int dr = Math.Max(-radius, -dq - radius); dr <= Math.Min(radius, -dq + radius); dr++)
+                yield return (centerQ + dq, centerR + dr);
     }
 
     private List<HexTile> GetNeighborTiles(int q, int r)

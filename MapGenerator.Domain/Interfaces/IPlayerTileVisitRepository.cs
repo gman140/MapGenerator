@@ -11,5 +11,6 @@ public interface IPlayerTileVisitRepository
     Task DeleteAllForPlayerAsync(string playerId);
     Task CloseAllOpenVisitsAsync(string playerId);
     Task<List<(int Q, int R)>> GetVisitedCoordsAsync(string playerId);
+    Task RecordRevealedCoordsAsync(string playerId, IEnumerable<(int Q, int R)> coords);
     Task DeleteAllAsync();
 }
