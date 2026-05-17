@@ -12,6 +12,72 @@
          @onmousemove="HandleMouseMove"
          @onmouseleave="() => { _hoveredTile = null; _hoveredSettlementName = null; }">
 
+        <defs>
+            @* Water: elongated horizontal turbulence — ripple/wave feel *@
+            <filter id="tex-water">
+                <feTurbulence type="turbulence" baseFrequency="0.04 0.02" numOctaves="2" seed="1" result="n"/>
+                <feColorMatrix values="0.2 0 0 0 0.4  0 0.2 0 0 0.4  0 0 0.2 0 0.4  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="soft-light" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Sand: fine isotropic grain — beach and desert grit *@
+            <filter id="tex-sand">
+                <feTurbulence type="turbulence" baseFrequency="0.065" numOctaves="3" seed="5" result="n"/>
+                <feColorMatrix values="0.35 0 0 0 0.65  0 0.35 0 0 0.65  0 0 0.35 0 0.65  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="multiply" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Grass: medium anisotropic turbulence — blades of grass strokes *@
+            <filter id="tex-grass">
+                <feTurbulence type="turbulence" baseFrequency="0.055 0.08" numOctaves="2" seed="10" result="n"/>
+                <feColorMatrix values="0.22 0 0 0 0.39  0 0.22 0 0 0.39  0 0 0.22 0 0.39  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="soft-light" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Forest: medium turbulence — gentle canopy variation *@
+            <filter id="tex-forest">
+                <feTurbulence type="turbulence" baseFrequency="0.09" numOctaves="2" seed="15" result="n"/>
+                <feColorMatrix values="0.15 0 0 0 0.425  0 0.15 0 0 0.425  0 0 0.15 0 0.425  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="soft-light" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Wetland: slow organic blobs — subtle swamp and marsh *@
+            <filter id="tex-wetland">
+                <feTurbulence type="turbulence" baseFrequency="0.038" numOctaves="2" seed="22" result="n"/>
+                <feColorMatrix values="0.15 0 0 0 0.425  0 0.15 0 0 0.425  0 0 0.15 0 0.425  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="soft-light" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Rock: fractal noise with overlay — rough stone *@
+            <filter id="tex-rock">
+                <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="20" result="n"/>
+                <feColorMatrix values="0.2 0 0 0 0.4  0 0.2 0 0 0.4  0 0 0.2 0 0.4  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="overlay" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Lava: elongated turbulence screened orange — glowing lava flows *@
+            <filter id="tex-lava">
+                <feTurbulence type="turbulence" baseFrequency="0.03 0.012" numOctaves="3" seed="8" result="n"/>
+                <feColorMatrix values="0.6 0 0 0 0  0.3 0 0 0 0  0 0 0 0 0  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="screen" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Tundra: slow fractal noise — cold patchy ground *@
+            <filter id="tex-tundra">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="25" result="n"/>
+                <feColorMatrix values="0.17 0 0 0 0.415  0 0.17 0 0 0.415  0 0 0.17 0 0.415  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="soft-light" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+            @* Snow: fine fractal noise screened — icy crystalline sparkle *@
+            <filter id="tex-snow">
+                <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="30" result="n"/>
+                <feColorMatrix values="0.1 0 0 0 0  0 0.1 0 0 0  0 0 0.1 0 0  0 0 0 1 0" in="n" result="s"/>
+                <feBlend in="SourceGraphic" in2="s" mode="screen" result="b"/>
+                <feComposite in="b" in2="SourceGraphic" operator="in"/>
+            </filter>
+        </defs>
+
         @for (int dq = -ViewRadius; dq <= ViewRadius; dq++)
         {
             @for (int dr = -ViewRadius; dr <= ViewRadius; dr++)
@@ -23,9 +89,9 @@
                 bool inFog = RevealedTiles != null && !RevealedTiles.Contains((tq, tr));
                 if (hexDist > ViewRadius || !_tileMap.TryGetValue((tq, tr), out var tile) || inFog)
                 {
-                    <polygon @key="@($"fog_{tq}_{tr}")"
-                             points="@HexPoints(cx, cy)"
-                             class="hex-fog" />
+                    <path @key="@($"fog_{tq}_{tr}")"
+                          d="@HexPath(cx, cy, tq, tr)"
+                          class="hex-fog" />
                 }
                 else
                 {
@@ -38,8 +104,8 @@
                     <g @key="@($"{tq}_{tr}")"
                        class="hex-group @(isHovered ? "hovered" : "") @(isAdjacent ? "adjacent" : "")"
                        @onclick="() => OnTileClicked.InvokeAsync((tq, tr))">
-                        <polygon points="@HexPoints(cx, cy)"
-                                 class="hex-tile biome-@tile.Biome.ToString().ToLower()" />
+                        <path d="@HexPath(cx, cy, tq, tr)"
+                             class="hex-tile biome-@tile.Biome.ToString().ToLower()" />
 
                         @if (featureDef != null)
                         {
@@ -214,18 +280,69 @@
         return Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
     }
 
-    private static string HexPoints(double cx, double cy)
+    private static string HexPath(double cx, double cy, int q, int r)
     {
-        var sb = new System.Text.StringBuilder();
+        // World-space vertex positions (tile units) — stable regardless of player position,
+        // so shared vertices and edges between adjacent tiles always hash identically.
+        var wx = new double[6];
+        var wy = new double[6];
+        var vx = new double[6];
+        var vy = new double[6];
+
         for (int i = 0; i < 6; i++)
         {
             double angle = Math.PI / 180 * (60 * i - 30);
-            double x = cx + HexSize * Math.Cos(angle);
-            double y = cy + HexSize * Math.Sin(angle);
-            if (i > 0) sb.Append(' ');
-            sb.Append($"{x:F1},{y:F1}");
+            wx[i] = Sqrt3 * q + Sqrt3 / 2 * r + Math.Cos(angle);
+            wy[i] = 1.5 * r + Math.Sin(angle);
+            int gx = (int)Math.Round(wx[i] * 100);
+            int gy = (int)Math.Round(wy[i] * 100);
+            const double Jitter = 3.0;
+            vx[i] = cx + HexSize * Math.Cos(angle) + (SinHash(gx, gy, 0) - 0.5) * Jitter;
+            vy[i] = cy + HexSize * Math.Sin(angle) + (SinHash(gx, gy, 1) - 0.5) * Jitter;
         }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"M {F(vx[0])},{F(vy[0])}");
+
+        for (int i = 0; i < 6; i++)
+        {
+            int j = (i + 1) % 6;
+
+            // SVG-space edge midpoint
+            double mx = (vx[i] + vx[j]) / 2;
+            double my = (vy[i] + vy[j]) / 2;
+
+            // Canonical edge direction sorted by world coords so both tiles sharing
+            // this edge always compute the same perpendicular and control point.
+            double edx = wx[j] - wx[i];
+            double edy = wy[j] - wy[i];
+            bool flip = wx[i] > wx[j] + 1e-9 ||
+                        (Math.Abs(wx[i] - wx[j]) < 1e-9 && wy[i] > wy[j]);
+            if (flip) { edx = -edx; edy = -edy; }
+            double len = Math.Sqrt(edx * edx + edy * edy);
+            double px = -edy / len;  // canonical perpendicular
+            double py =  edx / len;
+
+            // Hash the world-space edge midpoint for a stable displacement
+            int gmx = (int)Math.Round(((wx[i] + wx[j]) / 2) * 100);
+            int gmy = (int)Math.Round(((wy[i] + wy[j]) / 2) * 100);
+            const double MaxCurve = 16.0;
+            double disp = (SinHash(gmx, gmy, 2) - 0.5) * MaxCurve;
+
+            double qcx = mx + px * disp;
+            double qcy = my + py * disp;
+
+            sb.Append($" Q {F(qcx)},{F(qcy)} {F(vx[j])},{F(vy[j])}");
+        }
+
+        sb.Append(" Z");
         return sb.ToString();
+    }
+
+    private static double SinHash(int x, int y, int channel)
+    {
+        double v = Math.Sin(x * 127.1 + y * 311.7 + channel * 74.3) * 43758.5453;
+        return v - Math.Floor(v);
     }
 
     private static string F(double v) => v.ToString("F1");

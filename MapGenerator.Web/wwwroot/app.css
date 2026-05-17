@@ -21,7 +21,7 @@
     --marsh:     #556848;
     --grassland: #6eaf41;
     --plains:    #b9af5a;
-    --savanna:   #c8b850;
+    --savanna:   #a09238;
     --forest:    #285a28;
     --jungle:    #1a5c1a;
     --desert:    #d2af64;
@@ -29,7 +29,7 @@
     --tundra:    #8ea898;
     --snow:      #e6ebf0;
     --glacier:   #c8dce8;
-    --volcano:   #5a2818;
+    --volcano:   #d85a06;
 }
 
 html, body { height: 100svh; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
@@ -65,30 +65,30 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .hex-map-container { cursor: default; display: flex; align-items: center; justify-content: center;  }
 .hex-map-svg { display: block; }
 .hex-group { cursor: pointer; }
-.hex-group:hover polygon { filter: brightness(1.25); }
-.hex-group.adjacent polygon { stroke: rgba(255,255,255,.35); stroke-width: 1.5; }
-.hex-group.hovered polygon { stroke: white; stroke-width: 1.5; filter: brightness(1.3); }
+.hex-group:hover path { filter: brightness(1.25); }
+.hex-group.adjacent path { stroke: rgba(255,255,255,.5); stroke-width: 1.5; }
+.hex-group.hovered path { stroke: white; stroke-width: 1.5; filter: brightness(1.3); }
 
-.hex-tile { stroke: rgba(0,0,0,.35); stroke-width: .8; }
+.hex-tile { stroke-width: 1; }
 .hex-fog  { fill: #050508; stroke: rgba(0,0,0,.5); stroke-width: .8; pointer-events: none; }
-.biome-ocean     { fill: var(--ocean); }
-.biome-lake      { fill: var(--lake); }
-.biome-shallows  { fill: var(--shallows); }
-.biome-beach     { fill: var(--beach); }
-.biome-river     { fill: var(--river); }
-.biome-swamp     { fill: var(--swamp); }
-.biome-marsh     { fill: var(--marsh); }
-.biome-grassland { fill: var(--grassland); }
-.biome-plains    { fill: var(--plains); }
-.biome-savanna   { fill: var(--savanna); }
-.biome-forest    { fill: var(--forest); }
-.biome-jungle    { fill: var(--jungle); }
-.biome-desert    { fill: var(--desert); }
-.biome-mountain  { fill: var(--mountain); }
-.biome-tundra    { fill: var(--tundra); }
-.biome-snow      { fill: var(--snow); }
-.biome-glacier   { fill: var(--glacier); }
-.biome-volcano   { fill: var(--volcano); }
+.biome-ocean     { fill: var(--ocean);     filter: url(#tex-water);   stroke: color-mix(in srgb, var(--ocean)     80%, rgb(49, 32, 19)); }
+.biome-lake      { fill: var(--lake);      filter: url(#tex-water);   stroke: color-mix(in srgb, var(--lake)      90%, rgb(49, 32, 19)); }
+.biome-shallows  { fill: var(--shallows);  filter: url(#tex-water);   stroke: color-mix(in srgb, var(--shallows)  90%, rgb(49, 32, 19)); }
+.biome-beach     { fill: var(--beach);     filter: url(#tex-sand);    stroke: color-mix(in srgb, var(--beach)     90%, rgb(49, 32, 19)); }
+.biome-river     { fill: var(--river);     filter: url(#tex-water);   stroke: color-mix(in srgb, var(--river)     90%, rgb(49, 32, 19)); }
+.biome-swamp     { fill: var(--swamp);     filter: url(#tex-wetland); stroke: color-mix(in srgb, var(--swamp)     70%, rgb(49, 32, 19)); }
+.biome-marsh     { fill: var(--marsh);     filter: url(#tex-wetland); stroke: color-mix(in srgb, var(--marsh)     70%, rgb(49, 32, 19)); }
+.biome-grassland { fill: var(--grassland); filter: url(#tex-grass);   stroke: color-mix(in srgb, var(--grassland) 90%, rgb(49, 32, 19)); }
+.biome-plains    { fill: var(--plains);    filter: url(#tex-grass);   stroke: color-mix(in srgb, var(--plains)    90%, rgb(49, 32, 19)); }
+.biome-savanna   { fill: var(--savanna);   filter: url(#tex-grass);   stroke: color-mix(in srgb, var(--savanna)   90%, rgb(49, 32, 19)); }
+.biome-forest    { fill: var(--forest);    filter: url(#tex-forest);  stroke: color-mix(in srgb, var(--forest)    60%, rgb(49, 32, 19)); }
+.biome-jungle    { fill: var(--jungle);    filter: url(#tex-forest);  stroke: color-mix(in srgb, var(--jungle)    90%, rgb(49, 32, 19)); }
+.biome-desert    { fill: var(--desert);    filter: url(#tex-sand);    stroke: color-mix(in srgb, var(--desert)    90%, rgb(49, 32, 19)); }
+.biome-mountain  { fill: var(--mountain);  filter: url(#tex-rock);    stroke: color-mix(in srgb, var(--mountain)  90%, rgb(49, 32, 19)); }
+.biome-tundra    { fill: var(--tundra);    filter: url(#tex-tundra);  stroke: color-mix(in srgb, var(--tundra)    90%, rgb(49, 32, 19)); }
+.biome-snow      { fill: var(--snow);      filter: url(#tex-snow);    stroke: color-mix(in srgb, var(--snow)      90%, rgb(49, 32, 19)); }
+.biome-glacier   { fill: var(--glacier);   filter: url(#tex-snow);    stroke: color-mix(in srgb, var(--glacier)   90%, rgb(49, 32, 19)); }
+.biome-volcano   { fill: var(--volcano);   filter: url(#tex-lava);    stroke: color-mix(in srgb, var(--volcano)   90%, rgb(49, 32, 19)); }
 
 .feature-dot         { pointer-events: none; opacity: 0.82; stroke: rgba(0,0,0,0.5); stroke-width: 0.8; }
 .feature-dot.feature-nature  { fill: #9b59b6; }
