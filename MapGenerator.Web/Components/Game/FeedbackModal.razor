@@ -1,0 +1,103 @@
+@using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
+@inject IFeedbackRepository FeedbackRepo
+
+<button class="crafting-toggle" @onclick="OpenAsync">
+    <span>💬 Feedback</span>
+</button>
+
+@if (_open)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-box feedback-modal" @onclick:stopPropagation>
+            <div class="crafting-modal-header">
+                <h3 class="modal-title">@(IsAdmin ? "User Feedback" : "Submit Feedback")</h3>
+                <button class="crafting-modal-close" @onclick="Close">✕</button>
+            </div>
+
+            @if (IsAdmin)
+            {
+                @if (_loading)
+                {
+                    <p class="inventory-empty">Loading...</p>
+                }
+                else if (_allFeedback.Count == 0)
+                {
+                    <p class="inventory-empty">No feedback submitted yet.</p>
+                }
+                else
+                {
+                    <div class="feedback-list">
+                        @foreach (var fb in _allFeedback)
+                        {
+                            <div class="feedback-entry">
+                                <div class="feedback-entry-header">
+                                    <span class="feedback-username">@fb.Username</span>
+                                    <span class="feedback-date">@fb.SubmittedAt.ToString("MMM d, yyyy HH:mm")</span>
+                                </div>
+                                <p class="feedback-text">@fb.Text</p>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <textarea class="feedback-textarea" placeholder="What's on your mind?"
+                          @bind="_text" maxlength="1000" rows="5"></textarea>
+                <div class="feedback-actions">
+                    @if (_submitted)
+                    {
+                        <span class="success-text">Thanks for the feedback!</span>
+                    }
+                    else
+                    {
+                        <button class="feedback-submit-btn" @onclick="SubmitAsync"
+                                disabled="@(string.IsNullOrWhiteSpace(_text))">
+                            Submit
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Username { get; set; } = null!;
+    [Parameter] public bool IsAdmin { get; set; }
+
+    private bool _open;
+    private bool _loading;
+    private bool _submitted;
+    private string _text = string.Empty;
+    private List<Feedback> _allFeedback = [];
+
+    private async Task OpenAsync()
+    {
+        _open = true;
+        _submitted = false;
+        _text = string.Empty;
+        if (IsAdmin)
+        {
+            _loading = true;
+            _allFeedback = await FeedbackRepo.GetAllAsync();
+            _loading = false;
+        }
+    }
+
+    private void Close() => _open = false;
+
+    private async Task SubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_text)) return;
+        await FeedbackRepo.SaveAsync(new Feedback
+        {
+            Username    = Username,
+            Text        = _text.Trim(),
+            SubmittedAt = DateTime.UtcNow,
+        });
+        _submitted = true;
+        _text = string.Empty;
+    }
+}

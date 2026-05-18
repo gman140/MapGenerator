@@ -419,6 +419,21 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .equip-equip-btn:hover:not(:disabled) { background: rgba(60,120,220,.35); }
 .equip-equip-btn:disabled { opacity: .45; cursor: default; }
 
+/* ── Feedback modal ──────────────────────────────────────────────────────── */
+.feedback-modal { max-width: 480px; padding: 1.25rem; gap: .75rem; display: flex; flex-direction: column; }
+.feedback-textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: inherit; font-size: .85rem; padding: .5rem .65rem; resize: vertical; outline: none; line-height: 1.5; }
+.feedback-textarea:focus { border-color: var(--accent); }
+.feedback-actions { display: flex; justify-content: flex-end; align-items: center; }
+.feedback-submit-btn { font-size: .82rem; padding: .3rem .9rem; border-radius: 4px; border: 1px solid var(--accent); background: rgba(110,181,160,.15); color: var(--accent); cursor: pointer; transition: background .15s; }
+.feedback-submit-btn:hover:not(:disabled) { background: rgba(110,181,160,.3); }
+.feedback-submit-btn:disabled { opacity: .4; cursor: default; }
+.feedback-list { display: flex; flex-direction: column; gap: .5rem; max-height: 60vh; overflow-y: auto; }
+.feedback-entry { border: 1px solid var(--border); border-radius: 5px; padding: .5rem .65rem; display: flex; flex-direction: column; gap: .25rem; }
+.feedback-entry-header { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.feedback-username { font-size: .78rem; color: var(--accent); font-weight: 600; }
+.feedback-date { font-size: .7rem; color: var(--text-dim); white-space: nowrap; }
+.feedback-text { font-size: .82rem; color: var(--text); line-height: 1.5; margin: 0; white-space: pre-wrap; }
+
 /* ── Combat shake animation ──────────────────────────────────────────────── */
 @keyframes combat-shake {
   0%, 100% { transform: translateX(0) rotate(0deg); }

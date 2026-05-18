@@ -80,6 +80,7 @@ else
                             OnEquip="HandleEquipAsync"
                             OnUnequip="HandleUnequipAsync" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
+            <FeedbackModal Username="@Session.Player.Username" IsAdmin="Session.Player.IsAdmin" />
             @if (!Session.Player.IsInDungeon)
             {
                 <BuildMenu Player="Session.Player"

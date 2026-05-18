@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IRoadRepository, RoadRepository>();
         services.AddScoped<IDungeonRepository, DungeonRepository>();
         services.AddScoped<ICombatRepository, CombatRepository>();
+        services.AddScoped<IFeedbackRepository, FeedbackRepository>();
         return services;
     }
 }
