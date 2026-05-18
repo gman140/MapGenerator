@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<DanceService>();
         services.AddScoped<KissService>();
         services.AddScoped<EggExplosionService>();
+        services.AddScoped<DungeonGenerationService>();
+        services.AddScoped<DungeonService>();
         return services;
     }
 }

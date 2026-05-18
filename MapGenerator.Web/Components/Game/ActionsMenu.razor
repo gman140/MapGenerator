@@ -5,8 +5,11 @@
 
 <div class="actions-menu">
     <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
-    <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
-    <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
+    @if (!IsInDungeon)
+    {
+        <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
+        <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
+    }
     <button class="action-item" @onclick="HandleGather"
             disabled="@(!TileHasResources || GatherOnCooldown)">
         ⛏ Gather
@@ -19,27 +22,54 @@
             <span class="action-cooldown">nothing here</span>
         }
     </button>
-    <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
-        🥚 Lay Egg
-        @if (EggOnCooldown)
-        {
-            <span class="action-cooldown">@_eggCooldownText</span>
-        }
-    </button>
-    @if (Player.Inventory.GetValueOrDefault("Poultice") > 0)
+    @if (!IsInDungeon)
     {
-        <button class="action-item" @onclick="HandleUsePoultice">
-            🌿 Use Poultice
-            <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
+        <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
+            🥚 Lay Egg
+            @if (EggOnCooldown)
+            {
+                <span class="action-cooldown">@_eggCooldownText</span>
+            }
+        </button>
+        @if (Player.Inventory.GetValueOrDefault("Poultice") > 0)
+        {
+            <button class="action-item" @onclick="HandleUsePoultice">
+                🌿 Use Poultice
+                <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
+            </button>
+        }
+        <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
+            💃 Dance
+            @if (DanceOnCooldown)
+            {
+                <span class="action-cooldown">@_danceCooldownText</span>
+            }
         </button>
     }
-    <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
-        💃 Dance
-        @if (DanceOnCooldown)
-        {
-            <span class="action-cooldown">@_danceCooldownText</span>
-        }
-    </button>
+    @if (IsOnDungeonEntrance && !IsInDungeon)
+    {
+        <button class="action-item dungeon-enter-btn" @onclick="HandleEnterDungeon">
+            🕳️ Enter Dungeon
+        </button>
+    }
+    @if (IsInDungeon && IsOnStaircaseDown)
+    {
+        <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
+            ⬇️ Descend
+        </button>
+    }
+    @if (IsInDungeon && IsOnStaircaseUp)
+    {
+        <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
+            @(IsOnFloorOne ? "⬆️ Exit Dungeon" : "⬆️ Ascend")
+        </button>
+    }
+    @if (IsInDungeon && HasRope)
+    {
+        <button class="action-item dungeon-rope-btn" @onclick="HandleUseRope">
+            🪢 Use Rope <span class="action-cooldown">(exit)</span>
+        </button>
+    }
 </div>
 
 @code {
@@ -51,11 +81,20 @@
     [Parameter] public EventCallback OnGather { get; set; }
     [Parameter] public EventCallback OnUsePoultice { get; set; }
     [Parameter] public EventCallback OnDance { get; set; }
+    [Parameter] public EventCallback OnEnterDungeon { get; set; }
+    [Parameter] public EventCallback OnUseRope { get; set; }
+    [Parameter] public EventCallback OnUseStaircase { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
     [Parameter] public DateTime? LastDancedAt { get; set; }
     [Parameter] public bool CooldownBypassed { get; set; }
     [Parameter] public long GatherCooldownUntil { get; set; }
     [Parameter] public bool TileHasResources { get; set; }
+    [Parameter] public bool IsOnDungeonEntrance { get; set; }
+    [Parameter] public bool IsInDungeon { get; set; }
+    [Parameter] public bool HasRope { get; set; }
+    [Parameter] public bool IsOnStaircaseUp { get; set; }
+    [Parameter] public bool IsOnStaircaseDown { get; set; }
+    [Parameter] public bool IsOnFloorOne { get; set; }
 
     private TimeSpan EffectiveEggCooldown
     {
@@ -130,6 +169,9 @@
     private async Task HandleGather()       { await OnGather.InvokeAsync(); }
     private async Task HandleUsePoultice()  { await OnUsePoultice.InvokeAsync(); }
     private async Task HandleDance()        { await OnDance.InvokeAsync(); }
+    private async Task HandleEnterDungeon()  { await OnEnterDungeon.InvokeAsync(); }
+    private async Task HandleUseRope()       { await OnUseRope.InvokeAsync(); }
+    private async Task HandleUseStaircase()  { await OnUseStaircase.InvokeAsync(); }
 
     public void Dispose() => _timer?.Dispose();
 }

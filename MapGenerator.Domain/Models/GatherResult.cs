@@ -4,8 +4,11 @@ public class GatherResult
 {
     public bool Success { get; init; }
     public string? ErrorMessage { get; init; }
+    public string? Message { get; init; }
     public List<GatheredItem> Gathered { get; init; } = [];
     public long CooldownUntil { get; init; }
+
+    public static GatherResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };
 }
 
 public class GatheredItem

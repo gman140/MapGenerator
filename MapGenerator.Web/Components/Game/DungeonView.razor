@@ -1,0 +1,327 @@
+@using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Models
+
+<div class="dungeon-view">
+    <div class="dungeon-hud">
+        <span class="dungeon-floor-label">Floor @FloorNumber</span>
+        @if (!HasLantern)
+        {
+            <span class="dungeon-dark-warning">⚫ No Lantern — darkness limits your sight</span>
+        }
+    </div>
+
+    <svg width="@_svgWidth" height="@_svgHeight" class="dungeon-svg">
+
+        @* Visible rooms — all pointer-events disabled; overlay handles input *@
+        @foreach (var room in _visibleRooms)
+        {
+            bool isPlayer = room.Q == PlayerQ && room.R == PlayerR;
+            var (cx, cy) = RoomCenter(room.Q, room.R);
+            string fill   = GetRoomFill(room, isPlayer);
+            string stroke = isPlayer ? PlayerColor : "#1a1a2e";
+            float  sw     = isPlayer ? 3f : 1.5f;
+
+            <path @key="@($"room_{room.Q}_{room.R}")"
+                  d="@HexPath(cx, cy)"
+                  fill="@fill"
+                  stroke="@stroke"
+                  stroke-width="@sw"
+                  style="pointer-events: none;" />
+
+            <g @key="@($"deco_{room.Q}_{room.R}")" style="pointer-events: none;">
+                <text x="@cx.ToString("F0")"
+                      y="@((cy + 6).ToString("F0"))"
+                      text-anchor="middle"
+                      font-size="16"
+                      class="dungeon-room-icon">
+                    @GetRoomIcon(room)
+                </text>
+
+                @foreach (int dir in room.PassableDirections)
+                {
+                    var (edgeCx, edgeCy) = PassageCenter(cx, cy, dir);
+                    <circle cx="@edgeCx.ToString("F1")"
+                            cy="@edgeCy.ToString("F1")"
+                            r="3"
+                            fill="#4a4a6a"
+                            opacity="0.7" />
+                }
+            </g>
+        }
+
+        @* Fog tiles — slightly lighter if passable from current position *@
+        @foreach (var pos in _fogRooms)
+        {
+            var (cx, cy) = RoomCenter(pos.Q, pos.R);
+            bool passable = _passableFromCurrent.Contains((pos.Q, pos.R));
+            <path @key="@($"fog_{pos.Q}_{pos.R}")"
+                  d="@HexPath(cx, cy)"
+                  fill="@(passable ? "#16162a" : "#0a0a14")"
+                  stroke="#1a1a2e"
+                  stroke-width="1"
+                  style="pointer-events: none;" />
+        }
+
+        @* Player dot — drawn above rooms, below overlay *@
+        @{
+            var (pcx, pcy) = RoomCenter(PlayerQ, PlayerR);
+        }
+        <circle cx="@pcx.ToString("F0")" cy="@pcy.ToString("F0")" r="8"
+                fill="@PlayerColor" stroke="#fff" stroke-width="2"
+                style="pointer-events: none;" />
+
+        @* Transparent overlay — sole source of mouse events *@
+        <rect x="0" y="0"
+              width="@_svgWidth.ToString("F0")"
+              height="@_svgHeight.ToString("F0")"
+              fill="transparent"
+              style="cursor: @(_hoveredRoom != null && CanMoveToRoom(_hoveredRoom) ? "pointer" : "default");"
+              @onclick="HandleOverlayClick"
+              @onmousemove="HandleOverlayMouseMove"
+              @onmouseleave="() => { _hoveredRoom = null; }" />
+    </svg>
+
+    @if (_hoveredRoom != null)
+    {
+        bool isRevealed = RevealedRooms.Contains((_hoveredRoom.Q, _hoveredRoom.R))
+                       || (_hoveredRoom.Q == PlayerQ && _hoveredRoom.R == PlayerR);
+        <div class="dungeon-tooltip">
+            @if (isRevealed)
+            {
+                <strong>@GetRoomLabel(_hoveredRoom)</strong>
+                @if (_hoveredRoom.Type == DungeonRoomType.LockedDoor && _hoveredRoom.RequiredKeyId != null)
+                {
+                    <div>Requires: @GetKeyName(_hoveredRoom.RequiredKeyId)</div>
+                }
+                @if ((_hoveredRoom.Type is DungeonRoomType.Treasure or DungeonRoomType.Boss)
+                     && !_hoveredRoom.IsCleared && _hoveredRoom.Loot.Count > 0)
+                {
+                    <div class="dungeon-tooltip-loot">Items inside</div>
+                }
+            }
+            else if (_passableFromCurrent.Contains((_hoveredRoom.Q, _hoveredRoom.R)))
+            {
+                <strong>Unknown passage</strong>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DungeonFloor Floor { get; set; } = null!;
+    [Parameter, EditorRequired] public int PlayerQ { get; set; }
+    [Parameter, EditorRequired] public int PlayerR { get; set; }
+    [Parameter, EditorRequired] public int FloorNumber { get; set; }
+    [Parameter, EditorRequired] public string PlayerColor { get; set; } = "#50a0f0";
+    [Parameter] public bool HasLantern { get; set; }
+    [Parameter] public HashSet<(int Q, int R)> RevealedRooms { get; set; } = [];
+    [Parameter] public EventCallback<(int Q, int R)> OnRoomClicked { get; set; }
+
+    private const double HexSize = 34;
+    private static readonly double Sqrt3 = Math.Sqrt(3);
+
+    private double _svgWidth  = 700;
+    private double _svgHeight = 700;
+    private double _minOffsetX;
+    private double _minOffsetY;
+
+    private List<DungeonRoom> _visibleRooms = [];
+    private List<(int Q, int R)> _fogRooms = [];
+    private HashSet<(int Q, int R)> _passableFromCurrent = [];
+    private DungeonRoom? _hoveredRoom;
+
+    private static readonly (int dq, int dr)[] Directions =
+    [
+        ( 1,  0), ( 1, -1), ( 0, -1),
+        (-1,  0), (-1,  1), ( 0,  1),
+    ];
+
+    protected override void OnParametersSet()
+    {
+        if (Floor.Rooms.Count == 0) return;
+
+        _minOffsetX = Floor.Rooms.Min(r => HexSize * Sqrt3 * (r.Q + r.R * 0.5));
+        _minOffsetY = Floor.Rooms.Min(r => HexSize * 1.5 * r.R);
+
+        double maxOffsetX = Floor.Rooms.Max(r => HexSize * Sqrt3 * (r.Q + r.R * 0.5));
+        double maxOffsetY = Floor.Rooms.Max(r => HexSize * 1.5 * r.R);
+        double padding = HexSize * 2;
+        _svgWidth  = maxOffsetX - _minOffsetX + HexSize * Sqrt3 + padding * 2;
+        _svgHeight = maxOffsetY - _minOffsetY + HexSize * 2    + padding * 2;
+
+        _visibleRooms = Floor.Rooms
+            .Where(r => RevealedRooms.Contains((r.Q, r.R)) || (r.Q == PlayerQ && r.R == PlayerR))
+            .ToList();
+
+        // Compute passable exits from player's current room (these can be clicked even in fog)
+        _passableFromCurrent = [];
+        var currentRoom = Floor.Rooms.FirstOrDefault(r => r.Q == PlayerQ && r.R == PlayerR);
+        if (currentRoom != null)
+        {
+            foreach (int dir in currentRoom.PassableDirections)
+            {
+                var (dq, dr) = Directions[dir];
+                _passableFromCurrent.Add((currentRoom.Q + dq, currentRoom.R + dr));
+            }
+        }
+
+        var floorPositions = Floor.Rooms.Select(r => (r.Q, r.R)).ToHashSet();
+        var fogSet = new HashSet<(int, int)>();
+        foreach (var room in _visibleRooms)
+        {
+            foreach (int dir in room.PassableDirections)
+            {
+                var (dq, dr) = Directions[dir];
+                int nq = room.Q + dq, nr = room.R + dr;
+                if (!RevealedRooms.Contains((nq, nr)) && floorPositions.Contains((nq, nr))
+                    && !(nq == PlayerQ && nr == PlayerR))
+                    fogSet.Add((nq, nr));
+            }
+        }
+        // Also add passable-from-current rooms that aren't otherwise visible as fog
+        foreach (var pos in _passableFromCurrent)
+        {
+            if (!RevealedRooms.Contains(pos) && floorPositions.Contains(pos)
+                && !(pos.Q == PlayerQ && pos.R == PlayerR))
+                fogSet.Add((pos.Q, pos.R));
+        }
+        _fogRooms = fogSet.Select(p => (p.Item1, p.Item2)).ToList();
+    }
+
+    // ── Coordinate helpers ────────────────────────────────────────────────────
+
+    private (double cx, double cy) RoomCenter(int q, int r)
+    {
+        double padding = HexSize * 2;
+        double cx = HexSize * Sqrt3 * (q + r * 0.5) - _minOffsetX + padding + HexSize * Sqrt3 / 2;
+        double cy = HexSize * 1.5 * r               - _minOffsetY + padding + HexSize;
+        return (cx, cy);
+    }
+
+    private static (double, double) PassageCenter(double cx, double cy, int dir)
+    {
+        double angle = Math.PI / 180.0 * (60 * dir);
+        return (cx + HexSize * 0.75 * Math.Cos(angle), cy + HexSize * 0.75 * Math.Sin(angle));
+    }
+
+    private static string HexPath(double cx, double cy)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < 6; i++)
+        {
+            double angle = Math.PI / 180.0 * (60 * i - 30);
+            double x = cx + HexSize * Math.Cos(angle);
+            double y = cy + HexSize * Math.Sin(angle);
+            sb.Append(i == 0 ? $"M {x:F1},{y:F1}" : $" L {x:F1},{y:F1}");
+        }
+        sb.Append(" Z");
+        return sb.ToString();
+    }
+
+    // ── Overlay event handling ────────────────────────────────────────────────
+
+    private DungeonRoom? FindNearestRoom(double x, double y)
+    {
+        DungeonRoom? nearest = null;
+        double minDist = HexSize; // only snap within one hex radius
+        foreach (var room in Floor.Rooms)
+        {
+            // Skip rooms that are neither visible nor passable exits
+            if (!RevealedRooms.Contains((room.Q, room.R))
+                && !(room.Q == PlayerQ && room.R == PlayerR)
+                && !_passableFromCurrent.Contains((room.Q, room.R)))
+                continue;
+
+            var (cx, cy) = RoomCenter(room.Q, room.R);
+            double dist = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+            if (dist < minDist)
+            {
+                minDist = dist;
+                nearest = room;
+            }
+        }
+        return nearest;
+    }
+
+    private void HandleOverlayMouseMove(MouseEventArgs e)
+    {
+        _hoveredRoom = FindNearestRoom(e.OffsetX, e.OffsetY);
+    }
+
+    private async Task HandleOverlayClick(MouseEventArgs e)
+    {
+        var room = FindNearestRoom(e.OffsetX, e.OffsetY);
+        if (room != null && CanMoveToRoom(room))
+            await OnRoomClicked.InvokeAsync((room.Q, room.R));
+    }
+
+    // ── Interaction ───────────────────────────────────────────────────────────
+
+    private bool CanMoveToRoom(DungeonRoom room)
+    {
+        if (room.Q == PlayerQ && room.R == PlayerR) return false;
+        return _passableFromCurrent.Contains((room.Q, room.R));
+    }
+
+    // ── Visuals ───────────────────────────────────────────────────────────────
+
+    private static string GetRoomFill(DungeonRoom room, bool isPlayer)
+    {
+        if (isPlayer) return "#1e2a40";
+        return room.Type switch
+        {
+            DungeonRoomType.Entrance      => "#2d4a2d",
+            DungeonRoomType.Empty         => "#1e1e32",
+            DungeonRoomType.Treasure      => room.IsCleared ? "#2a2a1a" : "#4a3a00",
+            DungeonRoomType.Shrine        => room.IsCleared ? "#1e1e32" : "#2a1a4a",
+            DungeonRoomType.Trap          => room.IsCleared ? "#1e1e32" : "#3a1a1a",
+            DungeonRoomType.Rest          => room.IsCleared ? "#1e1e32" : "#1a3a2a",
+            DungeonRoomType.Dark          => "#0a0a1a",
+            DungeonRoomType.Boss          => room.IsCleared ? "#1e1e32" : "#3a0a0a",
+            DungeonRoomType.StaircaseDown => "#1a2a3a",
+            DungeonRoomType.StaircaseUp   => "#2d4a2d",
+            DungeonRoomType.LockedDoor    => room.RequiredKeyId == null ? "#1e2e1e" : "#2a1e00",
+            _                             => "#1e1e32",
+        };
+    }
+
+    private static string GetRoomIcon(DungeonRoom room) => room.Type switch
+    {
+        DungeonRoomType.Entrance      => "🚪",
+        DungeonRoomType.Treasure      => room.IsCleared ? "📭" : "📦",
+        DungeonRoomType.Shrine        => room.IsCleared ? "✨" : "🔮",
+        DungeonRoomType.Trap          => room.IsCleared ? "" : "⚠️",
+        DungeonRoomType.Rest          => room.IsCleared ? "" : "🛖",
+        DungeonRoomType.Dark          => "🌑",
+        DungeonRoomType.Boss          => room.IsCleared ? "💀" : "👁️",
+        DungeonRoomType.StaircaseDown => "⬇️",
+        DungeonRoomType.StaircaseUp   => "⬆️",
+        DungeonRoomType.LockedDoor    => room.RequiredKeyId == null ? "🔓" : "🔒",
+        _                             => "",
+    };
+
+    private static string GetRoomLabel(DungeonRoom room) => room.Type switch
+    {
+        DungeonRoomType.Entrance      => "Entrance",
+        DungeonRoomType.Empty         => "Empty Room",
+        DungeonRoomType.Treasure      => room.IsCleared ? "Empty Treasure Room" : "Treasure Room",
+        DungeonRoomType.Shrine        => room.IsCleared ? "Spent Shrine" : "Shrine",
+        DungeonRoomType.Trap          => room.IsCleared ? "Sprung Trap" : "Trap Room",
+        DungeonRoomType.Rest          => room.IsCleared ? "Resting Spot (used)" : "Resting Spot",
+        DungeonRoomType.Dark          => "Dark Room",
+        DungeonRoomType.Boss          => room.IsCleared ? "Boss Chamber (cleared)" : "Boss Chamber",
+        DungeonRoomType.StaircaseDown => "Staircase Down",
+        DungeonRoomType.StaircaseUp   => "Staircase Up",
+        DungeonRoomType.LockedDoor    => room.RequiredKeyId == null ? "Unlocked Door" : "Locked Door",
+        _                             => "Room",
+    };
+
+    private static string GetKeyName(string keyId) => keyId switch
+    {
+        "IronKey"    => "Iron Key",
+        "FrostKey"   => "Frost Key",
+        "AncientKey" => "Ancient Key",
+        "WoodKey"    => "Wood Key",
+        _            => "Key",
+    };
+}

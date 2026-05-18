@@ -70,6 +70,25 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "Ash",           Name = "Ash",            Description = "Grey powder from something that burned completely." },
         new() { Id = "HollowStone",   Name = "Hollow Stone",   Description = "A stone with a void inside. Something used to live here." },
         new() { Id = "TidalCoin",     Name = "Tidal Coin",     Description = "Old currency, revealed by water. The kingdom it represents is unrecognizable." },
+
+        // ── Dungeon keys (quantity 1) ─────────────────────────────────────────
+        new() { Id = "IronKey",    Name = "Iron Key",    Description = "Pitted and cold. It fits a lock somewhere underground." },
+        new() { Id = "FrostKey",   Name = "Frost Key",   Description = "The metal is always cold. Something below is waiting to be opened." },
+        new() { Id = "AncientKey", Name = "Ancient Key", Description = "Older than the tomb it opens. Handle with the respect that implies." },
+        new() { Id = "WoodKey",    Name = "Wood Key",    Description = "Carved from something that grew in the dark. Still smells of it." },
+
+        // ── Dungeon-exclusive resources (quantity 1) ──────────────────────────
+        new() { Id = "CaveCrystal",   Name = "Cave Crystal",   Description = "It grew in the dark over a very long time. It does not know what sunlight is." },
+        new() { Id = "GlowingMoss",   Name = "Glowing Moss",   Description = "Bioluminescent and cold to the touch. It illuminates nothing useful." },
+        new() { Id = "AncientShard",  Name = "Ancient Shard",  Description = "Ceramic, probably. From something that mattered to someone, once." },
+        new() { Id = "DeepMushroom",  Name = "Deep Mushroom",  Description = "Pale and enormous and growing where it has no right to grow." },
+        new() { Id = "FrozenRelic",   Name = "Frozen Relic",   Description = "Encased in ice so old it has gone blue. Something waits inside." },
+        new() { Id = "BoneRune",      Name = "Bone Rune",      Description = "Carved into something that used to be alive. The carving is precise and deliberate." },
+        new() { Id = "MossGem",       Name = "Moss Gem",       Description = "A gem colonized by moss so thoroughly that the two have become one thing." },
+        new() { Id = "DeepOre",       Name = "Deep Ore",       Description = "Denser and darker than surface ore. It came from somewhere that pressure is a way of life." },
+        new() { Id = "IceShard",      Name = "Ice Shard",      Description = "Brittle and clouded and very cold. It has been ice for a long time." },
+        new() { Id = "TangledRoot",   Name = "Tangled Root",   Description = "Root matter from the labyrinth above. It found its way down here. So did you." },
+        new() { Id = "TarnishedRelic",Name = "Tarnished Relic",Description = "Something ceremonial, its purpose lost. The tarnish is its memory now." },
     ];
 
     private static readonly Dictionary<string, ResourceDefinition> _byId =

@@ -28,6 +28,8 @@ public class GameSessionService : IAsyncDisposable
     private readonly ITileNoteRepository _noteRepo;
     private readonly IMapRepository _mapRepo;
     private readonly IRoadRepository _roadRepo;
+    private readonly DungeonService _dungeonSvc;
+    private readonly IDungeonRepository _dungeonRepo;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -54,7 +56,9 @@ public class GameSessionService : IAsyncDisposable
         IPlayerTileVisitRepository visitRepo,
         ITileNoteRepository noteRepo,
         IMapRepository mapRepo,
-        IRoadRepository roadRepo)
+        IRoadRepository roadRepo,
+        DungeonService dungeonSvc,
+        IDungeonRepository dungeonRepo)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -77,6 +81,8 @@ public class GameSessionService : IAsyncDisposable
         _noteRepo        = noteRepo;
         _mapRepo         = mapRepo;
         _roadRepo        = roadRepo;
+        _dungeonSvc      = dungeonSvc;
+        _dungeonRepo     = dungeonRepo;
     }
 
     public async Task InitAsync(string browserId)
@@ -285,18 +291,29 @@ public class GameSessionService : IAsyncDisposable
     {
         if (Player == null) return ("You are not sure who you are.", [], null, null);
         if (IsStunned) return ("You are stunned and cannot focus.", [], null, null);
+        if (Player.IsInDungeon)
+        {
+            var msg = await _dungeonSvc.InvestigateAsync(Player);
+            return (msg, [], null, null);
+        }
         return await _investigateSvc.InvestigateAsync(Player);
     }
 
     public async Task<GatherResult> GatherAsync()
     {
-        if (Player == null) return new GatherResult { Success = false, ErrorMessage = "Not logged in." };
-        if (IsStunned) return new GatherResult { Success = false, ErrorMessage = "You are stunned and cannot act." };
+        if (Player == null) return GatherResult.Fail("Not logged in.");
+        if (IsStunned) return GatherResult.Fail("You are stunned and cannot act.");
         var permissions = _permissionSvc.GetPermissions(Player);
-        var result = await _gatherSvc.TryGatherAsync(Player, permissions);
-        if (result.Success)
-            Player.GatherCooldownUntil = result.CooldownUntil;
-        return result;
+        if (Player.IsInDungeon)
+        {
+            var result = await _dungeonSvc.GatherAsync(Player, permissions);
+            if (result.Success) Player.GatherCooldownUntil = result.CooldownUntil;
+            return result;
+        }
+        var surfaceResult = await _gatherSvc.TryGatherAsync(Player, permissions);
+        if (surfaceResult.Success)
+            Player.GatherCooldownUntil = surfaceResult.CooldownUntil;
+        return surfaceResult;
     }
 
     public async Task<bool> UsePoulticeAsync()
@@ -427,6 +444,66 @@ public class GameSessionService : IAsyncDisposable
             : $"You eat the {foodDef.Name}.";
         return (true, message);
     }
+
+    // ── Dungeon ───────────────────────────────────────────────────────────────
+
+    public async Task<(bool success, string message, List<(int Q, int R)> revealedRooms)> EnterDungeonAsync()
+    {
+        if (Player == null) return (false, "Not logged in.", []);
+        if (IsStunned) return (false, "You are stunned and cannot act.", []);
+        if (Player.IsInDungeon) return (false, "You are already in a dungeon.", []);
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile?.FeatureId == null) return (false, "There is no dungeon entrance here.", []);
+        return await _dungeonSvc.EnterDungeonAsync(Player, tile.FeatureId);
+    }
+
+    public async Task<DungeonMoveResult> UseStaircaseAsync()
+    {
+        if (Player == null) return DungeonMoveResult.Fail("Not logged in.");
+        if (IsStunned) return DungeonMoveResult.Fail("You are stunned and cannot move.");
+        if (!Player.IsInDungeon) return DungeonMoveResult.Fail("You are not in a dungeon.");
+        return await _dungeonSvc.UseStaircaseAsync(Player);
+    }
+
+    public async Task<DungeonMoveResult> DungeonMoveAsync(int targetQ, int targetR)
+    {
+        if (Player == null) return DungeonMoveResult.Fail("Not logged in.");
+        if (IsStunned) return DungeonMoveResult.Fail("You are stunned and cannot move.");
+        if (!Player.IsInDungeon) return DungeonMoveResult.Fail("You are not in a dungeon.");
+        var permissions = _permissionSvc.GetPermissions(Player);
+        return await _dungeonSvc.MoveAsync(Player, targetQ, targetR, permissions);
+    }
+
+    public async Task<(bool success, string message)> UseRopeAsync()
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (IsStunned) return (false, "You are stunned and cannot act.");
+        return await _dungeonSvc.UseRopeAsync(Player);
+    }
+
+    public async Task<DungeonFloor?> GetCurrentDungeonFloorAsync()
+    {
+        if (Player == null || !Player.IsInDungeon) return null;
+        var dungeon = await _dungeonRepo.GetByIdAsync(Player.DungeonInstanceId!);
+        return dungeon?.Floors.FirstOrDefault(f => f.FloorNumber == Player.DungeonFloor);
+    }
+
+    public bool IsOnDungeonEntrance()
+    {
+        if (Player == null || Player.IsInDungeon) return false;
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        return tile?.FeatureId is "CaveEntrance" or "IcyCavern" or "FrozenShrine"
+               or "AncientRuins" or "RuinedTower" or "RuinedTemple" or "CrumbledFortress"
+               or "StoneCircle" or "TreeHollow";
+    }
+
+    public bool DungeonTileHasGather()
+    {
+        if (Player == null || !Player.IsInDungeon) return false;
+        return true; // Determined at gather-time by DungeonService
+    }
+
+    // ── Dispose ───────────────────────────────────────────────────────────────
 
     public ValueTask DisposeAsync()
     {

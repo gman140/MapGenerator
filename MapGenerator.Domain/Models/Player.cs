@@ -22,4 +22,12 @@ public class Player
     public List<ActiveBuff> ActiveBuffs { get; set; } = [];
     public Dictionary<string, int> Inventory { get; set; } = new();
     public Dictionary<string, int> CraftedItems { get; set; } = new();
+
+    // Dungeon state — null DungeonInstanceId means on the surface
+    public string? DungeonInstanceId { get; set; }
+    public int DungeonFloor { get; set; }
+    public int DungeonQ { get; set; }
+    public int DungeonR { get; set; }
+
+    public bool IsInDungeon => DungeonInstanceId != null;
 }

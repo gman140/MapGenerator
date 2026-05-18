@@ -23,6 +23,9 @@ public class MongoDbContext
         RegisterMap<SettlementTile>();
         RegisterMap<Road>();
         RegisterMap<RoadPoint>();
+        RegisterMapWithPlainStringId<DungeonInstance>();
+        RegisterMap<DungeonFloor>();
+        RegisterMap<DungeonRoom>();
     }
 
     private static void RegisterMap<T>() where T : class
@@ -39,6 +42,19 @@ public class MongoDbContext
                     idMember.SetIdGenerator(StringObjectIdGenerator.Instance)
                             .SetSerializer(new StringSerializer(BsonType.ObjectId));
                 }
+            });
+        }
+    }
+
+    // For documents whose Id is a plain string (not a MongoDB ObjectId).
+    private static void RegisterMapWithPlainStringId<T>() where T : class
+    {
+        if (!BsonClassMap.IsClassMapRegistered(typeof(T)))
+        {
+            BsonClassMap.RegisterClassMap<T>(cm =>
+            {
+                cm.AutoMap();
+                cm.SetIgnoreExtraElements(true);
             });
         }
     }
@@ -60,4 +76,5 @@ public class MongoDbContext
     public IMongoCollection<TileInventory> TileInventories => _db.GetCollection<TileInventory>("tileInventories");
     public IMongoCollection<Settlement> Settlements => _db.GetCollection<Settlement>("settlements");
     public IMongoCollection<Road> Roads => _db.GetCollection<Road>("roads");
+    public IMongoCollection<DungeonInstance> Dungeons => _db.GetCollection<DungeonInstance>("dungeons");
 }

@@ -10,6 +10,7 @@
 @using MapGenerator.Application.Services
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
 @implements IAsyncDisposable
 
 <PageTitle>@(Session.Player?.Username ?? "World Map")</PageTitle>
@@ -26,10 +27,24 @@ else
 {
     <div class="game-layout">
         <div class="map-area">
-            <HexMapView Player="Session.Player"
-                        OnTileClicked="HandleTileClickAsync"
-                        OnlinePlayers="Broadcast.GetOnlinePlayers()"
-                        RevealedTiles="_revealedTiles" />
+            @if (Session.Player.IsInDungeon && _dungeonFloor != null)
+            {
+                <DungeonView Floor="_dungeonFloor"
+                             PlayerQ="Session.Player.DungeonQ"
+                             PlayerR="Session.Player.DungeonR"
+                             FloorNumber="Session.Player.DungeonFloor"
+                             PlayerColor="Session.Player.Color"
+                             HasLantern="_playerHasLantern"
+                             RevealedRooms="_revealedDungeonRooms"
+                             OnRoomClicked="HandleDungeonRoomClickAsync" />
+            }
+            else
+            {
+                <HexMapView Player="Session.Player"
+                            OnTileClicked="HandleTileClickAsync"
+                            OnlinePlayers="Broadcast.GetOnlinePlayers()"
+                            RevealedTiles="_revealedTiles" />
+            }
         </div>
         <div class="sidebar">
             <MiniMap Player="Session.Player" MapVersion="_mapVersion"
@@ -42,11 +57,14 @@ else
                         OnKissPlayer="HandleKissPlayerAsync" />
             <InventoryModal Inventory="Session.Player.Inventory" OnEat="HandleEatAsync" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
-            <BuildMenu Player="Session.Player"
-                       CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
-                       OnBuild="HandleBuildStructureAsync"
-                       OnDestroy="HandleDestroyStructureAsync"
-                       OnBuildRoad="HandleBuildRoadAsync" />
+            @if (!Session.Player.IsInDungeon)
+            {
+                <BuildMenu Player="Session.Player"
+                           CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
+                           OnBuild="HandleBuildStructureAsync"
+                           OnDestroy="HandleDestroyStructureAsync"
+                           OnBuildRoad="HandleBuildRoadAsync" />
+            }
             <TileInventoryPanel Player="Session.Player" OnInventoryChanged="StateHasChanged" />
             @if (Session.Player.IsAdmin)
             {
@@ -61,10 +79,19 @@ else
                          OnDance="HandleDanceAsync"
                          OnLeaveNote="() => { _showNoteModal = true; _noteText = string.Empty; }"
                          OnPlantSign="() => { _showSignModal = true; _signText = string.Empty; }"
+                         OnEnterDungeon="HandleEnterDungeonAsync"
+                         OnUseRope="HandleUseRopeAsync"
+                         OnUseStaircase="HandleUseStaircaseAsync"
                          LastEggLaidAt="Session.Player.LastEggLaidAt"
                          LastDancedAt="Session.Player.LastDancedAt"
                          GatherCooldownUntil="_gatherCooldownUntil"
-                         TileHasResources="Session.TileHasResources()"
+                         TileHasResources="Session.Player.IsInDungeon || Session.TileHasResources()"
+                         IsOnDungeonEntrance="Session.IsOnDungeonEntrance()"
+                         IsInDungeon="Session.Player.IsInDungeon"
+                         HasRope="_playerHasRope"
+                         IsOnStaircaseUp="_isOnStaircaseUp"
+                         IsOnStaircaseDown="_isOnStaircaseDown"
+                         IsOnFloorOne="Session.Player.DungeonFloor == 1"
                          CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)" />
         </div>
         <div class="chat-area">
@@ -159,6 +186,19 @@ else
     private string _noteText = string.Empty;
     private string _signText = string.Empty;
 
+    // Dungeon state
+    private DungeonFloor? _dungeonFloor;
+    private HashSet<(int Q, int R)> _revealedDungeonRooms = [];
+    private bool _playerHasLantern => Session.Player != null &&
+        (Session.Player.Inventory.GetValueOrDefault("Lantern") > 0 ||
+         Session.Player.CraftedItems.GetValueOrDefault("Lantern") > 0);
+    private bool _playerHasRope => Session.Player != null &&
+        Session.Player.Inventory.GetValueOrDefault("Rope") > 0;
+    private DungeonRoomType? _currentDungeonRoomType => _dungeonFloor?.Rooms
+        .FirstOrDefault(r => r.Q == Session.Player!.DungeonQ && r.R == Session.Player.DungeonR)?.Type;
+    private bool _isOnStaircaseUp   => _currentDungeonRoomType == DungeonRoomType.StaircaseUp;
+    private bool _isOnStaircaseDown => _currentDungeonRoomType == DungeonRoomType.StaircaseDown;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
@@ -178,6 +218,12 @@ else
         AddArrivalMessages(Session.Player.Q, Session.Player.R);
         _worldMessages = await Session.GetWorldChatAsync();
         _revealedTiles = await Session.LoadRevealedTilesAsync();
+
+        if (Session.Player.IsInDungeon)
+        {
+            _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
+            _revealedDungeonRooms = [(Session.Player.DungeonQ, Session.Player.DungeonR)];
+        }
 
         Broadcast.PlayerMoved        += OnPlayerMoved;
         Broadcast.MessageReceived    += OnMessageReceived;
@@ -440,6 +486,112 @@ else
         StateHasChanged();
     }
 
+    private async Task HandleEnterDungeonAsync()
+    {
+        var (success, message, revealedOnEntry) = await Session.EnterDungeonAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        if (success)
+        {
+            _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
+            _revealedDungeonRooms = [(Session.Player!.DungeonQ, Session.Player.DungeonR)];
+            foreach (var pos in revealedOnEntry)
+                _revealedDungeonRooms.Add(pos);
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleUseStaircaseAsync()
+    {
+        if (Session.Player == null) return;
+        var result = await Session.UseStaircaseAsync();
+
+        if (!result.Success)
+        {
+            ShowToast(result.ErrorMessage ?? "Cannot use staircase.");
+            return;
+        }
+
+        if (result.RoomMessage != null)
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = result.RoomMessage,
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+
+        if (result.ExitedToSurface)
+        {
+            _dungeonFloor = null;
+            _revealedDungeonRooms = [];
+        }
+        else
+        {
+            _revealedDungeonRooms = [(result.NewQ, result.NewR)];
+            if (result.RevealedRooms != null)
+                foreach (var pos in result.RevealedRooms)
+                    _revealedDungeonRooms.Add(pos);
+            _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleDungeonRoomClickAsync((int Q, int R) target)
+    {
+        if (Session.Player == null) return;
+        var result = await Session.DungeonMoveAsync(target.Q, target.R);
+
+        if (!result.Success)
+        {
+            ShowToast(result.ErrorMessage ?? "Cannot move there.");
+            return;
+        }
+
+        if (result.RoomMessage != null)
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = result.RoomMessage,
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+
+        if (result.ExitedToSurface)
+        {
+            _dungeonFloor = null;
+            _revealedDungeonRooms = [];
+        }
+        else
+        {
+            _revealedDungeonRooms.Add((result.NewQ, result.NewR));
+            if (result.RevealedRooms != null)
+                foreach (var pos in result.RevealedRooms)
+                    _revealedDungeonRooms.Add(pos);
+
+            // Reload floor data if floor changed
+            _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
+        }
+
+        _gatherCooldownUntil = Session.Player.GatherCooldownUntil;
+        StateHasChanged();
+    }
+
+    private async Task HandleUseRopeAsync()
+    {
+        var (success, message) = await Session.UseRopeAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        if (success)
+        {
+            _dungeonFloor = null;
+            _revealedDungeonRooms = [];
+        }
+        StateHasChanged();
+    }
+
     private async Task HandleGatherAsync()
     {
         var result = await Session.GatherAsync();
@@ -451,9 +603,19 @@ else
             return;
         }
 
-        var message = result.Gathered.Count == 0
-            ? "You search carefully but find nothing worth taking."
-            : "You gather: " + string.Join(", ", result.Gathered.Select(g => $"{g.Quantity}× {g.Name}")) + ".";
+        string message;
+        if (result.Message != null && Session.Player?.IsInDungeon == true)
+        {
+            message = result.Gathered.Count == 0
+                ? "You search the room thoroughly but find nothing useful."
+                : result.Message + " You gather: " + string.Join(", ", result.Gathered.Select(g => $"{g.Quantity}× {g.Name}")) + ".";
+        }
+        else
+        {
+            message = result.Gathered.Count == 0
+                ? "You search carefully but find nothing worth taking."
+                : "You gather: " + string.Join(", ", result.Gathered.Select(g => $"{g.Quantity}× {g.Name}")) + ".";
+        }
 
         _localMessages.Add(new ChatMessage
         {

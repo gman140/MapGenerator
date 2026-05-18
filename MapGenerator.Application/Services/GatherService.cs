@@ -147,5 +147,5 @@ public class GatherService
         }
     }
 
-    private static GatherResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };
+    private static GatherResult Fail(string msg) => GatherResult.Fail(msg);
 }

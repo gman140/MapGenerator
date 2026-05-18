@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ITileInventoryRepository, TileInventoryRepository>();
         services.AddScoped<ISettlementRepository, SettlementRepository>();
         services.AddScoped<IRoadRepository, RoadRepository>();
+        services.AddScoped<IDungeonRepository, DungeonRepository>();
         return services;
     }
 }
