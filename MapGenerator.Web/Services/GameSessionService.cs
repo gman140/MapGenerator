@@ -416,6 +416,8 @@ public class GameSessionService : IAsyncDisposable
         else Player.Inventory[resourceId] = qty - 1;
 
         Player.Satiety = Math.Min(100, Player.Satiety + foodDef.SatietyRestore);
+        if (foodDef.Buff != null)
+            BuffService.ApplyBuff(Player, foodDef.Buff);
         Player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(Player);
 

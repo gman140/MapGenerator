@@ -1,6 +1,7 @@
 @using MapGenerator.Application.Services
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
 @inject SettlementCacheService SettlementCache
@@ -55,6 +56,18 @@
              style="width: @Player.Satiety.ToString("F0")%"></div>
         <span class="hunger-text">@hungerLabel</span>
     </div>
+
+    @if (Player.ActiveBuffs.Count > 0)
+    {
+        <div class="active-buffs">
+            @foreach (var buff in Player.ActiveBuffs)
+            {
+                <span class="buff-chip buff-@buff.Type.ToString().ToLower()">
+                    @FormatActiveBuff(buff)
+                </span>
+            }
+        </div>
+    }
 
     @if (_stunnedRemaining > 0)
     {
@@ -175,6 +188,14 @@
             ? _cooldownRemaining / (double)_cooldownDuration * 100.0
             : 0;
     }
+
+    private static string FormatActiveBuff(ActiveBuff buff) => buff.Type switch
+    {
+        BuffType.CooldownReduction    => $"⚡ CD −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
+        BuffType.GatherBonus          => $"🎯 Gather +{(buff.Magnitude - 1) * 100:F0}% × {buff.RemainingCharges}",
+        BuffType.HungerDrainReduction => $"🌿 Hunger −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
+        _                             => buff.Type.ToString(),
+    };
 
     private async Task HandleColorChange(ChangeEventArgs e)
     {

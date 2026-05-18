@@ -19,17 +19,31 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "Peat",  Name = "Peat",  Description = "Dense compressed plant matter, from something that died slowly.",                 MinQuantity = 1, MaxQuantity = 3 },
         new() { Id = "Flint", Name = "Flint", Description = "A sharp-edged stone that makes other things sharp.",                             MinQuantity = 1, MaxQuantity = 3 },
 
-        // ── Food (variable quantity) ──────────────────────────────────────────
-        new() { Id = "Berries",  Name = "Berries",  Description = "Small, tart, and numerous. Edible now. Better cooked into something.",   MinQuantity = 1, MaxQuantity = 3 },
-        new() { Id = "Mushroom", Name = "Mushroom", Description = "A forest mushroom. Edible raw in a pinch, considerably better cooked.",  MinQuantity = 1, MaxQuantity = 2 },
-        new() { Id = "Grain",    Name = "Grain",    Description = "Dry seed-heads gathered from open ground. Not edible raw, but useful.",  MinQuantity = 1, MaxQuantity = 3 },
+        // ── Food — raw gatherable (variable quantity) ─────────────────────────
+        new() { Id = "Berries",      Name = "Berries",       Description = "Small, tart, and numerous. Edible now. Better cooked into something.",       MinQuantity = 1, MaxQuantity = 3 },
+        new() { Id = "Mushroom",     Name = "Mushroom",      Description = "A forest mushroom. Edible raw in a pinch, considerably better cooked.",      MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "Grain",        Name = "Grain",         Description = "Dry seed-heads gathered from open ground. Not edible raw, but useful.",      MinQuantity = 1, MaxQuantity = 3 },
+        new() { Id = "WildCarrot",   Name = "Wild Carrot",   Description = "Thin, pale, and slightly bitter. Better than nothing. Slightly.",            MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "Acorn",        Name = "Acorn",         Description = "Bitter and starchy. Technically edible. The squirrels are doing something right.", MinQuantity = 2, MaxQuantity = 5 },
+        new() { Id = "WildGarlic",   Name = "Wild Garlic",   Description = "Pungent in the way that announces itself well in advance.",                  MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "BaobabFruit",  Name = "Baobab Fruit",  Description = "Dry and chalky and vaguely citrus. From a tree that looks older than everything.", MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "Yam",          Name = "Yam",           Description = "A heavy, starchy root. Raw it is unpleasant. Cooked it is something else entirely.", MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "HeartOfPalm",  Name = "Heart of Palm", Description = "Pale and fibrous, cut from deep inside a palm. Mild to the point of apology.", MinQuantity = 1, MaxQuantity = 1 },
+        new() { Id = "CattailRoot",  Name = "Cattail Root",  Description = "Starchy and wet and pulled from the mud. It has a kind of dignity about it.", MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "RockLichen",   Name = "Rock Lichen",   Description = "Scraped off a boulder. Grey, dry, and profoundly humble. Survivable.", MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "PineNut",      Name = "Pine Nut",      Description = "Small, oily, and worth the trouble of finding them.",                         MinQuantity = 1, MaxQuantity = 3 },
 
-        // ── Cooked food (quantity 1) ──────────────────────────────────────────
-        new() { Id = "CookedFish",    Name = "Cooked Fish",    Description = "Fish charred over open flame. Filling and good." },
-        new() { Id = "CookedMushroom",Name = "Cooked Mushroom",Description = "Heat transformed them into something much better." },
-        new() { Id = "MushroomSoup",  Name = "Mushroom Soup",  Description = "Salt, grain, and mushrooms, simmered until the broth is deep." },
-        new() { Id = "BerryPie",      Name = "Berry Pie",      Description = "Imperfect crust, too-tart berries, genuinely good." },
-        new() { Id = "HerbTea",       Name = "Herb Tea",       Description = "Bitter, fragrant, and better for you than it tastes." },
+        // ── Food — cooked (quantity 1) ────────────────────────────────────────
+        new() { Id = "CookedFish",     Name = "Cooked Fish",     Description = "Fish charred over open flame. Filling and good." },
+        new() { Id = "CookedMushroom", Name = "Cooked Mushroom", Description = "Heat transformed them into something much better." },
+        new() { Id = "MushroomSoup",   Name = "Mushroom Soup",   Description = "Salt, grain, and mushrooms, simmered until the broth is deep." },
+        new() { Id = "BerryPie",       Name = "Berry Pie",       Description = "Imperfect crust, too-tart berries, genuinely good." },
+        new() { Id = "HerbTea",        Name = "Herb Tea",        Description = "Bitter, fragrant, and better for you than it tastes." },
+        new() { Id = "GarlicFlatbread",Name = "Garlic Flatbread",Description = "Wild garlic pressed into grain dough and cooked flat over the fire. Aggressively aromatic." },
+        new() { Id = "YamStew",        Name = "Yam Stew",        Description = "Yam, grain, and salt, cooked low and slow. Dense and sustaining." },
+        new() { Id = "AcornPorridge",  Name = "Acorn Porridge",  Description = "A patient preparation that makes acorns tolerable, even pleasant." },
+        new() { Id = "BaobabBrew",     Name = "Baobab Brew",     Description = "The fruit dissolved in hot water. Tart, frothy, and inexplicably refreshing." },
+        new() { Id = "CattailCakes",   Name = "Cattail Cakes",   Description = "Dried cattail root ground with grain and pressed into small cakes. Earthy and filling." },
 
         // ── Uncommon (quantity 1) ─────────────────────────────────────────────
         new() { Id = "Herbs",     Name = "Herbs",     Description = "Fragrant leaves of ambiguous medicinal value. Edible, and sometimes medicinal." },

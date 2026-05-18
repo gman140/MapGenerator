@@ -47,12 +47,15 @@ public class GatherService
         var pool = BuildYieldPool(tile);
         ApplyItemEffects(player, tile, pool);
 
+        double gatherBonusMult = BuffService.ConsumeGatherMultiplier(player);
+
         var rng      = new Random();
         var gathered = new List<GatheredItem>();
 
         foreach (var yield in pool)
         {
-            if (rng.NextDouble() >= yield.Probability) continue;
+            float effectiveProb = Math.Min(1.0f, yield.Probability * (float)gatherBonusMult);
+            if (rng.NextDouble() >= effectiveProb) continue;
 
             var def = _resourceProvider.GetById(yield.ResourceId);
             if (def == null) continue;
@@ -66,12 +69,16 @@ public class GatherService
             player.Inventory[def.Id] = existing + qty;
         }
 
-        player.Satiety = Math.Max(0, player.Satiety - 2.0);
+        double hungerDrainMult = BuffService.ConsumeHungerDrainMultiplier(player);
+        player.Satiety = Math.Max(0, player.Satiety - 2.0 * hungerDrainMult);
 
         long effectiveCooldown = CooldownMs;
         if (tile.Structure?.Type == StructureType.MineShaft) effectiveCooldown /= 2;
         if (!permissions.Contains(Permission.IgnoreCooldowns))
+        {
             effectiveCooldown = (long)(effectiveCooldown * HungerService.GetCooldownMultiplier(player.Satiety));
+            effectiveCooldown = (long)(effectiveCooldown * BuffService.ConsumeCooldownMultiplier(player));
+        }
         long cooldown = permissions.Contains(Permission.IgnoreCooldowns) ? 0 : effectiveCooldown;
         player.GatherCooldownUntil = cooldown > 0 ? now + cooldown : 0;
         player.LastSeen = DateTime.UtcNow;

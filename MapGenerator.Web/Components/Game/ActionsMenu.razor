@@ -1,4 +1,6 @@
+@using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Models
+@using static MapGenerator.Application.Services.HungerService
 @implements IDisposable
 
 <div class="actions-menu">
@@ -55,7 +57,17 @@
     [Parameter] public long GatherCooldownUntil { get; set; }
     [Parameter] public bool TileHasResources { get; set; }
 
-    private bool EggOnCooldown   => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value).TotalMinutes < 1;
+    private TimeSpan EffectiveEggCooldown
+    {
+        get
+        {
+            double hungerMult = GetCooldownMultiplier(Player.Satiety);
+            double buffMult   = Player.ActiveBuffs.FirstOrDefault(b => b.Type == BuffType.CooldownReduction)?.Magnitude ?? 1.0;
+            return TimeSpan.FromMinutes(1) * (hungerMult * buffMult);
+        }
+    }
+
+    private bool EggOnCooldown   => !CooldownBypassed && LastEggLaidAt.HasValue && (DateTime.UtcNow - LastEggLaidAt.Value) < EffectiveEggCooldown;
     private bool DanceOnCooldown => !CooldownBypassed && LastDancedAt.HasValue  && (DateTime.UtcNow - LastDancedAt.Value).TotalMinutes  < 1;
     private bool GatherOnCooldown => !CooldownBypassed && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < GatherCooldownUntil;
     private string _eggCooldownText   = "";
@@ -89,7 +101,7 @@
     {
         if (LastEggLaidAt.HasValue)
         {
-            var remaining = TimeSpan.FromMinutes(1) - (DateTime.UtcNow - LastEggLaidAt.Value);
+            var remaining = EffectiveEggCooldown - (DateTime.UtcNow - LastEggLaidAt.Value);
             _eggCooldownText = remaining > TimeSpan.Zero ? $"({remaining.TotalSeconds:F0}s)" : "";
         }
 

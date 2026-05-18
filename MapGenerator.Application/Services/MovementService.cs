@@ -92,7 +92,8 @@ public class MovementService
             cooldown = 0;
 
         // Drain satiety before applying item discounts so drain reflects terrain difficulty.
-        player.Satiety = Math.Max(0, player.Satiety - HungerService.DrainForMovement(cooldown));
+        double hungerDrainMult = BuffService.ConsumeHungerDrainMultiplier(player);
+        player.Satiety = Math.Max(0, player.Satiety - HungerService.DrainForMovement(cooldown) * hungerDrainMult);
 
         if (cooldown > 0)
         {
@@ -104,6 +105,7 @@ public class MovementService
                 cooldown = (long)(cooldown * 0.60);
 
             cooldown = (long)(cooldown * HungerService.GetCooldownMultiplier(player.Satiety));
+            cooldown = (long)(cooldown * BuffService.ConsumeCooldownMultiplier(player));
         }
 
         await _visitRepo.RecordDepartureAsync(player.Id, player.Q, player.R);

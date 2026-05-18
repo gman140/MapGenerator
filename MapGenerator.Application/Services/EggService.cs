@@ -27,14 +27,17 @@ public class EggService
 
         if (!permissions.Contains(Permission.IgnoreCooldowns) && player.LastEggLaidAt.HasValue)
         {
-            double mult = HungerService.GetCooldownMultiplier(player.Satiety);
+            double mult = HungerService.GetCooldownMultiplier(player.Satiety)
+                          * BuffService.PeekCooldownMultiplier(player);
             var effectiveCooldown = TimeSpan.FromMilliseconds(EggCooldown.TotalMilliseconds * mult);
             var remaining = effectiveCooldown - (DateTime.UtcNow - player.LastEggLaidAt.Value);
             if (remaining > TimeSpan.Zero)
                 return (false, $"You need to rest {remaining.TotalSeconds:F0}s before laying another egg.", 0);
         }
 
-        player.Satiety = Math.Max(0, player.Satiety - 25.0);
+        double drainMult = BuffService.ConsumeHungerDrainMultiplier(player);
+        BuffService.ConsumeCooldownMultiplier(player);
+        player.Satiety = Math.Max(0, player.Satiety - 25.0 * drainMult);
 
         var newCount = await _mapRepo.IncrementEggCountAsync(player.Q, player.R);
         _mapCache.UpdateCachedEggCount(player.Q, player.R, newCount);

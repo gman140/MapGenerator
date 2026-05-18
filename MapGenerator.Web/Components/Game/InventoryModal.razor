@@ -1,4 +1,6 @@
+@using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
 @inject IResourceDefinitionProvider ResourceProvider
 @inject ICraftingRecipeProvider RecipeProvider
 @inject IFoodDefinitionProvider FoodProvider
@@ -54,6 +56,10 @@
                             {
                                 <p class="inv-modal-desc">@desc</p>
                             }
+                            @if (foodDef.Buff != null)
+                            {
+                                <p class="inv-modal-buff">@FormatBuff(foodDef.Buff)</p>
+                            }
                         </div>
                     }
                 </div>
@@ -107,4 +113,12 @@
     [Parameter] public EventCallback<string> OnEat { get; set; }
 
     private bool _open;
+
+    private static string FormatBuff(BuffDefinition buff) => buff.Type switch
+    {
+        BuffType.CooldownReduction    => $"⚡ Cooldown −{(1 - buff.Magnitude) * 100:F0}% for {buff.Charges} actions",
+        BuffType.GatherBonus          => $"🎯 Gather +{(buff.Magnitude - 1) * 100:F0}% for {buff.Charges} gathers",
+        BuffType.HungerDrainReduction => $"🌿 Hunger drain −{(1 - buff.Magnitude) * 100:F0}% for {buff.Charges} actions",
+        _                             => string.Empty,
+    };
 }

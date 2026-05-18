@@ -165,7 +165,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         {
             Id               = "MushroomSoup",
             Name             = "Mushroom Soup",
-            Description      = "Two mushrooms, a measure of grain, a pinch of salt. Simmered until the broth is deep and the cold is gone.",
+            Description      = "Two mushrooms, a measure of grain, a pinch of salt. Simmered until the broth is deep and the cold is gone. Reduces hunger drain by 40% for 24 actions.",
             RequiresCampfire = true,
             IsConsumable     = true,
             Ingredients      =
@@ -180,7 +180,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         {
             Id               = "BerryPie",
             Name             = "Berry Pie",
-            Description      = "Three handfuls of berries, two measures of grain, pressed into something that qualifies as a pie. It is better than it looks.",
+            Description      = "Three handfuls of berries, two measures of grain, pressed into something that qualifies as a pie. It is better than it looks. Improves gather yield by 50% for 16 gathers.",
             RequiresCampfire = true,
             IsConsumable     = true,
             Ingredients      =
@@ -194,11 +194,78 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         {
             Id               = "HerbTea",
             Name             = "Herb Tea",
-            Description      = "Two bundles of herbs steeped in water over the fire. Bitter, fragrant, and genuinely useful.",
+            Description      = "Two bundles of herbs steeped in water over the fire. Bitter, fragrant, and genuinely useful. Reduces action cooldowns by 50% for 20 actions.",
             RequiresCampfire = true,
             IsConsumable     = true,
             Ingredients      = [ new() { ResourceId = "Herbs", Quantity = 2 } ],
             Effects          = [],
+        },
+        new()
+        {
+            Id               = "GarlicFlatbread",
+            Name             = "Garlic Flatbread",
+            Description      = "Wild garlic pounded into grain dough, pressed flat, cooked until blistered. Pungent and good. Improves gather yield by 50% for 12 gathers.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "WildGarlic", Quantity = 2 },
+                new() { ResourceId = "Grain",      Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "YamStew",
+            Name             = "Yam Stew",
+            Description      = "Yam and grain simmered low with salt until it thickens. Dense, slow, sustaining. Reduces hunger drain by 40% for 24 actions.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Yam",   Quantity = 1 },
+                new() { ResourceId = "Grain", Quantity = 1 },
+                new() { ResourceId = "Salt",  Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "AcornPorridge",
+            Name             = "Acorn Porridge",
+            Description      = "Three acorns leached and ground with grain, cooked until almost palatable. Reduces action cooldowns by 35% for 12 actions.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Acorn", Quantity = 3 },
+                new() { ResourceId = "Grain", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "BaobabBrew",
+            Name             = "Baobab Brew",
+            Description      = "Baobab fruit dissolved in hot water. Tart, slightly fizzy, deeply strange. Reduces action cooldowns by 40% for 32 actions.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      = [ new() { ResourceId = "BaobabFruit", Quantity = 2 } ],
+            Effects          = [],
+        },
+        new()
+        {
+            Id               = "CattailCakes",
+            Name             = "Cattail Cakes",
+            Description      = "Cattail root dried and ground with grain, pressed into small flat cakes. Earthy, filling, unremarkable in the best way.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "CattailRoot", Quantity = 2 },
+                new() { ResourceId = "Grain",       Quantity = 1 },
+            ],
+            Effects = [],
         },
 
         // ── Workshop-exclusive ────────────────────────────────────────────────────
