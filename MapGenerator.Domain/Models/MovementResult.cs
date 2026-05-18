@@ -9,4 +9,5 @@ public class MovementResult
     public int? NewQ { get; set; }
     public int? NewR { get; set; }
     public long? CooldownUntil { get; set; }
+    public bool CombatStarted { get; set; }
 }

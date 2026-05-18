@@ -30,4 +30,25 @@ public class Player
     public int DungeonR { get; set; }
 
     public bool IsInDungeon => DungeonInstanceId != null;
+
+    // Combat stats
+    public int MaxHp { get; set; } = 100;
+    public int CurrentHp { get; set; } = 100;
+    public int MaxStamina { get; set; } = 10;
+    public int CurrentStamina { get; set; } = 10;
+    public int BaseAttack { get; set; } = 10;
+    public int BaseDefense { get; set; } = 5;
+    public float BaseDodgeChance { get; set; } = 0.10f;
+
+    // Equipment slots (item ID or null)
+    public string? EquippedWeaponId { get; set; }
+    public string? EquippedArmorId { get; set; }
+    public string? EquippedHatId { get; set; }
+
+    // Combat session
+    public string? ActiveCombatSessionId { get; set; }
+    public bool IsInCombat => ActiveCombatSessionId != null;
+
+    // Enemy kill tracking
+    public Dictionary<string, int> EnemiesDefeated { get; set; } = new();
 }

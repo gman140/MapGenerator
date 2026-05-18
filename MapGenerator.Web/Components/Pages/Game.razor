@@ -8,6 +8,8 @@
 @inject IJSRuntime JS
 @inject ICraftingRecipeProvider RecipeProvider
 @using MapGenerator.Application.Services
+@using MapGenerator.Combat.Enums
+@using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
@@ -27,7 +29,21 @@ else
 {
     <div class="game-layout">
         <div class="map-area">
-            @if (Session.Player.IsInDungeon && _dungeonFloor != null)
+            @if ((Session.Player.IsInCombat || _combatResult != null) && _combatSession != null)
+            {
+                <CombatView @ref="_combatView"
+                            Session="_combatSession"
+                            PlayerColor="@Session.Player.Color"
+                            PlayerName="@Session.Player.Username"
+                            PlayerInventory="Session.Player.Inventory"
+                            PlayerCraftedItems="Session.Player.CraftedItems"
+                            OnAction="HandleCombatActionAsync"
+                            EndResult="_combatResult"
+                            OnConfirmEnd="HandleCombatConfirmAsync"
+                            IsAdmin="Session.Player.IsAdmin"
+                            LogDisplayCount="_combatLogDisplayCount" />
+            }
+            else if (Session.Player.IsInDungeon && _dungeonFloor != null)
             {
                 <DungeonView Floor="_dungeonFloor"
                              PlayerQ="Session.Player.DungeonQ"
@@ -55,7 +71,14 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync"
                         OnKissPlayer="HandleKissPlayerAsync" />
-            <InventoryModal Inventory="Session.Player.Inventory" OnEat="HandleEatAsync" />
+            <InventoryModal Inventory="Session.Player.Inventory"
+                            CraftedItems="Session.Player.CraftedItems"
+                            EquippedWeaponId="@Session.Player.EquippedWeaponId"
+                            EquippedArmorId="@Session.Player.EquippedArmorId"
+                            EquippedHatId="@Session.Player.EquippedHatId"
+                            OnEat="HandleEatAsync"
+                            OnEquip="HandleEquipAsync"
+                            OnUnequip="HandleUnequipAsync" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
             @if (!Session.Player.IsInDungeon)
             {
@@ -70,6 +93,10 @@ else
             {
                 <TileEditorPanel CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
                                  OnSave="HandleEditTileAsync" />
+                <button class="action-item admin-combat-btn" @onclick="HandleStartDebugCombatAsync"
+                        disabled="@Session.Player.IsInCombat">
+                    ⚔ Start Combat
+                </button>
             }
             <ActionsMenu Player="Session.Player"
                          OnLayEgg="HandleLayEggAsync"
@@ -186,6 +213,12 @@ else
     private string _noteText = string.Empty;
     private string _signText = string.Empty;
 
+    // Combat state
+    private CombatSession? _combatSession;
+    private CombatResult? _combatResult;
+    private int _combatLogDisplayCount;   // 0 = show all
+    private CombatView? _combatView;
+
     // Dungeon state
     private DungeonFloor? _dungeonFloor;
     private HashSet<(int Q, int R)> _revealedDungeonRooms = [];
@@ -218,6 +251,9 @@ else
         AddArrivalMessages(Session.Player.Q, Session.Player.R);
         _worldMessages = await Session.GetWorldChatAsync();
         _revealedTiles = await Session.LoadRevealedTilesAsync();
+
+        if (Session.Player.IsInCombat)
+            _combatSession = await Session.GetActiveCombatAsync();
 
         if (Session.Player.IsInDungeon)
         {
@@ -280,6 +316,14 @@ else
         }
 
         _cooldownUntil = result.CooldownUntil ?? 0;
+
+        if (result.CombatStarted)
+        {
+            _combatSession = await Session.GetActiveCombatAsync();
+            StateHasChanged();
+            return;
+        }
+
         _localMessages = await Session.GetTileChatAsync();
         AddArrivalMessages(Session.Player!.Q, Session.Player.R);
         await RevealTile(Session.Player.Q, Session.Player.R);
@@ -549,6 +593,19 @@ else
             return;
         }
 
+        if (result.CombatStarted)
+        {
+            _combatSession = await Session.GetActiveCombatAsync();
+            if (result.RoomMessage != null)
+                _localMessages.Add(new ChatMessage
+                {
+                    SenderName = "World", Content = result.RoomMessage,
+                    IsSystemMessage = true, SentAt = DateTime.UtcNow
+                });
+            StateHasChanged();
+            return;
+        }
+
         if (result.RoomMessage != null)
             _localMessages.Add(new ChatMessage
             {
@@ -573,6 +630,73 @@ else
         }
 
         _gatherCooldownUntil = Session.Player.GatherCooldownUntil;
+        StateHasChanged();
+    }
+
+    // ── Combat ────────────────────────────────────────────────────────────────
+
+    private async Task HandleCombatActionAsync(CombatAction action)
+    {
+        if (Session.Player == null) return;
+        _combatSession = await Session.ProcessCombatTurnAsync(action);
+        if (_combatSession == null) return;
+
+        bool finished = _combatSession.Phase is CombatPhase.Victory or CombatPhase.Defeat;
+        bool hasEnemyPhase = !finished
+            && _combatSession.TurnBoundaryLogIndex < _combatSession.Log.Count;
+
+        if (hasEnemyPhase)
+        {
+            // Phase 1: show player action log only, hold action buttons with "Enemy is acting..."
+            _combatLogDisplayCount = _combatSession.TurnBoundaryLogIndex;
+            _combatView?.SetEnemyPhase(true);
+            StateHasChanged();
+            // Delay gives the player time to read their action result before enemy log appears
+            await Task.Delay(750);
+        }
+
+        // Phase 2: show full log
+        _combatLogDisplayCount = 0;
+        if (_combatView != null) _combatView.SetEnemyPhase(false);
+
+        if (finished)
+            _combatResult = await Session.GetPendingCombatResultAsync();
+
+        StateHasChanged();
+    }
+
+    private async Task HandleCombatConfirmAsync()
+    {
+        await Session.FinalizeCombatAsync();
+        _combatSession = null;
+        _combatResult  = null;
+        _combatLogDisplayCount = 0;
+        if (Session.Player.IsInDungeon)
+            _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
+        StateHasChanged();
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    private async Task HandleStartDebugCombatAsync()
+    {
+        await Session.StartDebugCombatAsync();
+        _combatSession = await Session.GetActiveCombatAsync();
+        StateHasChanged();
+    }
+
+    // ── Equipment ─────────────────────────────────────────────────────────────
+
+    private async Task HandleEquipAsync(string itemId)
+    {
+        var error = await Session.EquipItemAsync(itemId);
+        if (error != null) ShowToast(error);
+        StateHasChanged();
+    }
+
+    private async Task HandleUnequipAsync(string slot)
+    {
+        await Session.UnequipItemAsync(slot);
         StateHasChanged();
     }
 

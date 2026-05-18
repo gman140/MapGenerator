@@ -4,71 +4,74 @@
 @implements IDisposable
 
 <div class="actions-menu">
-    <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
-    @if (!IsInDungeon)
+    @if (!Player.IsInCombat)
     {
-        <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
-        <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
-    }
-    <button class="action-item" @onclick="HandleGather"
-            disabled="@(!TileHasResources || GatherOnCooldown)">
-        ⛏ Gather
-        @if (GatherOnCooldown)
+        <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
+        @if (!IsInDungeon)
         {
-            <span class="action-cooldown">@_gatherCooldownText</span>
+            <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
+            <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
         }
-        else if (!TileHasResources)
-        {
-            <span class="action-cooldown">nothing here</span>
-        }
-    </button>
-    @if (!IsInDungeon)
-    {
-        <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
-            🥚 Lay Egg
-            @if (EggOnCooldown)
+        <button class="action-item" @onclick="HandleGather"
+                disabled="@(!TileHasResources || GatherOnCooldown)">
+            ⛏ Gather
+            @if (GatherOnCooldown)
             {
-                <span class="action-cooldown">@_eggCooldownText</span>
+                <span class="action-cooldown">@_gatherCooldownText</span>
+            }
+            else if (!TileHasResources)
+            {
+                <span class="action-cooldown">nothing here</span>
             }
         </button>
-        @if (Player.Inventory.GetValueOrDefault("Poultice") > 0)
+        @if (!IsInDungeon)
         {
-            <button class="action-item" @onclick="HandleUsePoultice">
-                🌿 Use Poultice
-                <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
+            <button class="action-item" @onclick="LayEgg" disabled="@EggOnCooldown">
+                🥚 Lay Egg
+                @if (EggOnCooldown)
+                {
+                    <span class="action-cooldown">@_eggCooldownText</span>
+                }
+            </button>
+            @if (Player.Inventory.GetValueOrDefault("Poultice") > 0)
+            {
+                <button class="action-item" @onclick="HandleUsePoultice">
+                    🌿 Use Poultice
+                    <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
+                </button>
+            }
+            <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
+                💃 Dance
+                @if (DanceOnCooldown)
+                {
+                    <span class="action-cooldown">@_danceCooldownText</span>
+                }
             </button>
         }
-        <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
-            💃 Dance
-            @if (DanceOnCooldown)
-            {
-                <span class="action-cooldown">@_danceCooldownText</span>
-            }
-        </button>
-    }
-    @if (IsOnDungeonEntrance && !IsInDungeon)
-    {
-        <button class="action-item dungeon-enter-btn" @onclick="HandleEnterDungeon">
-            🕳️ Enter Dungeon
-        </button>
-    }
-    @if (IsInDungeon && IsOnStaircaseDown)
-    {
-        <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
-            ⬇️ Descend
-        </button>
-    }
-    @if (IsInDungeon && IsOnStaircaseUp)
-    {
-        <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
-            @(IsOnFloorOne ? "⬆️ Exit Dungeon" : "⬆️ Ascend")
-        </button>
-    }
-    @if (IsInDungeon && HasRope)
-    {
-        <button class="action-item dungeon-rope-btn" @onclick="HandleUseRope">
-            🪢 Use Rope <span class="action-cooldown">(exit)</span>
-        </button>
+        @if (IsOnDungeonEntrance && !IsInDungeon)
+        {
+            <button class="action-item dungeon-enter-btn" @onclick="HandleEnterDungeon">
+                🕳️ Enter Dungeon
+            </button>
+        }
+        @if (IsInDungeon && IsOnStaircaseDown)
+        {
+            <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
+                ⬇️ Descend
+            </button>
+        }
+        @if (IsInDungeon && IsOnStaircaseUp)
+        {
+            <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
+                @(IsOnFloorOne ? "⬆️ Exit Dungeon" : "⬆️ Ascend")
+            </button>
+        }
+        @if (IsInDungeon && HasRope)
+        {
+            <button class="action-item dungeon-rope-btn" @onclick="HandleUseRope">
+                🪢 Use Rope <span class="action-cooldown">(exit)</span>
+            </button>
+        }
     }
 </div>
 

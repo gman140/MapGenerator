@@ -1,4 +1,7 @@
 using MapGenerator.Application.Services;
+using MapGenerator.Combat.Enums;
+using MapGenerator.Combat.Interfaces;
+using MapGenerator.Combat.Models;
 using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
@@ -30,6 +33,9 @@ public class GameSessionService : IAsyncDisposable
     private readonly IRoadRepository _roadRepo;
     private readonly DungeonService _dungeonSvc;
     private readonly IDungeonRepository _dungeonRepo;
+    private readonly ICombatEngine _combatEngine;
+    private readonly ICombatRepository _combatRepo;
+    private readonly IResourceDefinitionProvider _resourceProvider;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -58,7 +64,10 @@ public class GameSessionService : IAsyncDisposable
         IMapRepository mapRepo,
         IRoadRepository roadRepo,
         DungeonService dungeonSvc,
-        IDungeonRepository dungeonRepo)
+        IDungeonRepository dungeonRepo,
+        ICombatEngine combatEngine,
+        ICombatRepository combatRepo,
+        IResourceDefinitionProvider resourceProvider)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -83,6 +92,9 @@ public class GameSessionService : IAsyncDisposable
         _roadRepo        = roadRepo;
         _dungeonSvc      = dungeonSvc;
         _dungeonRepo     = dungeonRepo;
+        _combatEngine    = combatEngine;
+        _combatRepo      = combatRepo;
+        _resourceProvider = resourceProvider;
     }
 
     public async Task InitAsync(string browserId)
@@ -501,6 +513,146 @@ public class GameSessionService : IAsyncDisposable
     {
         if (Player == null || !Player.IsInDungeon) return false;
         return true; // Determined at gather-time by DungeonService
+    }
+
+    // ── Combat ────────────────────────────────────────────────────────────────
+
+    public async Task StartDebugCombatAsync()
+    {
+        if (Player == null || Player.IsInCombat) return;
+        var session = _combatEngine.StartCombat(new CombatStartContext
+        {
+            Player    = Player,
+            Trigger   = CombatTrigger.RandomEncounter,
+            BiomeType = "Forest",
+        });
+        Player.ActiveCombatSessionId = session.Id;
+        await _combatRepo.SaveAsync(session);
+        await _playerRepo.UpdateAsync(Player);
+    }
+
+    public async Task<CombatSession?> GetActiveCombatAsync()
+    {
+        if (Player?.ActiveCombatSessionId == null) return null;
+        return await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
+    }
+
+    public async Task<CombatSession?> ProcessCombatTurnAsync(CombatAction action)
+    {
+        if (Player?.ActiveCombatSessionId == null) return null;
+        var session = await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
+        if (session == null) return null;
+
+        session = _combatEngine.ProcessTurn(session, Player, action);
+        await _combatRepo.SaveAsync(session);
+        // Result is not applied here — UI shows the end screen first, then calls FinalizeCombatAsync
+        return session;
+    }
+
+    public async Task<CombatResult?> GetPendingCombatResultAsync()
+    {
+        if (Player?.ActiveCombatSessionId == null) return null;
+        var session = await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
+        if (session == null || !_combatEngine.IsFinished(session)) return null;
+        return _combatEngine.Resolve(session);
+    }
+
+    public async Task FinalizeCombatAsync()
+    {
+        if (Player?.ActiveCombatSessionId == null) return;
+        var session = await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
+        if (session == null) return;
+        await ApplyCombatResultAsync(session);
+    }
+
+    private async Task ApplyCombatResultAsync(CombatSession session)
+    {
+        if (Player == null) return;
+        var result = _combatEngine.Resolve(session);
+
+        Player.CurrentHp    = result.HpRemaining;
+        Player.CurrentStamina = result.StaminaRemaining;
+
+        if (result.PlayerDied)
+        {
+            if (Player.IsAdmin)
+            {
+                // Admins respawn on the world map without losing anything
+                Player.DungeonInstanceId = null;
+                Player.DungeonFloor      = 0;
+                Player.DungeonQ          = 0;
+                Player.DungeonR          = 0;
+                Player.CurrentHp         = Player.MaxHp;
+                Player.CurrentStamina    = Player.MaxStamina;
+            }
+            else
+            {
+                // Same reset as drowning
+                Player.Q              = 0;
+                Player.R              = 0;
+                Player.DungeonInstanceId = null;
+                Player.DungeonFloor   = 0;
+                Player.DungeonQ       = 0;
+                Player.DungeonR       = 0;
+                Player.Satiety        = 50;
+                Player.Inventory.Clear();
+                Player.CraftedItems.Clear();
+                Player.CurrentHp      = Player.MaxHp;
+                Player.CurrentStamina = Player.MaxStamina;
+            }
+        }
+        else
+        {
+            // Grant loot
+            foreach (var (id, qty) in result.LootGained)
+                Player.Inventory[id] = Player.Inventory.GetValueOrDefault(id) + qty;
+
+            // Record enemies defeated
+            foreach (var (defId, count) in result.EnemiesDefeated)
+                Player.EnemiesDefeated[defId] = Player.EnemiesDefeated.GetValueOrDefault(defId) + count;
+        }
+
+        Player.ActiveCombatSessionId = null;
+        await _playerRepo.UpdateAsync(Player);
+        await _combatRepo.DeleteAsync(session.Id);
+    }
+
+    // ── Equipment ─────────────────────────────────────────────────────────────
+
+    public async Task<string?> EquipItemAsync(string itemId)
+    {
+        if (Player == null) return "Not logged in.";
+        var def = _resourceProvider.GetById(itemId);
+        if (def?.EquipmentSlot == null) return "That item cannot be equipped.";
+
+        int qty = Player.Inventory.GetValueOrDefault(itemId)
+                + Player.CraftedItems.GetValueOrDefault(itemId);
+        if (qty <= 0) return "You don't have that item.";
+
+        switch (def.EquipmentSlot)
+        {
+            case "Weapon": Player.EquippedWeaponId = itemId; break;
+            case "Armor":  Player.EquippedArmorId  = itemId; break;
+            case "Hat":    Player.EquippedHatId    = itemId; break;
+            default: return "Unknown equipment slot.";
+        }
+
+        await _playerRepo.UpdateAsync(Player);
+        return null;
+    }
+
+    public async Task<string?> UnequipItemAsync(string slot)
+    {
+        if (Player == null) return "Not logged in.";
+        switch (slot)
+        {
+            case "Weapon": Player.EquippedWeaponId = null; break;
+            case "Armor":  Player.EquippedArmorId  = null; break;
+            case "Hat":    Player.EquippedHatId    = null; break;
+            default: return "Unknown slot.";
+        }
+        await _playerRepo.UpdateAsync(Player);
+        return null;
     }
 
     // ── Dispose ───────────────────────────────────────────────────────────────

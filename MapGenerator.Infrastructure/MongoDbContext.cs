@@ -1,3 +1,4 @@
+using MapGenerator.Combat.Models;
 using MapGenerator.Domain.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -26,6 +27,10 @@ public class MongoDbContext
         RegisterMapWithPlainStringId<DungeonInstance>();
         RegisterMap<DungeonFloor>();
         RegisterMap<DungeonRoom>();
+        RegisterMapWithPlainStringId<CombatSession>();
+        RegisterMap<Enemy>();
+        RegisterMapWithPlainStringId<CombatModifier>();
+        RegisterMap<EnemyActionEntry>();
     }
 
     private static void RegisterMap<T>() where T : class
@@ -77,4 +82,5 @@ public class MongoDbContext
     public IMongoCollection<Settlement> Settlements => _db.GetCollection<Settlement>("settlements");
     public IMongoCollection<Road> Roads => _db.GetCollection<Road>("roads");
     public IMongoCollection<DungeonInstance> Dungeons => _db.GetCollection<DungeonInstance>("dungeons");
+    public IMongoCollection<CombatSession> CombatSessions => _db.GetCollection<CombatSession>("combatSessions");
 }

@@ -1,3 +1,6 @@
+using MapGenerator.Combat.Enums;
+using MapGenerator.Combat.Interfaces;
+using MapGenerator.Combat.Models;
 using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
@@ -17,6 +20,8 @@ public class DungeonService
     private readonly IPlayerRepository _playerRepo;
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly DungeonGenerationService _generator;
+    private readonly ICombatEngine _combatEngine;
+    private readonly ICombatRepository _combatRepo;
 
     private static readonly Dictionary<string, string> FeatureThemeMap = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -35,12 +40,16 @@ public class DungeonService
         IDungeonRepository dungeonRepo,
         IPlayerRepository playerRepo,
         IResourceDefinitionProvider resourceProvider,
-        DungeonGenerationService generator)
+        DungeonGenerationService generator,
+        ICombatEngine combatEngine,
+        ICombatRepository combatRepo)
     {
         _dungeonRepo      = dungeonRepo;
         _playerRepo       = playerRepo;
         _resourceProvider = resourceProvider;
         _generator        = generator;
+        _combatEngine     = combatEngine;
+        _combatRepo       = combatRepo;
     }
 
     // ── Entry ────────────────────────────────────────────────────────────────
@@ -191,10 +200,23 @@ public class DungeonService
         if (hasLantern)
             result.RevealedRooms = GetAdjacentRoomCoords(targetQ, targetR, floor);
 
-        result.NewFloor    = player.DungeonFloor;
-        result.NewQ        = player.DungeonQ;
-        result.NewR        = player.DungeonR;
+        result.NewFloor        = player.DungeonFloor;
+        result.NewQ            = player.DungeonQ;
+        result.NewR            = player.DungeonR;
         result.ExitedToSurface = !player.IsInDungeon;
+
+        // Dungeon random encounter (15% on corridor moves, skip if combat already started)
+        if (!result.CombatStarted && !player.IsInCombat && !result.ExitedToSurface)
+        {
+            var dungeonSession = _combatEngine.TryGenerateEncounter(
+                player, string.Empty, inDungeon: true, dungeon.DungeonTheme, floor.FloorNumber);
+            if (dungeonSession != null)
+            {
+                player.ActiveCombatSessionId = dungeonSession.Id;
+                await _combatRepo.SaveAsync(dungeonSession);
+                result.CombatStarted = true;
+            }
+        }
 
         await _playerRepo.UpdateAsync(player);
         return result;
@@ -382,11 +404,20 @@ public class DungeonService
                 break;
 
             case DungeonRoomType.Boss when !room.IsCleared:
-                player.Satiety = Math.Max(0, player.Satiety - 30);
-                long bossStunUntil = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 60_000;
-                if (!permissions.Contains(Permission.IgnoreCooldowns))
-                    player.StunnedUntil = Math.Max(player.StunnedUntil, bossStunUntil);
-                message = "Something here reacts to your presence with force. You take a heavy blow. The chamber still holds its treasures — gather them when you recover.";
+                if (!player.IsInCombat)
+                {
+                    var bossSession = _combatEngine.StartCombat(new CombatStartContext
+                    {
+                        Player       = player,
+                        Trigger      = CombatTrigger.RoomEntry,
+                        DungeonTheme = dungeon.DungeonTheme,
+                        DungeonFloor = floor.FloorNumber,
+                        RoomType     = nameof(DungeonRoomType.Boss),
+                    });
+                    player.ActiveCombatSessionId = bossSession.Id;
+                    await _combatRepo.SaveAsync(bossSession);
+                    message = "Something massive stirs in the chamber. It moves toward you.";
+                }
                 break;
         }
 
@@ -465,6 +496,7 @@ public class DungeonMoveResult
     public int NewQ { get; set; }
     public int NewR { get; set; }
     public bool ExitedToSurface { get; set; }
+    public bool CombatStarted { get; set; }
 
     public static DungeonMoveResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };
 }

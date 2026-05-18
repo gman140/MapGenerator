@@ -1,0 +1,43 @@
+using MapGenerator.Combat.Enums;
+
+namespace MapGenerator.Combat.Models;
+
+public class CombatSession
+{
+    public string Id { get; set; } = string.Empty;
+    public string PlayerId { get; set; } = string.Empty;
+
+    // Player HP
+    public int PlayerHp { get; set; }
+    public int PlayerMaxHp { get; set; }
+
+    // Player stamina
+    public int PlayerStamina { get; set; }
+    public int PlayerMaxStamina { get; set; }
+
+    // Snapshotted base stats (at combat start)
+    public int PlayerBaseAttack { get; set; }
+    public int PlayerBaseDefense { get; set; }
+    public float PlayerBaseDodgeChance { get; set; }
+
+    // Turn flags (cleared at end of each turn)
+    public bool PlayerDefending { get; set; }
+    public bool PlayerDodging { get; set; }
+
+    // Active modifiers on the player (equipment = permanent, buffs = temporary)
+    public List<CombatModifier> ActiveModifiers { get; set; } = [];
+
+    public List<Enemy> Enemies { get; set; } = [];
+    public int TurnNumber { get; set; }
+    public CombatPhase Phase { get; set; }
+    public List<string> Log { get; set; } = [];
+
+    // Set after player action, before enemy actions — used by UI to animate the two phases
+    public int TurnBoundaryLogIndex { get; set; }
+
+    // True when the player successfully used the Flee action
+    public bool PlayerFled { get; set; }
+
+    // Context for display
+    public string? ContextLabel { get; set; }  // e.g. "Jungle", "Floor 2 — Ancient Tomb"
+}

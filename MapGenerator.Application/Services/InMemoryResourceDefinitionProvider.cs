@@ -89,6 +89,30 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "IceShard",      Name = "Ice Shard",      Description = "Brittle and clouded and very cold. It has been ice for a long time." },
         new() { Id = "TangledRoot",   Name = "Tangled Root",   Description = "Root matter from the labyrinth above. It found its way down here. So did you." },
         new() { Id = "TarnishedRelic",Name = "Tarnished Relic",Description = "Something ceremonial, its purpose lost. The tarnish is its memory now." },
+
+        // ── Equipment — Weapons ───────────────────────────────────────────────
+        new() { Id = "IronSword",   Name = "Iron Sword",   Description = "A dull but reliable iron blade. It has seen better years but none worse.", EquipmentSlot = "Weapon", AttackBonus = 8 },
+        new() { Id = "WoodClub",    Name = "Wood Club",    Description = "Heavy and unbalanced. Effective in the manner that blunt things are.", EquipmentSlot = "Weapon", AttackBonus = 5 },
+
+        // ── Equipment — Armor ─────────────────────────────────────────────────
+        new() { Id = "LeatherArmor",  Name = "Leather Armor",  Description = "Stitched from scraps. Better than nothing, which it slightly exceeds.", EquipmentSlot = "Armor", DefenseBonus = 6 },
+        new() { Id = "BearHideCloak", Name = "Bear Hide Cloak", Description = "Heavy and warm and smells of the bear it used to be. Excellent protection.", EquipmentSlot = "Armor", DefenseBonus = 10 },
+
+        // ── Equipment — Hats ──────────────────────────────────────────────────
+        new() { Id = "TravelHat",   Name = "Travel Hat",   Description = "A well-worn hat. It has learned to move with you.", EquipmentSlot = "Hat", DodgeChanceBonus = 0.05f },
+        new() { Id = "HoodedCowl",  Name = "Hooded Cowl",  Description = "Darkness inside. It helps you slip away from things that would rather you didn't.", EquipmentSlot = "Hat", DodgeChanceBonus = 0.10f },
+
+        // ── Enemy loot drops ──────────────────────────────────────────────────
+        new() { Id = "SlimeGel",     Name = "Slime Gel",     Description = "A viscous, quivering substance left behind by the slime. Warm." },
+        new() { Id = "GooShard",     Name = "Goo Shard",     Description = "A crystallized piece of slime. It shouldn't be solid, and yet." },
+        new() { Id = "EggFragment",  Name = "Egg Fragment",  Description = "A piece of something that was an egg until recently. Still warm." },
+        new() { Id = "GoldenYolk",   Name = "Golden Yolk",   Description = "The yolk of a sentient egg. It is deeply unsettling how golden it is." },
+        new() { Id = "WolfPelt",     Name = "Wolf Pelt",     Description = "Thick and coarse. The wolf won't need it anymore." },
+        new() { Id = "Fang",         Name = "Fang",          Description = "Long and curved. Sharper than it has any business being." },
+        new() { Id = "BearHide",     Name = "Bear Hide",     Description = "Dense, thick fur and leather together. Heavy with former intent." },
+        new() { Id = "Claw",         Name = "Claw",          Description = "A bear's claw, curved like a question you'd rather not answer." },
+        new() { Id = "TrollHide",    Name = "Troll Hide",    Description = "Rough and grey and very thick. It absorbed a great deal before this." },
+        new() { Id = "CrushedRock",  Name = "Crushed Rock",  Description = "Stone ground to coarse powder by something with more strength than patience." },
     ];
 
     private static readonly Dictionary<string, ResourceDefinition> _byId =

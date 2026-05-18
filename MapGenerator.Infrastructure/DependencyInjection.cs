@@ -1,3 +1,4 @@
+using MapGenerator.Combat.Interfaces;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<ISettlementRepository, SettlementRepository>();
         services.AddScoped<IRoadRepository, RoadRepository>();
         services.AddScoped<IDungeonRepository, DungeonRepository>();
+        services.AddScoped<ICombatRepository, CombatRepository>();
         return services;
     }
 }

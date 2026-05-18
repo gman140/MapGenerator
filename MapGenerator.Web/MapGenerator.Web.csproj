@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MapGenerator.Application\MapGenerator.Application.csproj" />
+    <ProjectReference Include="..\MapGenerator.Combat\MapGenerator.Combat.csproj" />
     <ProjectReference Include="..\MapGenerator.Infrastructure\MapGenerator.Infrastructure.csproj" />
   </ItemGroup>
 

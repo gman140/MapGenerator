@@ -312,6 +312,92 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             ],
             Effects = [ItemEffect.ImproveAllGather],
         },
+
+        // ── Equipment — Weapons ───────────────────────────────────────────────
+        new()
+        {
+            Id               = "WoodClub",
+            Name             = "Wood Club",
+            Description      = "Three pieces of wood and two shards of flint, and something to be afraid of. Heavy and graceless. Gets the job done.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",  Quantity = 3 },
+                new() { ResourceId = "Flint", Quantity = 2 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "IronSword",
+            Name             = "Iron Sword",
+            Description      = "Three ore smelted with coal, shaped on a wood haft. Dull in sunlight. Reliable in the dark. You made it yourself, which means something.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Ore",   Quantity = 3 },
+                new() { ResourceId = "Coal",  Quantity = 2 },
+                new() { ResourceId = "Wood",  Quantity = 1 },
+            ],
+            Effects = [],
+        },
+
+        // ── Equipment — Armor ─────────────────────────────────────────────────
+        new()
+        {
+            Id               = "LeatherArmor",
+            Name             = "Leather Armor",
+            Description      = "Four lengths of fiber and two feathers, pressed and stitched into something that stops things. Smells of sweat and intent.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Fiber",    Quantity = 4 },
+                new() { ResourceId = "Feathers", Quantity = 3 },
+                new() { ResourceId = "Peat",     Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "BearHideCloak",
+            Name             = "Bear Hide Cloak",
+            Description      = "Two bear hides and three lengths of fiber, heavy and warm and made from something that was formidable. Some of that transfers over.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "BearHide", Quantity = 2 },
+                new() { ResourceId = "Fiber",    Quantity = 3 },
+            ],
+            Effects = [],
+        },
+
+        // ── Equipment — Hats ──────────────────────────────────────────────────
+        new()
+        {
+            Id               = "TravelHat",
+            Name             = "Travel Hat",
+            Description      = "Three fiber, two feathers, shaped into something that moves when you do. A well-worn hat learns your habits.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Fiber",    Quantity = 3 },
+                new() { ResourceId = "Feathers", Quantity = 2 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "HoodedCowl",
+            Name             = "Hooded Cowl",
+            Description      = "Four fiber and one wolf pelt, stitched into something that keeps the darkness where it belongs — outside.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Fiber",    Quantity = 4 },
+                new() { ResourceId = "WolfPelt", Quantity = 1 },
+            ],
+            Effects = [],
+        },
     ];
 
     private static readonly Dictionary<string, CraftingRecipe> _byId =

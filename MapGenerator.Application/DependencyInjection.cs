@@ -1,4 +1,6 @@
 using MapGenerator.Application.Services;
+using MapGenerator.Combat.Interfaces;
+using MapGenerator.Combat.Services;
 using MapGenerator.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<EggExplosionService>();
         services.AddScoped<DungeonGenerationService>();
         services.AddScoped<DungeonService>();
+        services.AddSingleton<IEnemyDefinitionProvider, InMemoryEnemyDefinitionProvider>();
+        services.AddScoped<EnemySpawner>();
+        services.AddScoped<ICombatEngine, CombatEngine>();
         return services;
     }
 }

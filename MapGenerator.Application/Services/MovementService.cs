@@ -1,3 +1,4 @@
+using MapGenerator.Combat.Interfaces;
 using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
@@ -13,6 +14,8 @@ public class MovementService
     private readonly IBiomeDefinitionProvider _biomeProvider;
     private readonly ICraftingRecipeProvider _recipeProvider;
     private readonly SettlementCacheService _settlementCache;
+    private readonly ICombatEngine _combatEngine;
+    private readonly ICombatRepository _combatRepo;
 
     public MovementService(
         IMapRepository mapRepo,
@@ -21,7 +24,9 @@ public class MovementService
         MapGeneratorService mapCache,
         IBiomeDefinitionProvider biomeProvider,
         ICraftingRecipeProvider recipeProvider,
-        SettlementCacheService settlementCache)
+        SettlementCacheService settlementCache,
+        ICombatEngine combatEngine,
+        ICombatRepository combatRepo)
     {
         _mapRepo         = mapRepo;
         _playerRepo      = playerRepo;
@@ -30,6 +35,8 @@ public class MovementService
         _biomeProvider   = biomeProvider;
         _recipeProvider  = recipeProvider;
         _settlementCache = settlementCache;
+        _combatEngine    = combatEngine;
+        _combatRepo      = combatRepo;
     }
 
     public static bool AreAdjacent(int q1, int r1, int q2, int r2)
@@ -118,13 +125,30 @@ public class MovementService
 
         await _visitRepo.RecordArrivalAsync(player.Id, targetQ, targetR);
 
-        return new MovementResult
+        var result = new MovementResult
         {
             Success = true,
             NewQ = targetQ,
             NewR = targetR,
-            CooldownUntil = player.MovementCooldownUntil
+            CooldownUntil = player.MovementCooldownUntil,
         };
+
+        // Random encounter check — skip if player is already in combat
+        if (!player.IsInCombat)
+        {
+            var encounterTile = await _mapRepo.GetTileAsync(targetQ, targetR);
+            string biome = encounterTile?.Biome.ToString() ?? "Plains";
+            var session = _combatEngine.TryGenerateEncounter(player, biome, false, null, null);
+            if (session != null)
+            {
+                player.ActiveCombatSessionId = session.Id;
+                await _combatRepo.SaveAsync(session);
+                await _playerRepo.UpdateAsync(player);
+                result.CombatStarted = true;
+            }
+        }
+
+        return result;
     }
 
     private static MovementResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };

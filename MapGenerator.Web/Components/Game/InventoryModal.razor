@@ -6,21 +6,29 @@
 @inject IFoodDefinitionProvider FoodProvider
 
 @{
-    int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value);
+    int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value)
+                  + CraftedItems.Where(kv => kv.Value > 0).Sum(kv => kv.Value);
 }
 <button class="crafting-toggle" @onclick="() => _open = true">
     <span>📋 Inventory@(totalItems > 0 ? $" ({totalItems})" : "")</span>
 </button>
 
 @{
-    var food      = Inventory.Where(kv => kv.Value > 0 && FoodProvider.GetById(kv.Key) != null)
+    var allItems   = Inventory.Concat(CraftedItems)
+                              .GroupBy(kv => kv.Key)
+                              .ToDictionary(g => g.Key, g => g.Sum(kv => kv.Value));
+    var food      = allItems.Where(kv => kv.Value > 0 && FoodProvider.GetById(kv.Key) != null)
                              .OrderBy(kv => kv.Key).ToList();
-    var materials = Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null
-                                       && FoodProvider.GetById(kv.Key) == null)
+    var materials = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) is { EquipmentSlot: null } && FoodProvider.GetById(kv.Key) == null)
                              .OrderBy(kv => kv.Key).ToList();
-    var crafted   = Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null
-                                       && FoodProvider.GetById(kv.Key) == null)
+    var crafted   = allItems.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null
+                                       && FoodProvider.GetById(kv.Key) == null
+                                       && ResourceProvider.GetById(kv.Key) is not { EquipmentSlot: not null })
                              .OrderBy(kv => kv.Key).ToList();
+
+    var weaponItems = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key)?.EquipmentSlot == "Weapon").OrderBy(kv => kv.Key).ToList();
+    var armorItems  = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key)?.EquipmentSlot == "Armor").OrderBy(kv => kv.Key).ToList();
+    var hatItems    = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key)?.EquipmentSlot == "Hat").OrderBy(kv => kv.Key).ToList();
 }
 @if (_open)
 {
@@ -30,78 +38,95 @@
                 <h3 class="modal-title">Inventory</h3>
                 <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
             </div>
-            @if (food.Count == 0 && materials.Count == 0 && crafted.Count == 0)
+
+            <div class="inv-tabs">
+                <button class="inv-tab @(_tab == 0 ? "active" : "")" @onclick="() => _tab = 0">Items</button>
+                <button class="inv-tab @(_tab == 1 ? "active" : "")" @onclick="() => _tab = 1">Equipment</button>
+            </div>
+
+            @if (_tab == 0)
             {
-                <p class="inventory-empty">Nothing gathered yet.</p>
-            }
-            @if (food.Count > 0)
-            {
-                <p class="inventory-section-label">Food</p>
-                <div class="inv-modal-list">
-                    @foreach (var (id, qty) in food)
-                    {
-                        var foodDef    = FoodProvider.GetById(id)!;
-                        var resDef     = ResourceProvider.GetById(id);
-                        var recipeDef  = RecipeProvider.GetById(id);
-                        var name       = resDef?.Name ?? recipeDef?.Name ?? foodDef.Name;
-                        var desc       = resDef?.Description ?? recipeDef?.Description ?? string.Empty;
-                        var capturedId = id;
-                        <div class="inv-modal-item">
-                            <div class="inv-modal-item-header">
-                                <span class="inv-modal-name">@name</span>
-                                <span class="inv-modal-qty">×@qty</span>
-                                <button class="eat-btn" @onclick="() => OnEat.InvokeAsync(capturedId)">Eat</button>
+                @if (food.Count == 0 && materials.Count == 0 && crafted.Count == 0)
+                {
+                    <p class="inventory-empty">Nothing gathered yet.</p>
+                }
+                @if (food.Count > 0)
+                {
+                    <p class="inventory-section-label">Food</p>
+                    <div class="inv-modal-list">
+                        @foreach (var (id, qty) in food)
+                        {
+                            var foodDef    = FoodProvider.GetById(id)!;
+                            var resDef     = ResourceProvider.GetById(id);
+                            var recipeDef  = RecipeProvider.GetById(id);
+                            var name       = resDef?.Name ?? recipeDef?.Name ?? foodDef.Name;
+                            var desc       = resDef?.Description ?? recipeDef?.Description ?? string.Empty;
+                            var capturedId = id;
+                            <div class="inv-modal-item">
+                                <div class="inv-modal-item-header">
+                                    <span class="inv-modal-name">@name</span>
+                                    <span class="inv-modal-qty">×@qty</span>
+                                    <button class="eat-btn" @onclick="() => OnEat.InvokeAsync(capturedId)">Eat</button>
+                                </div>
+                                @if (!string.IsNullOrEmpty(desc))
+                                {
+                                    <p class="inv-modal-desc">@desc</p>
+                                }
+                                @if (foodDef.Buff != null)
+                                {
+                                    <p class="inv-modal-buff">@FormatBuff(foodDef.Buff)</p>
+                                }
                             </div>
-                            @if (!string.IsNullOrEmpty(desc))
-                            {
-                                <p class="inv-modal-desc">@desc</p>
-                            }
-                            @if (foodDef.Buff != null)
-                            {
-                                <p class="inv-modal-buff">@FormatBuff(foodDef.Buff)</p>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-            @if (materials.Count > 0)
-            {
-                <p class="inventory-section-label">Materials</p>
-                <div class="inv-modal-list">
-                    @foreach (var (id, qty) in materials)
-                    {
-                        var def = ResourceProvider.GetById(id)!;
-                        <div class="inv-modal-item">
-                            <div class="inv-modal-item-header">
-                                <span class="inv-modal-name">@def.Name</span>
-                                <span class="inv-modal-qty">×@qty</span>
+                        }
+                    </div>
+                }
+                @if (materials.Count > 0)
+                {
+                    <p class="inventory-section-label">Materials</p>
+                    <div class="inv-modal-list">
+                        @foreach (var (id, qty) in materials)
+                        {
+                            var def = ResourceProvider.GetById(id)!;
+                            <div class="inv-modal-item">
+                                <div class="inv-modal-item-header">
+                                    <span class="inv-modal-name">@def.Name</span>
+                                    <span class="inv-modal-qty">×@qty</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(def.Description))
+                                {
+                                    <p class="inv-modal-desc">@def.Description</p>
+                                }
                             </div>
-                            @if (!string.IsNullOrEmpty(def.Description))
-                            {
-                                <p class="inv-modal-desc">@def.Description</p>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-            @if (crafted.Count > 0)
-            {
-                <p class="inventory-section-label">Crafted</p>
-                <div class="inv-modal-list">
-                    @foreach (var (id, qty) in crafted)
-                    {
-                        var def = RecipeProvider.GetById(id)!;
-                        <div class="inv-modal-item">
-                            <div class="inv-modal-item-header">
-                                <span class="inv-modal-name">@def.Name</span>
-                                <span class="inv-modal-qty">×@qty</span>
+                        }
+                    </div>
+                }
+                @if (crafted.Count > 0)
+                {
+                    <p class="inventory-section-label">Crafted</p>
+                    <div class="inv-modal-list">
+                        @foreach (var (id, qty) in crafted)
+                        {
+                            var def = RecipeProvider.GetById(id)!;
+                            <div class="inv-modal-item">
+                                <div class="inv-modal-item-header">
+                                    <span class="inv-modal-name">@def.Name</span>
+                                    <span class="inv-modal-qty">×@qty</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(def.Description))
+                                {
+                                    <p class="inv-modal-desc">@def.Description</p>
+                                }
                             </div>
-                            @if (!string.IsNullOrEmpty(def.Description))
-                            {
-                                <p class="inv-modal-desc">@def.Description</p>
-                            }
-                        </div>
-                    }
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="inv-equipment">
+                    @RenderEquipSlot("Weapon", "⚔ Weapon", EquippedWeaponId, weaponItems)
+                    @RenderEquipSlot("Armor", "🛡 Armor", EquippedArmorId, armorItems)
+                    @RenderEquipSlot("Hat", "🎩 Hat", EquippedHatId, hatItems)
                 </div>
             }
         </div>
@@ -110,9 +135,99 @@
 
 @code {
     [Parameter, EditorRequired] public Dictionary<string, int> Inventory { get; set; } = null!;
+    [Parameter] public Dictionary<string, int> CraftedItems { get; set; } = new();
+    [Parameter] public string? EquippedWeaponId { get; set; }
+    [Parameter] public string? EquippedArmorId { get; set; }
+    [Parameter] public string? EquippedHatId { get; set; }
     [Parameter] public EventCallback<string> OnEat { get; set; }
+    [Parameter] public EventCallback<string> OnEquip { get; set; }
+    [Parameter] public EventCallback<string> OnUnequip { get; set; }
 
     private bool _open;
+    private int _tab;
+
+    private RenderFragment RenderEquipSlot(string slot, string label, string? equippedId, List<KeyValuePair<string, int>> available) => __builder =>
+    {
+        __builder.OpenElement(0, "div");
+        __builder.AddAttribute(1, "class", "equip-slot");
+
+        __builder.OpenElement(2, "div");
+        __builder.AddAttribute(3, "class", "equip-slot-header");
+        __builder.OpenElement(4, "span");
+        __builder.AddAttribute(5, "class", "equip-slot-label");
+        __builder.AddContent(6, label);
+        __builder.CloseElement();
+
+        if (equippedId != null)
+        {
+            var def = ResourceProvider.GetById(equippedId);
+            var name = def?.Name ?? equippedId;
+            __builder.OpenElement(7, "span");
+            __builder.AddAttribute(8, "class", "equip-slot-equipped");
+            __builder.AddContent(9, name);
+            __builder.CloseElement();
+            var capturedSlot = slot;
+            __builder.OpenElement(10, "button");
+            __builder.AddAttribute(11, "class", "equip-unequip-btn");
+            __builder.AddAttribute(12, "onclick", EventCallback.Factory.Create(this, () => OnUnequip.InvokeAsync(capturedSlot)));
+            __builder.AddContent(13, "Unequip");
+            __builder.CloseElement();
+        }
+        else
+        {
+            __builder.OpenElement(7, "span");
+            __builder.AddAttribute(8, "class", "equip-slot-empty");
+            __builder.AddContent(9, "Empty");
+            __builder.CloseElement();
+        }
+        __builder.CloseElement(); // equip-slot-header
+
+        if (available.Count > 0)
+        {
+            __builder.OpenElement(14, "div");
+            __builder.AddAttribute(15, "class", "equip-available");
+            int seq = 16;
+            foreach (var (id, qty) in available)
+            {
+                var def = ResourceProvider.GetById(id);
+                var name = def?.Name ?? id;
+                bool isEquipped = id == equippedId;
+                var capturedId = id;
+                __builder.OpenElement(seq++, "div");
+                __builder.AddAttribute(seq++, "class", "equip-available-item");
+                __builder.OpenElement(seq++, "span");
+                __builder.AddAttribute(seq++, "class", "inv-modal-name");
+                __builder.AddContent(seq++, name);
+                __builder.CloseElement();
+                if (def != null && (def.AttackBonus != 0 || def.DefenseBonus != 0 || def.DodgeChanceBonus != 0))
+                {
+                    __builder.OpenElement(seq++, "span");
+                    __builder.AddAttribute(seq++, "class", "equip-stat-hint");
+                    __builder.AddContent(seq++, FormatEquipStats(def));
+                    __builder.CloseElement();
+                }
+                __builder.OpenElement(seq++, "button");
+                __builder.AddAttribute(seq++, "class", "equip-equip-btn");
+                __builder.AddAttribute(seq++, "disabled", isEquipped);
+                __builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create(this, () => OnEquip.InvokeAsync(capturedId)));
+                __builder.AddContent(seq++, isEquipped ? "Equipped" : "Equip");
+                __builder.CloseElement();
+                __builder.CloseElement(); // equip-available-item
+            }
+            __builder.CloseElement(); // equip-available
+        }
+
+        __builder.CloseElement(); // equip-slot
+    };
+
+    private static string FormatEquipStats(ResourceDefinition def)
+    {
+        var parts = new List<string>();
+        if (def.AttackBonus != 0) parts.Add($"+{def.AttackBonus} Atk");
+        if (def.DefenseBonus != 0) parts.Add($"+{def.DefenseBonus} Def");
+        if (def.DodgeChanceBonus != 0) parts.Add($"+{def.DodgeChanceBonus * 100:F0}% Dodge");
+        return string.Join(", ", parts);
+    }
 
     private static string FormatBuff(BuffDefinition buff) => buff.Type switch
     {
