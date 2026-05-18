@@ -20,9 +20,12 @@
             </div>
             <div class="crafting-recipes">
                 @{
-            bool hasWorkshop = MapCache.GetCachedTile(Player.Q, Player.R)?.Structure?.Type == StructureType.Workshop;
-            var normalRecipes    = RecipeProvider.All.Where(r => !r.RequiresWorkshop).ToList();
+            var tileStructure    = MapCache.GetCachedTile(Player.Q, Player.R)?.Structure?.Type;
+            bool hasWorkshop     = tileStructure == StructureType.Workshop;
+            bool hasCampfire     = tileStructure == StructureType.Campfire;
+            var normalRecipes    = RecipeProvider.All.Where(r => !r.RequiresWorkshop && !r.RequiresCampfire).ToList();
             var workshopRecipes  = RecipeProvider.All.Where(r => r.RequiresWorkshop).ToList();
+            var campfireRecipes  = RecipeProvider.All.Where(r => r.RequiresCampfire).ToList();
         }
         @if (hasWorkshop)
         {
@@ -62,6 +65,44 @@
                             }
                         </div>
                     </div>
+                }
+
+                @if (hasCampfire && campfireRecipes.Count > 0)
+                {
+                    <p class="workshop-section-label campfire-section-label">🔥 Campfire Cooking</p>
+                    @foreach (var recipe in campfireRecipes)
+                    {
+                        bool canCraft = recipe.Ingredients.All(i =>
+                        {
+                            Player.Inventory.TryGetValue(i.ResourceId, out int have);
+                            return have >= i.Quantity;
+                        });
+
+                        <div class="recipe-card recipe-card-campfire">
+                            <div class="recipe-header">
+                                <span class="recipe-name">
+                                    @recipe.Name
+                                    @if (recipe.IsConsumable) { <span class="recipe-consumable">food</span> }
+                                </span>
+                                <button class="recipe-craft-btn" disabled="@(!canCraft)"
+                                        @onclick="() => { OnCraft.InvokeAsync(recipe.Id); _open = false; }">
+                                    Cook
+                                </button>
+                            </div>
+                            <p class="inv-modal-desc">@recipe.Description</p>
+                            <div class="recipe-ingredients">
+                                @foreach (var ing in recipe.Ingredients)
+                                {
+                                    Player.Inventory.TryGetValue(ing.ResourceId, out int have);
+                                    bool ok = have >= ing.Quantity;
+                                    var resName = ResourceProvider.GetById(ing.ResourceId)?.Name ?? ing.ResourceId;
+                                    <span class="ingredient @(ok ? "ingredient-ok" : "ingredient-missing")">
+                                        @resName @have/@ing.Quantity
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
                 }
 
                 @if (hasWorkshop && workshopRecipes.Count > 0)

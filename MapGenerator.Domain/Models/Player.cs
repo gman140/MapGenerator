@@ -18,6 +18,7 @@ public class Player
     public DateTime? LastDancedAt { get; set; }
     public DateTime? LastKissedAt { get; set; }
     public int EggsDestroyed { get; set; }
+    public double Satiety { get; set; } = 80.0;
     public Dictionary<string, int> Inventory { get; set; } = new();
     public Dictionary<string, int> CraftedItems { get; set; } = new();
 }

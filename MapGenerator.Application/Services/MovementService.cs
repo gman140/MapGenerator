@@ -91,6 +91,9 @@ public class MovementService
         if (cooldown > 0 && _settlementCache.IsRoadTile(targetQ, targetR))
             cooldown = 0;
 
+        // Drain satiety before applying item discounts so drain reflects terrain difficulty.
+        player.Satiety = Math.Max(0, player.Satiety - HungerService.DrainForMovement(cooldown));
+
         if (cooldown > 0)
         {
             if (_recipeProvider.PlayerHasEffect(player, ItemEffect.ReduceMovementCooldown))
@@ -99,6 +102,8 @@ public class MovementService
             bool isColdBiome = tile.Biome is BiomeType.Tundra or BiomeType.Snow or BiomeType.Glacier;
             if (isColdBiome && _recipeProvider.PlayerHasEffect(player, ItemEffect.ReduceColdBiomeCooldown))
                 cooldown = (long)(cooldown * 0.60);
+
+            cooldown = (long)(cooldown * HungerService.GetCooldownMultiplier(player.Satiety));
         }
 
         await _visitRepo.RecordDepartureAsync(player.Id, player.Q, player.R);

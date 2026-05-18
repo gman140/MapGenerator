@@ -247,6 +247,7 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
                 new() { ResourceId = "Peat",        Probability = 0.45f },
                 new() { ResourceId = "Reed",        Probability = 0.30f },
                 new() { ResourceId = "Herbs",       Probability = 0.15f },
+                new() { ResourceId = "Mushroom",    Probability = 0.15f },
                 new() { ResourceId = "PaleMushroom",Probability = 0.08f },
                 new() { ResourceId = "RottenSilks", Probability = 0.05f },
             ],
@@ -290,6 +291,7 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
                 new() { ResourceId = "Peat",        Probability = 0.25f },
                 new() { ResourceId = "Clay",        Probability = 0.20f },
                 new() { ResourceId = "Herbs",       Probability = 0.15f },
+                new() { ResourceId = "Mushroom",    Probability = 0.12f },
                 new() { ResourceId = "PaleMushroom",Probability = 0.08f },
             ],
         },
@@ -321,8 +323,10 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
             [
                 new() { ResourceId = "Fiber",      Probability = 0.55f },
                 new() { ResourceId = "Herbs",      Probability = 0.20f },
+                new() { ResourceId = "Berries",    Probability = 0.18f },
                 new() { ResourceId = "Feathers",   Probability = 0.12f },
                 new() { ResourceId = "Flint",      Probability = 0.10f },
+                new() { ResourceId = "Grain",      Probability = 0.10f },
                 new() { ResourceId = "DeadGrass",  Probability = 0.08f },
                 new() { ResourceId = "CrowFeather",Probability = 0.04f },
             ],
@@ -354,6 +358,7 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
             ResourceYields =
             [
                 new() { ResourceId = "Fiber",    Probability = 0.45f },
+                new() { ResourceId = "Grain",    Probability = 0.25f },
                 new() { ResourceId = "Flint",    Probability = 0.22f },
                 new() { ResourceId = "Feathers", Probability = 0.15f },
                 new() { ResourceId = "Stone",    Probability = 0.10f },
@@ -387,6 +392,7 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
             ResourceYields =
             [
                 new() { ResourceId = "Fiber",       Probability = 0.40f },
+                new() { ResourceId = "Grain",       Probability = 0.20f },
                 new() { ResourceId = "Feathers",    Probability = 0.18f },
                 new() { ResourceId = "Flint",       Probability = 0.15f },
                 new() { ResourceId = "DeadGrass",   Probability = 0.15f },
@@ -430,6 +436,8 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
             [
                 new() { ResourceId = "Wood",        Probability = 0.55f },
                 new() { ResourceId = "Herbs",       Probability = 0.20f },
+                new() { ResourceId = "Berries",     Probability = 0.25f },
+                new() { ResourceId = "Mushroom",    Probability = 0.20f },
                 new() { ResourceId = "Moss",        Probability = 0.18f },
                 new() { ResourceId = "PaleMushroom",Probability = 0.10f },
                 new() { ResourceId = "Amber",       Probability = 0.08f },
@@ -474,6 +482,7 @@ public class InMemoryBiomeDefinitionProvider : IBiomeDefinitionProvider
                 new() { ResourceId = "Wood",       Probability = 0.50f },
                 new() { ResourceId = "Fiber",      Probability = 0.30f },
                 new() { ResourceId = "Herbs",      Probability = 0.28f },
+                new() { ResourceId = "Berries",    Probability = 0.30f },
                 new() { ResourceId = "Amber",      Probability = 0.10f },
                 new() { ResourceId = "RottenSilks",Probability = 0.08f },
             ],

@@ -66,8 +66,12 @@ public class GatherService
             player.Inventory[def.Id] = existing + qty;
         }
 
+        player.Satiety = Math.Max(0, player.Satiety - 2.0);
+
         long effectiveCooldown = CooldownMs;
         if (tile.Structure?.Type == StructureType.MineShaft) effectiveCooldown /= 2;
+        if (!permissions.Contains(Permission.IgnoreCooldowns))
+            effectiveCooldown = (long)(effectiveCooldown * HungerService.GetCooldownMultiplier(player.Satiety));
         long cooldown = permissions.Contains(Permission.IgnoreCooldowns) ? 0 : effectiveCooldown;
         player.GatherCooldownUntil = cooldown > 0 ? now + cooldown : 0;
         player.LastSeen = DateTime.UtcNow;

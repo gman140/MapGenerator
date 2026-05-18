@@ -29,10 +29,15 @@ public class CraftingService
         if (recipe == null)
             return Fail("Unknown recipe.");
 
-        bool hasWorkshop = _mapCache.GetCachedTile(player.Q, player.R)?.Structure?.Type == StructureType.Workshop;
+        var tileStructure = _mapCache.GetCachedTile(player.Q, player.R)?.Structure?.Type;
+        bool hasWorkshop  = tileStructure == StructureType.Workshop;
+        bool hasCampfire  = tileStructure == StructureType.Campfire;
 
         if (recipe.RequiresWorkshop && !hasWorkshop)
             return Fail("This recipe requires a Workshop.");
+
+        if (recipe.RequiresCampfire && !hasCampfire)
+            return Fail("This recipe requires a Campfire.");
 
         foreach (var ingredient in recipe.Ingredients)
         {

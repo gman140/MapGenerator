@@ -22,6 +22,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
     private readonly SettlementCacheService _settlementCache;
+    private readonly IFoodDefinitionProvider _foodProvider;
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly ITileNoteRepository _noteRepo;
@@ -48,6 +49,7 @@ public class GameSessionService : IAsyncDisposable
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
         SettlementCacheService settlementCache,
+        IFoodDefinitionProvider foodProvider,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo,
         ITileNoteRepository noteRepo,
@@ -69,6 +71,7 @@ public class GameSessionService : IAsyncDisposable
         _mapCache        = mapCache;
         _broadcast       = broadcast;
         _settlementCache = settlementCache;
+        _foodProvider    = foodProvider;
         _playerRepo      = playerRepo;
         _visitRepo       = visitRepo;
         _noteRepo        = noteRepo;
@@ -398,6 +401,29 @@ public class GameSessionService : IAsyncDisposable
         if (content.Length > 100) content = content[..100];
         await _mapRepo.PlaceSignAsync(Player.Q, Player.R, content, Player.Username);
         _mapCache.UpdateCachedSign(Player.Q, Player.R, content, Player.Username);
+    }
+
+    public async Task<(bool success, string message)> EatAsync(string resourceId)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        var foodDef = _foodProvider.GetById(resourceId);
+        if (foodDef == null) return (false, "You cannot eat that.");
+
+        Player.Inventory.TryGetValue(resourceId, out int qty);
+        if (qty <= 0) return (false, $"You don't have any {foodDef.Name}.");
+
+        if (qty == 1) Player.Inventory.Remove(resourceId);
+        else Player.Inventory[resourceId] = qty - 1;
+
+        Player.Satiety = Math.Min(100, Player.Satiety + foodDef.SatietyRestore);
+        Player.LastSeen = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+
+        var rng = new Random();
+        var message = foodDef.EatMessages.Length > 0
+            ? foodDef.EatMessages[rng.Next(foodDef.EatMessages.Length)]
+            : $"You eat the {foodDef.Name}.";
+        return (true, message);
     }
 
     public ValueTask DisposeAsync()

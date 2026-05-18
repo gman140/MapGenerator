@@ -48,14 +48,15 @@ public class PlayerService
 
         var player = new Player
         {
-            Username = username,
+            Username  = username,
             BrowserId = browserId,
-            IsAdmin = username.EndsWith("admin", StringComparison.OrdinalIgnoreCase),
-            Q = config.SpawnQ,
-            R = config.SpawnR,
+            IsAdmin   = username.EndsWith("admin", StringComparison.OrdinalIgnoreCase),
+            Q         = config.SpawnQ,
+            R         = config.SpawnR,
+            Satiety   = 80.0,
             CreatedAt = DateTime.UtcNow,
-            LastSeen = DateTime.UtcNow,
-            Color = PlayerColors[_rng.Next(PlayerColors.Length)],
+            LastSeen  = DateTime.UtcNow,
+            Color     = PlayerColors[_rng.Next(PlayerColors.Length)],
         };
 
         player = await _playerRepo.CreateAsync(player);
@@ -68,6 +69,10 @@ public class PlayerService
     {
         var player = await _playerRepo.GetByBrowserIdAsync(browserId);
         if (player == null) return null;
+
+        // Migrate existing players who predate the Satiety field (stored as 0.0).
+        if (player.Satiety <= 0)
+            player.Satiety = 80.0;
 
         player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(player);

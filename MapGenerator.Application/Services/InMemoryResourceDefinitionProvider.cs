@@ -19,8 +19,20 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "Peat",  Name = "Peat",  Description = "Dense compressed plant matter, from something that died slowly.",                 MinQuantity = 1, MaxQuantity = 3 },
         new() { Id = "Flint", Name = "Flint", Description = "A sharp-edged stone that makes other things sharp.",                             MinQuantity = 1, MaxQuantity = 3 },
 
+        // ── Food (variable quantity) ──────────────────────────────────────────
+        new() { Id = "Berries",  Name = "Berries",  Description = "Small, tart, and numerous. Edible now. Better cooked into something.",   MinQuantity = 1, MaxQuantity = 3 },
+        new() { Id = "Mushroom", Name = "Mushroom", Description = "A forest mushroom. Edible raw in a pinch, considerably better cooked.",  MinQuantity = 1, MaxQuantity = 2 },
+        new() { Id = "Grain",    Name = "Grain",    Description = "Dry seed-heads gathered from open ground. Not edible raw, but useful.",  MinQuantity = 1, MaxQuantity = 3 },
+
+        // ── Cooked food (quantity 1) ──────────────────────────────────────────
+        new() { Id = "CookedFish",    Name = "Cooked Fish",    Description = "Fish charred over open flame. Filling and good." },
+        new() { Id = "CookedMushroom",Name = "Cooked Mushroom",Description = "Heat transformed them into something much better." },
+        new() { Id = "MushroomSoup",  Name = "Mushroom Soup",  Description = "Salt, grain, and mushrooms, simmered until the broth is deep." },
+        new() { Id = "BerryPie",      Name = "Berry Pie",      Description = "Imperfect crust, too-tart berries, genuinely good." },
+        new() { Id = "HerbTea",       Name = "Herb Tea",       Description = "Bitter, fragrant, and better for you than it tastes." },
+
         // ── Uncommon (quantity 1) ─────────────────────────────────────────────
-        new() { Id = "Herbs",     Name = "Herbs",     Description = "Fragrant leaves of ambiguous medicinal value." },
+        new() { Id = "Herbs",     Name = "Herbs",     Description = "Fragrant leaves of ambiguous medicinal value. Edible, and sometimes medicinal." },
         new() { Id = "Feathers",  Name = "Feathers",  Description = "Shed or left behind. The bird is not here to explain." },
         new() { Id = "Salt",      Name = "Salt",      Description = "Crystallized from water, wind, or time." },
         new() { Id = "Clay",      Name = "Clay",      Description = "Dense, grey, workable. Remembers the shape of your hands." },

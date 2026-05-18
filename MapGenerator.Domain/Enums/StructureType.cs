@@ -7,4 +7,5 @@ public enum StructureType
     MineShaft,
     Workshop,
     Dock,
+    Campfire,
 }

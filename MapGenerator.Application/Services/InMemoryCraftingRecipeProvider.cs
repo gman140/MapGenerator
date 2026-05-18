@@ -140,6 +140,67 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             Effects = [ItemEffect.PreserveRareFinds],
         },
 
+        // ── Campfire-exclusive (cooking) ──────────────────────────────────────────
+        new()
+        {
+            Id               = "CookedFish",
+            Name             = "Cooked Fish",
+            Description      = "One fish, held over the fire until it's done. The smoke gets into it just right.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      = [ new() { ResourceId = "Fish", Quantity = 1 } ],
+            Effects          = [],
+        },
+        new()
+        {
+            Id               = "CookedMushroom",
+            Name             = "Cooked Mushroom",
+            Description      = "Heat changes them into something the raw version only suggested.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      = [ new() { ResourceId = "Mushroom", Quantity = 1 } ],
+            Effects          = [],
+        },
+        new()
+        {
+            Id               = "MushroomSoup",
+            Name             = "Mushroom Soup",
+            Description      = "Two mushrooms, a measure of grain, a pinch of salt. Simmered until the broth is deep and the cold is gone.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Mushroom", Quantity = 2 },
+                new() { ResourceId = "Grain",    Quantity = 1 },
+                new() { ResourceId = "Salt",     Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "BerryPie",
+            Name             = "Berry Pie",
+            Description      = "Three handfuls of berries, two measures of grain, pressed into something that qualifies as a pie. It is better than it looks.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Berries", Quantity = 3 },
+                new() { ResourceId = "Grain",   Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "HerbTea",
+            Name             = "Herb Tea",
+            Description      = "Two bundles of herbs steeped in water over the fire. Bitter, fragrant, and genuinely useful.",
+            RequiresCampfire = true,
+            IsConsumable     = true,
+            Ingredients      = [ new() { ResourceId = "Herbs", Quantity = 2 } ],
+            Effects          = [],
+        },
+
         // ── Workshop-exclusive ────────────────────────────────────────────────────
         new()
         {

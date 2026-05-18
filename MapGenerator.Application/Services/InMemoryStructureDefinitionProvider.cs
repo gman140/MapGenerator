@@ -82,6 +82,19 @@ public class InMemoryStructureDefinitionProvider : IStructureDefinitionProvider
             AllowedBiomes = [BiomeType.Beach, BiomeType.Shallows, BiomeType.River, BiomeType.Marsh],
             MapIcon = "<line x1='-6' y1='-1' x2='6' y2='-1' stroke='#8b5a30' stroke-width='2.5' stroke-linecap='round'/><line x1='-4' y1='-1' x2='-4' y2='6' stroke='#8b5a30' stroke-width='1.5' stroke-linecap='round'/><line x1='0' y1='-1' x2='0' y2='6' stroke='#8b5a30' stroke-width='1.5' stroke-linecap='round'/><line x1='4' y1='-1' x2='4' y2='6' stroke='#8b5a30' stroke-width='1.5' stroke-linecap='round'/>",
         },
+        new()
+        {
+            Type        = StructureType.Campfire,
+            Name        = "Campfire",
+            Description = "Stone, flint, and fuel. It burns warm and long enough to cook over. Stand here to access cooking recipes.",
+            Ingredients =
+            [
+                new() { ResourceId = "Wood",  Quantity = 3 },
+                new() { ResourceId = "Flint", Quantity = 2 },
+                new() { ResourceId = "Stone", Quantity = 1 },
+            ],
+            MapIcon = "<circle cx='0' cy='2' r='5' fill='#5a3010' opacity='0.9'/><line x1='-4' y1='2' x2='0' y2='-8' stroke='#8b5a20' stroke-width='1.5' stroke-linecap='round'/><line x1='4' y1='2' x2='0' y2='-8' stroke='#8b5a20' stroke-width='1.5' stroke-linecap='round'/><ellipse cx='0' cy='-5' rx='3' ry='4' fill='#e06820' opacity='0.9'/><ellipse cx='0' cy='-7' rx='1.5' ry='2.5' fill='#f8c040' opacity='0.9'/>",
+        },
     ];
 
     private static readonly Dictionary<StructureType, StructureDefinition> _byType =

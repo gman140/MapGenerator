@@ -1,6 +1,7 @@
 @using MapGenerator.Domain.Interfaces
 @inject IResourceDefinitionProvider ResourceProvider
 @inject ICraftingRecipeProvider RecipeProvider
+@inject IFoodDefinitionProvider FoodProvider
 
 @{
     int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value);
@@ -10,9 +11,13 @@
 </button>
 
 @{
-    var materials = Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null)
+    var food      = Inventory.Where(kv => kv.Value > 0 && FoodProvider.GetById(kv.Key) != null)
                              .OrderBy(kv => kv.Key).ToList();
-    var crafted   = Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null)
+    var materials = Inventory.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) != null
+                                       && FoodProvider.GetById(kv.Key) == null)
+                             .OrderBy(kv => kv.Key).ToList();
+    var crafted   = Inventory.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null
+                                       && FoodProvider.GetById(kv.Key) == null)
                              .OrderBy(kv => kv.Key).ToList();
 }
 @if (_open)
@@ -23,9 +28,35 @@
                 <h3 class="modal-title">Inventory</h3>
                 <button class="crafting-modal-close" @onclick="() => _open = false">✕</button>
             </div>
-            @if (materials.Count == 0 && crafted.Count == 0)
+            @if (food.Count == 0 && materials.Count == 0 && crafted.Count == 0)
             {
                 <p class="inventory-empty">Nothing gathered yet.</p>
+            }
+            @if (food.Count > 0)
+            {
+                <p class="inventory-section-label">Food</p>
+                <div class="inv-modal-list">
+                    @foreach (var (id, qty) in food)
+                    {
+                        var foodDef    = FoodProvider.GetById(id)!;
+                        var resDef     = ResourceProvider.GetById(id);
+                        var recipeDef  = RecipeProvider.GetById(id);
+                        var name       = resDef?.Name ?? recipeDef?.Name ?? foodDef.Name;
+                        var desc       = resDef?.Description ?? recipeDef?.Description ?? string.Empty;
+                        var capturedId = id;
+                        <div class="inv-modal-item">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@name</span>
+                                <span class="inv-modal-qty">×@qty</span>
+                                <button class="eat-btn" @onclick="() => OnEat.InvokeAsync(capturedId)">Eat</button>
+                            </div>
+                            @if (!string.IsNullOrEmpty(desc))
+                            {
+                                <p class="inv-modal-desc">@desc</p>
+                            }
+                        </div>
+                    }
+                </div>
             }
             @if (materials.Count > 0)
             {
@@ -73,6 +104,7 @@
 
 @code {
     [Parameter, EditorRequired] public Dictionary<string, int> Inventory { get; set; } = null!;
+    [Parameter] public EventCallback<string> OnEat { get; set; }
 
     private bool _open;
 }

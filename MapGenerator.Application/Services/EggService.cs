@@ -22,12 +22,19 @@ public class EggService
     public async Task<(bool success, string message, int eggCount)> LayEggAsync(
         Player player, IReadOnlySet<Permission> permissions)
     {
+        if (!HungerService.CanLayEgg(player.Satiety))
+            return (false, "You are too weak with hunger to lay an egg.", 0);
+
         if (!permissions.Contains(Permission.IgnoreCooldowns) && player.LastEggLaidAt.HasValue)
         {
-            var remaining = EggCooldown - (DateTime.UtcNow - player.LastEggLaidAt.Value);
+            double mult = HungerService.GetCooldownMultiplier(player.Satiety);
+            var effectiveCooldown = TimeSpan.FromMilliseconds(EggCooldown.TotalMilliseconds * mult);
+            var remaining = effectiveCooldown - (DateTime.UtcNow - player.LastEggLaidAt.Value);
             if (remaining > TimeSpan.Zero)
                 return (false, $"You need to rest {remaining.TotalSeconds:F0}s before laying another egg.", 0);
         }
+
+        player.Satiety = Math.Max(0, player.Satiety - 25.0);
 
         var newCount = await _mapRepo.IncrementEggCountAsync(player.Q, player.R);
         _mapCache.UpdateCachedEggCount(player.Q, player.R, newCount);

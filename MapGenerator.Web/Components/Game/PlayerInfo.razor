@@ -1,9 +1,11 @@
 @using MapGenerator.Application.Services
+@using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @inject MapGeneratorService MapCache
 @inject IFeatureDefinitionProvider FeatureProvider
 @inject SettlementCacheService SettlementCache
 @using static MapGenerator.Application.Services.DanceService
+@using static MapGenerator.Application.Services.HungerService
 @implements IDisposable
 
 <div class="player-info">
@@ -35,6 +37,23 @@
             <span class="settlement-tag">@settlementName</span>
         }
         <span class="coords">(@Player.Q, @Player.R)</span>
+    </div>
+
+    @{
+        var hungerBand = GetBand(Player.Satiety);
+        var hungerLabel = hungerBand switch
+        {
+            HungerBand.Stuffed  => "Stuffed",
+            HungerBand.Satiated => "Satiated",
+            HungerBand.Peckish  => "Peckish",
+            HungerBand.Hungry   => "Hungry",
+            _                   => "Starving",
+        };
+    }
+    <div class="hunger-bar">
+        <div class="hunger-fill hunger-@hungerBand.ToString().ToLower()"
+             style="width: @Player.Satiety.ToString("F0")%"></div>
+        <span class="hunger-text">@hungerLabel</span>
     </div>
 
     @if (_stunnedRemaining > 0)

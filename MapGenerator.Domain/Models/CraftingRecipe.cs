@@ -9,6 +9,7 @@ public class CraftingRecipe
     public string Description { get; init; } = string.Empty;
     public bool IsConsumable { get; init; }
     public bool RequiresWorkshop { get; init; }
+    public bool RequiresCampfire { get; init; }
     public CraftingIngredient[] Ingredients { get; init; } = [];
     public ItemEffect[] Effects { get; init; } = [];
 }

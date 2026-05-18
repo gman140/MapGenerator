@@ -40,7 +40,7 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnColorChanged="HandleColorChangedAsync"
                         OnKissPlayer="HandleKissPlayerAsync" />
-            <InventoryModal Inventory="Session.Player.Inventory" />
+            <InventoryModal Inventory="Session.Player.Inventory" OnEat="HandleEatAsync" />
             <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
             <BuildMenu Player="Session.Player"
                        CurrentTile="MapCache.GetCachedTile(Session.Player.Q, Session.Player.R)"
@@ -310,6 +310,7 @@ else
         [StructureType.MineShaft] = "Mine Shaft",
         [StructureType.Workshop]  = "Workshop",
         [StructureType.Dock]      = "Dock",
+        [StructureType.Campfire]  = "Campfire",
     };
 
     private async Task ConfirmOceanAsync()
@@ -409,6 +410,18 @@ else
         _localMessages.Add(new ChatMessage
         {
             SenderName = "World", Content = $"You craft: {result.CraftedItemName}.",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleEatAsync(string resourceId)
+    {
+        var (success, message) = await Session.EatAsync(resourceId);
+        if (!success) { ShowToast(message); return; }
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
         StateHasChanged();
