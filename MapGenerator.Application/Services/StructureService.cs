@@ -15,6 +15,7 @@ public class StructureService
     private readonly IMapRepository _mapRepo;
     private readonly ITileInventoryRepository _tileInventoryRepo;
     private readonly MapGeneratorService _mapCache;
+    private readonly SettlementCacheService _settlementCache;
 
     public StructureService(
         IStructureDefinitionProvider structureProvider,
@@ -22,7 +23,8 @@ public class StructureService
         IPlayerRepository playerRepo,
         IMapRepository mapRepo,
         ITileInventoryRepository tileInventoryRepo,
-        MapGeneratorService mapCache)
+        MapGeneratorService mapCache,
+        SettlementCacheService settlementCache)
     {
         _structureProvider  = structureProvider;
         _resourceProvider   = resourceProvider;
@@ -30,6 +32,7 @@ public class StructureService
         _mapRepo            = mapRepo;
         _tileInventoryRepo  = tileInventoryRepo;
         _mapCache           = mapCache;
+        _settlementCache    = settlementCache;
     }
 
     public async Task<(bool success, string? error)> TryBuildAsync(Player player, StructureType type, HexTile tile)
@@ -39,6 +42,9 @@ public class StructureService
 
         if (tile.Structure != null)
             return (false, $"A {_structureProvider.GetByType(tile.Structure.Type)?.Name ?? tile.Structure.Type.ToString()} already stands here.");
+
+        if (_settlementCache.GetSettlementTile(tile.Q, tile.R).Role != null)
+            return (false, "You cannot build on settlement land.");
 
         if (def.AllowedBiomes != null && !def.AllowedBiomes.Contains(tile.Biome))
             return (false, $"A {def.Name} cannot be built on {tile.Biome}.");

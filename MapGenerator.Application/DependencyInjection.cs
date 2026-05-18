@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddSingleton<IResourceDefinitionProvider, InMemoryResourceDefinitionProvider>();
         services.AddSingleton<ICraftingRecipeProvider, InMemoryCraftingRecipeProvider>();
         services.AddSingleton<IStructureDefinitionProvider, InMemoryStructureDefinitionProvider>();
+        services.AddSingleton<ISettlementRoleDefinitionProvider, InMemorySettlementRoleDefinitionProvider>();
         services.AddSingleton<MapGeneratorService>();
         services.AddSingleton<PermissionService>();
         services.AddSingleton<SettlementCacheService>();

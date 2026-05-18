@@ -5,6 +5,7 @@
 @inject IFeatureDefinitionProvider FeatureProvider
 @inject SettlementCacheService SettlementCache
 @inject IStructureDefinitionProvider StructureProvider
+@inject ISettlementRoleDefinitionProvider SettlementRoleProvider
 
 <div class="hex-map-container" @ref="_container">
     <svg width="@_svgWidth" height="@_svgHeight"
@@ -114,42 +115,14 @@
                                     class="feature-dot feature-@featureDef.Category.ToString().ToLower()" />
                         }
 
-                        @if (sRole == SettlementTileRole.Center)
-                        {
-                            <rect x="@F(cx-8)" y="@F(cy-2)" width="16" height="12" class="settle-center" rx="1"/>
-                            <polygon points="@F(cx-10),@F(cy-2) @F(cx),@F(cy-13) @F(cx+10),@F(cy-2)" class="settle-center-roof"/>
+                        @{
+                            var roleDef = sRole.HasValue ? SettlementRoleProvider.GetByRole(sRole.Value) : null;
                         }
-                        else if (sRole == SettlementTileRole.Residential)
+                        @if (roleDef?.MapIcon is { Length: > 0 })
                         {
-                            <rect x="@F(cx-5)" y="@F(cy)" width="10" height="8" class="settle-residential" rx="1"/>
-                            <polygon points="@F(cx-7),@F(cy) @F(cx),@F(cy-9) @F(cx+7),@F(cy)" class="settle-residential-roof"/>
-                        }
-                        else if (sRole == SettlementTileRole.Market)
-                        {
-                            <rect x="@F(cx-7)" y="@F(cy-1)" width="14" height="8" class="settle-market" rx="1"/>
-                            <line x1="@F(cx-9)" y1="@F(cy-1)" x2="@F(cx+9)" y2="@F(cy-1)" class="settle-market-awning"/>
-                        }
-                        else if (sRole == SettlementTileRole.Farm)
-                        {
-                            <line x1="@F(cx-9)" y1="@F(cy-2)" x2="@F(cx+9)" y2="@F(cy-2)" class="settle-farm"/>
-                            <line x1="@F(cx-9)" y1="@F(cy+1)" x2="@F(cx+9)" y2="@F(cy+1)" class="settle-farm"/>
-                            <line x1="@F(cx-9)" y1="@F(cy+4)" x2="@F(cx+9)" y2="@F(cy+4)" class="settle-farm"/>
-                        }
-                        else if (sRole == SettlementTileRole.Guard)
-                        {
-                            <rect x="@F(cx-5)" y="@F(cy-12)" width="10" height="15" class="settle-guard"/>
-                            <rect x="@F(cx-7)" y="@F(cy-15)" width="14" height="4"  class="settle-guard"/>
-                        }
-                        else if (sRole == SettlementTileRole.Inn)
-                        {
-                            <rect x="@F(cx-7)" y="@F(cy-1)" width="14" height="10" class="settle-inn" rx="1"/>
-                            <polygon points="@F(cx-9),@F(cy-1) @F(cx),@F(cy-11) @F(cx+9),@F(cy-1)" class="settle-inn-roof"/>
-                        }
-                        else if (sRole == SettlementTileRole.Mill)
-                        {
-                            <circle cx="@F(cx)" cy="@F(cy-3)" r="6" class="settle-mill"/>
-                            <line x1="@F(cx)" y1="@F(cy-10)" x2="@F(cx)" y2="@F(cy+4)"   class="settle-mill-arm"/>
-                            <line x1="@F(cx-7)" y1="@F(cy-3)" x2="@F(cx+7)" y2="@F(cy-3)" class="settle-mill-arm"/>
+                            <g transform="translate(@F(cx),@F(cy))" pointer-events="none">
+                                @((MarkupString)roleDef.MapIcon)
+                            </g>
                         }
 
                         @if (tile.Structure != null)
@@ -259,7 +232,7 @@
 
     private static readonly double Sqrt3 = Math.Sqrt(3);
 
-    protected override void OnParametersSet()
+protected override void OnParametersSet()
     {
         _svgWidth  = (ViewRadius * 2 + 1) * HexSize * Sqrt3 + HexSize;
         _svgHeight = (ViewRadius * 2 + 1) * HexSize * 1.5  + HexSize;
@@ -326,7 +299,7 @@
             // Hash the world-space edge midpoint for a stable displacement
             int gmx = (int)Math.Round(((wx[i] + wx[j]) / 2) * 100);
             int gmy = (int)Math.Round(((wy[i] + wy[j]) / 2) * 100);
-            const double MaxCurve = 16.0;
+            const double MaxCurve = 32.0;
             double disp = (SinHash(gmx, gmy, 2) - 0.5) * MaxCurve;
 
             double qcx = mx + px * disp;
