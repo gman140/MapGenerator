@@ -10,7 +10,7 @@
         }
     </div>
 
-    <svg width="@_svgWidth" height="@_svgHeight" class="dungeon-svg">
+    <svg width="@SvgWidth.ToString("F0")" height="@SvgHeight.ToString("F0")" class="dungeon-svg">
 
         @* Visible rooms — all pointer-events disabled; overlay handles input *@
         @foreach (var room in _visibleRooms)
@@ -36,16 +36,6 @@
                       class="dungeon-room-icon">
                     @GetRoomIcon(room)
                 </text>
-
-                @foreach (int dir in room.PassableDirections)
-                {
-                    var (edgeCx, edgeCy) = PassageCenter(cx, cy, dir);
-                    <circle cx="@edgeCx.ToString("F1")"
-                            cy="@edgeCy.ToString("F1")"
-                            r="3"
-                            fill="#4a4a6a"
-                            opacity="0.7" />
-                }
             </g>
         }
 
@@ -72,8 +62,8 @@
 
         @* Transparent overlay — sole source of mouse events *@
         <rect x="0" y="0"
-              width="@_svgWidth.ToString("F0")"
-              height="@_svgHeight.ToString("F0")"
+              width="@SvgWidth.ToString("F0")"
+              height="@SvgHeight.ToString("F0")"
               fill="transparent"
               style="cursor: @(_hoveredRoom != null && CanMoveToRoom(_hoveredRoom) ? "pointer" : "default");"
               @onclick="HandleOverlayClick"
@@ -117,13 +107,11 @@
     [Parameter] public HashSet<(int Q, int R)> RevealedRooms { get; set; } = [];
     [Parameter] public EventCallback<(int Q, int R)> OnRoomClicked { get; set; }
 
-    private const double HexSize = 34;
-    private static readonly double Sqrt3 = Math.Sqrt(3);
-
-    private double _svgWidth  = 700;
-    private double _svgHeight = 700;
-    private double _minOffsetX;
-    private double _minOffsetY;
+    private const double HexSize    = 34;
+    private const int    ViewRadius  = 8;
+    private static readonly double Sqrt3     = Math.Sqrt(3);
+    private static readonly double SvgWidth  = (ViewRadius * 2 + 1) * HexSize * Sqrt3 + HexSize;
+    private static readonly double SvgHeight = (ViewRadius * 2 + 1) * HexSize * 1.5   + HexSize;
 
     private List<DungeonRoom> _visibleRooms = [];
     private List<(int Q, int R)> _fogRooms = [];
@@ -140,68 +128,45 @@
     {
         if (Floor.Rooms.Count == 0) return;
 
-        _minOffsetX = Floor.Rooms.Min(r => HexSize * Sqrt3 * (r.Q + r.R * 0.5));
-        _minOffsetY = Floor.Rooms.Min(r => HexSize * 1.5 * r.R);
-
-        double maxOffsetX = Floor.Rooms.Max(r => HexSize * Sqrt3 * (r.Q + r.R * 0.5));
-        double maxOffsetY = Floor.Rooms.Max(r => HexSize * 1.5 * r.R);
-        double padding = HexSize * 2;
-        _svgWidth  = maxOffsetX - _minOffsetX + HexSize * Sqrt3 + padding * 2;
-        _svgHeight = maxOffsetY - _minOffsetY + HexSize * 2    + padding * 2;
-
         _visibleRooms = Floor.Rooms
             .Where(r => RevealedRooms.Contains((r.Q, r.R)) || (r.Q == PlayerQ && r.R == PlayerR))
             .ToList();
 
-        // Compute passable exits from player's current room (these can be clicked even in fog)
+        // Passable exits = any floor tile adjacent to the player's current position
+        var floorSet = Floor.Rooms.Select(r => (r.Q, r.R)).ToHashSet();
         _passableFromCurrent = [];
-        var currentRoom = Floor.Rooms.FirstOrDefault(r => r.Q == PlayerQ && r.R == PlayerR);
-        if (currentRoom != null)
+        foreach (var (dq, dr) in Directions)
         {
-            foreach (int dir in currentRoom.PassableDirections)
-            {
-                var (dq, dr) = Directions[dir];
-                _passableFromCurrent.Add((currentRoom.Q + dq, currentRoom.R + dr));
-            }
+            var pos = (Q: PlayerQ + dq, R: PlayerR + dr);
+            if (floorSet.Contains(pos))
+                _passableFromCurrent.Add(pos);
         }
 
-        var floorPositions = Floor.Rooms.Select(r => (r.Q, r.R)).ToHashSet();
-        var fogSet = new HashSet<(int, int)>();
+        // Fog = floor tiles adjacent to any revealed tile that aren't revealed themselves
+        var fogSet = new HashSet<(int Q, int R)>();
         foreach (var room in _visibleRooms)
-        {
-            foreach (int dir in room.PassableDirections)
+            foreach (var (dq, dr) in Directions)
             {
-                var (dq, dr) = Directions[dir];
-                int nq = room.Q + dq, nr = room.R + dr;
-                if (!RevealedRooms.Contains((nq, nr)) && floorPositions.Contains((nq, nr))
-                    && !(nq == PlayerQ && nr == PlayerR))
-                    fogSet.Add((nq, nr));
+                var pos = (Q: room.Q + dq, R: room.R + dr);
+                if (floorSet.Contains(pos) && !RevealedRooms.Contains(pos)
+                    && !(pos.Q == PlayerQ && pos.R == PlayerR))
+                    fogSet.Add(pos);
             }
-        }
-        // Also add passable-from-current rooms that aren't otherwise visible as fog
+        // Also include passable-from-current tiles not otherwise in fog
         foreach (var pos in _passableFromCurrent)
-        {
-            if (!RevealedRooms.Contains(pos) && floorPositions.Contains(pos)
-                && !(pos.Q == PlayerQ && pos.R == PlayerR))
-                fogSet.Add((pos.Q, pos.R));
-        }
-        _fogRooms = fogSet.Select(p => (p.Item1, p.Item2)).ToList();
+            if (!RevealedRooms.Contains(pos) && !(pos.Q == PlayerQ && pos.R == PlayerR))
+                fogSet.Add(pos);
+
+        _fogRooms = [.. fogSet];
     }
 
     // ── Coordinate helpers ────────────────────────────────────────────────────
 
     private (double cx, double cy) RoomCenter(int q, int r)
     {
-        double padding = HexSize * 2;
-        double cx = HexSize * Sqrt3 * (q + r * 0.5) - _minOffsetX + padding + HexSize * Sqrt3 / 2;
-        double cy = HexSize * 1.5 * r               - _minOffsetY + padding + HexSize;
+        double cx = SvgWidth  / 2 + HexSize * Sqrt3 * ((q - PlayerQ) + (r - PlayerR) * 0.5);
+        double cy = SvgHeight / 2 + HexSize * 1.5   * (r - PlayerR);
         return (cx, cy);
-    }
-
-    private static (double, double) PassageCenter(double cx, double cy, int dir)
-    {
-        double angle = Math.PI / 180.0 * (60 * dir);
-        return (cx + HexSize * 0.75 * Math.Cos(angle), cy + HexSize * 0.75 * Math.Sin(angle));
     }
 
     private static string HexPath(double cx, double cy)

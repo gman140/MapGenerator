@@ -153,20 +153,14 @@ public class DungeonService
         if (floor == null)
             return DungeonMoveResult.Fail("Floor not found.");
 
-        var currentRoom = floor.Rooms.FirstOrDefault(r => r.Q == player.DungeonQ && r.R == player.DungeonR);
-        if (currentRoom == null)
-            return DungeonMoveResult.Fail("Current room not found.");
-
-        // Validate adjacency and corridor
-        int dirIdx = GetDirectionIndex(player.DungeonQ, player.DungeonR, targetQ, targetR);
-        if (dirIdx < 0)
+        // Validate adjacency
+        int dq = targetQ - player.DungeonQ, dr = targetR - player.DungeonR;
+        if (!Directions.Any(d => d == (dq, dr)))
             return DungeonMoveResult.Fail("You can only move to adjacent rooms.");
-        if (!currentRoom.PassableDirections.Contains(dirIdx))
-            return DungeonMoveResult.Fail("There is no passage in that direction.");
 
         var targetRoom = floor.Rooms.FirstOrDefault(r => r.Q == targetQ && r.R == targetR);
         if (targetRoom == null)
-            return DungeonMoveResult.Fail("That room does not exist.");
+            return DungeonMoveResult.Fail("There is no passage in that direction.");
 
         // Locked door check
         if (targetRoom.Type == DungeonRoomType.LockedDoor && targetRoom.RequiredKeyId != null)
@@ -407,14 +401,6 @@ public class DungeonService
         player.DungeonFloor      = 0;
         player.DungeonQ          = 0;
         player.DungeonR          = 0;
-    }
-
-    private static int GetDirectionIndex(int fromQ, int fromR, int toQ, int toR)
-    {
-        int dq = toQ - fromQ, dr = toR - fromR;
-        for (int i = 0; i < Directions.Length; i++)
-            if (Directions[i] == (dq, dr)) return i;
-        return -1;
     }
 
     private static List<(int Q, int R)> GetAdjacentRoomCoords(int q, int r, DungeonFloor floor)
