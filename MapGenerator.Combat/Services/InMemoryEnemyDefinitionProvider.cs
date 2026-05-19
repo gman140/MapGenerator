@@ -511,6 +511,372 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 "It becomes, very suddenly, just sand.",
             ],
         },
+
+        new()
+        {
+            Id = "TwiceBornHeron", Name = "Twice-Born Heron",
+            BaseHp = 60, BaseAttack = 20, BaseDefense = 6,
+            FleeChance = 0.65f, FleeHpThreshold = 0.30f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 50 },
+                new() { Action = EnemyActionType.Buff,   Weight = 30 },
+                new() { Action = EnemyActionType.Defend, Weight = 20 },
+            ],
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.20f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "Feathers",   Chance = 0.50f },
+                new() { ItemId = "HeronQuill", Chance = 0.30f },
+                new() { ItemId = "Reed",       Chance = 0.40f },
+                new() { ItemId = "BoneFragment", Chance = 0.20f },
+            ],
+            AppearTexts =
+            [
+                "A heron stands perfectly still in the middle of the room. It was dead when it arrived. It still is.",
+                "Something wading-bird-shaped turns toward you. Its eyes are the wrong color. Both of them.",
+                "It was here before you. You get the sense it has been here for a long time, and was not alive for most of it.",
+            ],
+            AttackTexts =
+            [
+                "The beak drives forward with the precise efficiency of something that learned to hunt before it died.",
+                "It strikes in a single motion. The dead don't telegraph.",
+                "The wing catches you across the face. Cold and very solid.",
+                "It lunges without any of the tells a living thing would have. This is worse.",
+            ],
+            BuffTexts =
+            [
+                "The heron shifts its weight onto one leg and seems to become slightly less present.",
+                "It spreads its wings once, slowly. You realize you can see through it, slightly.",
+            ],
+            DefendTexts =
+            [
+                "It stands completely still. This is either a defense posture or what it normally does. Difficult to tell.",
+                "The heron folds its wings in and stares at you from a direction that doesn't match where it is standing.",
+            ],
+            FleeTexts =
+            [
+                "It rises without sound and passes through the wall above your head.",
+                "One moment it is there. Then it is simply gone, as if it remembered it was dead.",
+                "The heron pivots on one leg and departs in a direction that should not be possible.",
+            ],
+            DeathTexts =
+            [
+                "It folds over sideways and does not move. This time it stays that way.",
+                "The color goes out of it — what little remained — and it is still.",
+                "It simply stops. Whatever was animating it has somewhere else to be.",
+            ],
+        },
+
+        new()
+        {
+            Id = "StoneShepherd", Name = "Stone Shepherd",
+            BaseHp = 95, BaseAttack = 21, BaseDefense = 20,
+            FleeChance = 0.08f, FleeHpThreshold = 0.08f,
+            DefendDamageBonus = 0.80f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 40 },
+                new() { Action = EnemyActionType.Defend,      Weight = 35 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+            ],
+            LootTable =
+            [
+                new() { ItemId = "Stone",       Chance = 0.60f },
+                new() { ItemId = "Ore",         Chance = 0.35f },
+                new() { ItemId = "Flint",       Chance = 0.25f },
+                new() { ItemId = "HollowStone", Chance = 0.20f },
+                new() { ItemId = "CrushedRock", Chance = 0.35f },
+            ],
+            AppearTexts =
+            [
+                "A shape steps out of the shadows. It is very large, and very slow, and made entirely of stone.",
+                "You hear it before you see it: a deep, rhythmic grinding, like a millstone with somewhere to be.",
+                "Something monumental turns toward you. It has been standing here for a long time. You have interrupted its standing.",
+            ],
+            AttackTexts =
+            [
+                "A stone fist descends like something geological.",
+                "It swings an arm and the air moves before it does.",
+                "The blow arrives slowly and then all at once.",
+                "It reaches out with something that takes a full second to arrive. That second does not help.",
+            ],
+            HeavyAttackTexts =
+            [
+                "Both arms raise. Whatever comes next has been decided.",
+                "The ground shifts slightly as it loads the swing. Then it lands.",
+                "It brings everything to bear. There is a cracking sound that is not the stone.",
+            ],
+            DefendTexts =
+            [
+                "The shepherd plants both feet and does not move. There is no gap between it and the floor.",
+                "It hunches slightly, pulling its stone arms inward. The surface area decreases meaningfully.",
+                "It stops. This is, functionally, also its offense.",
+            ],
+            FleeTexts =
+            [
+                "It retreats with the unhurried gravity of something that has decided this fight is over.",
+                "The stone shepherd turns and walks away. It does not quicken. It does not need to.",
+                "It simply recedes, each step a small seismic event.",
+            ],
+            DeathTexts =
+            [
+                "It fragments slowly, from the outside in, until the floor is covered in pieces.",
+                "The shepherd lists to one side and comes apart. The dust takes a while to settle.",
+                "Whatever purpose held it together releases. It becomes a pile.",
+            ],
+        },
+
+        new()
+        {
+            Id = "PaleLibrarian", Name = "Pale Librarian",
+            BaseHp = 55, BaseAttack = 18, BaseDefense = 9,
+            FleeChance = 0.35f, FleeHpThreshold = 0.20f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 40 },
+                new() { Action = EnemyActionType.Buff,   Weight = 40 },
+                new() { Action = EnemyActionType.Defend, Weight = 20 },
+            ],
+            BuffStat = ModifierStat.Attack, BuffValue = 10f, BuffTurns = 3,
+            LootTable =
+            [
+                new() { ItemId = "DampParchment", Chance = 0.40f },
+                new() { ItemId = "AncientShard",  Chance = 0.35f },
+                new() { ItemId = "BoneRune",      Chance = 0.25f },
+                new() { ItemId = "BoneFragment",  Chance = 0.30f },
+            ],
+            AppearTexts =
+            [
+                "A robed figure stands against the far wall, writing in a book. It looks up. You are in the book now.",
+                "Something dead and scholarly regards you with its empty sockets. It has already started writing.",
+                "It was cataloging the room. You have become part of the room. This was not your plan.",
+            ],
+            AttackTexts =
+            [
+                "It strikes you with the corner of its book with more force than scholarship suggests.",
+                "A gesture, precise and deliberate. You were not expecting it to hurt.",
+                "It closes its book and uses the hand for something less academic.",
+                "The swing is measured. It has probably done this before and taken notes on it.",
+            ],
+            BuffTexts =
+            [
+                "It opens its book to a specific page and reads something. Its posture changes.",
+                "It writes something very quickly, consults it, and seems to find what it was looking for.",
+                "It studies you for a moment with the thoroughness of something that is going to use this information.",
+            ],
+            DefendTexts =
+            [
+                "The librarian holds up its book like a shield. The cover is, unfortunately, quite thick.",
+                "It steps back and takes careful notes on your position. This is still threatening.",
+            ],
+            FleeTexts =
+            [
+                "It closes its book and departs with the dignity of something that has documented enough.",
+                "The librarian retreats down a corridor, still writing as it goes.",
+                "It notes something in its book, underlines it, and leaves.",
+            ],
+            DeathTexts =
+            [
+                "The book falls open. The last entry ends mid-sentence.",
+                "It collapses with a dry sound, like old paper. The notes scatter.",
+                "The robes settle around nothing. The book remains.",
+            ],
+        },
+
+        new()
+        {
+            Id = "FermentedThing", Name = "Fermented Thing",
+            BaseHp = 75, BaseAttack = 24, BaseDefense = 7,
+            FleeChance = 0.25f, FleeHpThreshold = 0.15f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,     Weight = 45 },
+                new() { Action = EnemyActionType.Buff,       Weight = 30 },
+                new() { Action = EnemyActionType.Regenerate, Weight = 15 },
+                new() { Action = EnemyActionType.Defend,     Weight = 10 },
+            ],
+            BuffStat = ModifierStat.Attack, BuffValue = 10f, BuffTurns = 2,
+            RegenerateAmount = 8,
+            LootTable =
+            [
+                new() { ItemId = "Peat",  Chance = 0.55f },
+                new() { ItemId = "Moss",  Chance = 0.50f },
+                new() { ItemId = "Herbs", Chance = 0.35f },
+                new() { ItemId = "Amber", Chance = 0.15f },
+            ],
+            AppearTexts =
+            [
+                "The smell arrives first. Then the thing. Then you understand why it smells the way it does.",
+                "Something that may once have been identifiable shuffles into view. That time has clearly passed.",
+                "It has been fermenting for a very long time. You cannot determine what it was fermenting from.",
+            ],
+            AttackTexts =
+            [
+                "It lurches forward and makes contact in a way that is both imprecise and very effective.",
+                "The impact is wet and warm and you would rather not dwell on why.",
+                "It swings an appendage — or a protrusion — in your direction. It connects.",
+                "Whatever it hit you with is already reattaching.",
+            ],
+            BuffTexts =
+            [
+                "It gurgles. Something inside it shifts. It seems more solid than before, in the worst sense.",
+                "The fermentation intensifies. This is audible.",
+                "It absorbs something from the air and visibly enlarges.",
+            ],
+            RegenerateTexts =
+            [
+                "New material rises from its surface and fills the gaps you made.",
+                "The fermentation process is, apparently, ongoing. It looks less damaged than before.",
+                "You watch it closing. The smell worsens.",
+            ],
+            DefendTexts =
+            [
+                "It lets itself soften slightly, becoming harder to meaningfully strike.",
+                "It settles into itself and presents the most coherent surface it can manage.",
+            ],
+            FleeTexts =
+            [
+                "It withdraws by a method you cannot identify. One moment it is receding, then it is gone.",
+                "It moves considerably faster than something of its constitution should be able to.",
+                "The trail it leaves suggests it went that way. You do not follow.",
+            ],
+            DeathTexts =
+            [
+                "It deflates with a long, final exhale. The smell peaks, then fades slowly.",
+                "Whatever coherence it had releases. It becomes, technically, a floor.",
+                "It stops moving all at once. The fermentation, however, appears to continue.",
+            ],
+        },
+
+        new()
+        {
+            Id = "TheArrangement", Name = "The Arrangement",
+            BaseHp = 200, BaseAttack = 30, BaseDefense = 16,
+            FleeChance = 0.05f, FleeHpThreshold = 0.05f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 40 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 35 },
+                new() { Action = EnemyActionType.Buff,        Weight = 15 },
+                new() { Action = EnemyActionType.Defend,      Weight = 10 },
+            ],
+            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.4f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "CrackedOrb",    Chance = 0.45f },
+                new() { ItemId = "TarnishedRing", Chance = 0.30f },
+                new() { ItemId = "RiverGlass",    Chance = 0.40f },
+                new() { ItemId = "HollowStone",   Chance = 0.30f },
+                new() { ItemId = "Amber",         Chance = 0.25f },
+            ],
+            AppearTexts =
+            [
+                "A chair. A wooden crate. A glass orb. They float in deliberate formation and turn toward you.",
+                "You enter and something waits for you — but not a creature. A configuration. It adjusts.",
+                "Three ordinary objects occupy the center of the room. They have a purpose. It involves you.",
+            ],
+            AttackTexts =
+            [
+                "The crate swings forward at exactly the wrong moment.",
+                "The orb intercepts you from the left. You didn't know it was tracking you.",
+                "They coordinate. You don't know how. The result is a very precise impact.",
+                "Something hard, moving fast, from a direction you weren't watching.",
+            ],
+            HeavyAttackTexts =
+            [
+                "All three objects converge at once. The chair, the crate, the orb — unanimous.",
+                "The arrangement reconfigures and delivers something considerably worse.",
+                "They form a line and execute together. It feels more deliberate than it should.",
+            ],
+            BuffTexts =
+            [
+                "The objects rotate in formation. The configuration tightens. This has a purpose.",
+                "A new arrangement. You do not know what it means, but it means something.",
+            ],
+            DefendTexts =
+            [
+                "They form a wall between you and themselves. It is a wall of ordinary objects. It still works.",
+                "The arrangement spreads, making itself harder to address in one place.",
+            ],
+            FleeTexts =
+            [
+                "The objects drift apart and pass through separate walls. The room is empty.",
+                "They reconfigure and are gone before you can determine where they went.",
+                "The formation disperses with the unhurried calm of things that made a decision.",
+            ],
+            DeathTexts =
+            [
+                "The orb drops first. Then the crate. The chair takes a moment longer.",
+                "They fall in sequence and are ordinary objects again.",
+                "Whatever held them in formation lets go. They land on the floor and stay there.",
+            ],
+        },
+
+        new()
+        {
+            Id = "CoronatedRat", Name = "Coronated Rat",
+            BaseHp = 175, BaseAttack = 26, BaseDefense = 12,
+            FleeChance = 0.15f, FleeHpThreshold = 0.10f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,     Weight = 35 },
+                new() { Action = EnemyActionType.Buff,       Weight = 30 },
+                new() { Action = EnemyActionType.Regenerate, Weight = 20 },
+                new() { Action = EnemyActionType.Defend,     Weight = 15 },
+            ],
+            BuffStat = ModifierStat.Attack, BuffValue = 8f, BuffTurns = 2,
+            RegenerateAmount = 10,
+            LootTable =
+            [
+                new() { ItemId = "RatCrown",    Chance = 0.35f },
+                new() { ItemId = "BoneFragment",Chance = 0.55f },
+                new() { ItemId = "Fiber",       Chance = 0.45f },
+                new() { ItemId = "Stone",       Chance = 0.30f },
+            ],
+            AppearTexts =
+            [
+                "A crown enters the room first. Then you realize the crown is made of rats. Then you realize there is a large rat wearing them.",
+                "Something regal in the worst sense rounds the corner. The rats that form its crown are voting.",
+                "It is very large for a rat. The other rats riding atop it are, somehow, the more alarming feature.",
+            ],
+            AttackTexts =
+            [
+                "The coronated rat charges forward. The crown rats lean into it. They are in agreement.",
+                "It lunges with the conviction of something that has been democratically endorsed to do so.",
+                "A motion, fast and decisive. The vote was unanimous.",
+                "It attacks with the full weight of a rat that carries other rats and has been given a mandate.",
+            ],
+            BuffTexts =
+            [
+                "The crown convenes. Something is decided. The rat's posture shifts accordingly.",
+                "A rapid, chittering discussion from the top of its head. The decision is reached quickly. Unanimously.",
+                "The rats confer. The coronated rat straightens. Whatever was just voted on bodes poorly for you.",
+            ],
+            RegenerateTexts =
+            [
+                "New rats arrive from somewhere and join the crown. The crown grows larger.",
+                "Reinforcements. They came from the walls. The existing rats welcome them formally.",
+                "The crown reconstitutes. The quorum is re-established.",
+            ],
+            DefendTexts =
+            [
+                "The crown rats form a layered barricade. The coronated rat holds position.",
+                "It sits very still while the crown deliberates. Then: a decision to wait.",
+            ],
+            FleeTexts =
+            [
+                "The crown votes to leave. The motion passes. They go.",
+                "The entire arrangement retreats through a hole that should not fit them. It fits them.",
+                "The coronated rat reverses direction. The crown rats do not seem surprised by this outcome.",
+            ],
+            DeathTexts =
+            [
+                "The crown disperses first. The rats scatter in a dozen directions. The large rat follows more slowly.",
+                "It tips over sideways. The crown rats file off in an orderly fashion before it lands.",
+                "It stops. The last rat in the crown steps off, looks at you once, and leaves. This feels intentional.",
+            ],
+        },
     ];
 
     private static readonly Dictionary<string, EnemyDefinition> _byId =

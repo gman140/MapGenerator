@@ -124,6 +124,9 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "Claw",         Name = "Claw",          Description = "A bear's claw, curved like a question you'd rather not answer." },
         new() { Id = "TrollHide",   Name = "Troll Hide",   Description = "Rough and grey and very thick. It absorbed a great deal before this.", Traits = ItemTrait.Loot },
         new() { Id = "CrushedRock", Name = "Crushed Rock", Description = "Stone ground to coarse powder by something with more strength than patience.", Traits = ItemTrait.Loot },
+        new() { Id = "HeronQuill",    Name = "Heron Quill",    Description = "A feather from a bird that has been dead for longer than it looks. Still sharp.", Traits = ItemTrait.Loot },
+        new() { Id = "DampParchment", Name = "Damp Parchment", Description = "Covered in very small handwriting. Some of the entries are about you.", Traits = ItemTrait.Loot },
+        new() { Id = "RatCrown",      Name = "Rat Crown",      Description = "Assembled from things rats considered valuable. The workmanship is sincere.", Traits = ItemTrait.Loot },
 
         // ── Combat consumables ────────────────────────────────────────────────
         new() { Id = "Poultice", Name = "Poultice", Description = "Herbs, moss, and reed, pressed together with intent. Smells of the ground. Works better than it smells.",
