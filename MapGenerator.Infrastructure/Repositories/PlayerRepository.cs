@@ -27,6 +27,9 @@ public class PlayerRepository : IPlayerRepository
     public Task<Player?> GetByUsernameAsync(string username) =>
         _ctx.Players.Find(p => p.Username == username).FirstOrDefaultAsync()!;
 
+    public async Task<List<Player>> GetAllAsync() =>
+        await _ctx.Players.Find(_ => true).SortBy(p => p.Username).ToListAsync();
+
     public async Task<List<Player>> GetPlayersOnTileAsync(int q, int r) =>
         await _ctx.Players.Find(p => p.Q == q && p.R == r).ToListAsync();
 

@@ -7,6 +7,7 @@ public interface IPlayerRepository
     Task<Player?> GetByIdAsync(string id);
     Task<Player?> GetByBrowserIdAsync(string browserId);
     Task<Player?> GetByUsernameAsync(string username);
+    Task<List<Player>> GetAllAsync();
     Task<List<Player>> GetPlayersOnTileAsync(int q, int r);
     Task<Player> CreateAsync(Player player);
     Task UpdateAsync(Player player);

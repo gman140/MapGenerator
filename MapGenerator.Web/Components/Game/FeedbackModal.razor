@@ -1,41 +1,76 @@
+@using MapGenerator.Application.Services
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
+@using MapGenerator.Web.Services
+@using static MapGenerator.Application.Services.DanceService
 @inject IFeedbackRepository FeedbackRepo
+@inject IPlayerRepository PlayerRepo
+@inject GameBroadcastService Broadcast
 
 <button class="crafting-toggle" @onclick="OpenAsync">
-    <span>💬 Feedback</span>
+    <span>👥 Players / Feedback</span>
 </button>
 
 @if (_open)
 {
     <div class="modal-overlay" @onclick="Close">
-        <div class="modal-box feedback-modal" @onclick:stopPropagation>
+        <div class="modal-box players-modal" @onclick:stopPropagation>
             <div class="crafting-modal-header">
-                <h3 class="modal-title">@(IsAdmin ? "User Feedback" : "Submit Feedback")</h3>
+                <div class="players-modal-tabs">
+                    <button class="players-tab @(_tab == Tab.Players ? "active" : "")"
+                            @onclick='() => _tab = Tab.Players'>Players</button>
+                    <button class="players-tab @(_tab == Tab.Feedback ? "active" : "")"
+                            @onclick='() => SwitchToFeedback()'>Feedback</button>
+                </div>
                 <button class="crafting-modal-close" @onclick="Close">✕</button>
             </div>
 
-            @if (IsAdmin)
+            @if (_tab == Tab.Players)
             {
-                @if (_loading)
+                @if (_loadingPlayers)
                 {
                     <p class="inventory-empty">Loading...</p>
                 }
-                else if (_allFeedback.Count == 0)
-                {
-                    <p class="inventory-empty">No feedback submitted yet.</p>
-                }
                 else
                 {
-                    <div class="feedback-list">
-                        @foreach (var fb in _allFeedback)
+                    <div class="players-list">
+                        @foreach (var p in _players)
                         {
-                            <div class="feedback-entry">
-                                <div class="feedback-entry-header">
-                                    <span class="feedback-username">@fb.Username</span>
-                                    <span class="feedback-date">@fb.SubmittedAt.ToString("MMM d, yyyy HH:mm")</span>
+                            bool online = _onlineIds.Contains(p.Id);
+                            var title = GetTitle(p.EggsDestroyed);
+                            <div class="player-row @(online ? "player-row-online" : "")">
+                                <div class="player-row-sprite">
+                                    @if (p.SpritePixels.Length > 0)
+                                    {
+                                        <svg width="32" height="32" class="player-row-svg">
+                                            @for (int i = 0; i < 256 && i < p.SpritePixels.Length; i++)
+                                            {
+                                                if (!string.IsNullOrEmpty(p.SpritePixels[i]))
+                                                {
+                                                    int px = i % 16, py = i / 16;
+                                                    <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@p.SpritePixels[i]" />
+                                                }
+                                            }
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <div class="player-row-dot" style="background:@p.Color"></div>
+                                    }
                                 </div>
-                                <p class="feedback-text">@fb.Text</p>
+                                <div class="player-row-info">
+                                    <div class="player-row-name">
+                                        @p.Username
+                                        @if (title != null) { <span class="egg-title-small">@title</span> }
+                                        @if (p.IsAdmin) { <span class="admin-badge">admin</span> }
+                                    </div>
+                                    <div class="player-row-meta">
+                                        <span class="player-row-coords">(@p.Q, @p.R)</span>
+                                        <span class="player-row-seen @(online ? "seen-online" : "seen-offline")">
+                                            @(online ? "● Online" : FormatLastSeen(p.LastSeen))
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         }
                     </div>
@@ -43,21 +78,50 @@
             }
             else
             {
-                <textarea class="feedback-textarea" placeholder="What's on your mind?"
-                          @bind="_text" maxlength="1000" rows="5"></textarea>
-                <div class="feedback-actions">
-                    @if (_submitted)
+                @if (IsAdmin)
+                {
+                    @if (_loadingFeedback)
                     {
-                        <span class="success-text">Thanks for the feedback!</span>
+                        <p class="inventory-empty">Loading...</p>
+                    }
+                    else if (_allFeedback.Count == 0)
+                    {
+                        <p class="inventory-empty">No feedback submitted yet.</p>
                     }
                     else
                     {
-                        <button class="feedback-submit-btn" @onclick="SubmitAsync"
-                                disabled="@(string.IsNullOrWhiteSpace(_text))">
-                            Submit
-                        </button>
+                        <div class="feedback-list">
+                            @foreach (var fb in _allFeedback)
+                            {
+                                <div class="feedback-entry">
+                                    <div class="feedback-entry-header">
+                                        <span class="feedback-username">@fb.Username</span>
+                                        <span class="feedback-date">@fb.SubmittedAt.ToString("MMM d, yyyy HH:mm")</span>
+                                    </div>
+                                    <p class="feedback-text">@fb.Text</p>
+                                </div>
+                            }
+                        </div>
                     }
-                </div>
+                }
+                else
+                {
+                    <textarea class="feedback-textarea" placeholder="What's on your mind?"
+                              @bind="_text" maxlength="1000" rows="5"></textarea>
+                    <div class="feedback-actions">
+                        @if (_submitted)
+                        {
+                            <span class="success-text">Thanks for the feedback!</span>
+                        }
+                        else
+                        {
+                            <button class="feedback-submit-btn" @onclick="SubmitAsync"
+                                    disabled="@(string.IsNullOrWhiteSpace(_text))">
+                                Submit
+                            </button>
+                        }
+                    </div>
+                }
             }
         </div>
     </div>
@@ -67,8 +131,18 @@
     [Parameter, EditorRequired] public string Username { get; set; } = null!;
     [Parameter] public bool IsAdmin { get; set; }
 
+    private enum Tab { Players, Feedback }
+
     private bool _open;
-    private bool _loading;
+    private Tab _tab = Tab.Players;
+
+    // Players tab
+    private bool _loadingPlayers;
+    private List<Player> _players = [];
+    private HashSet<string> _onlineIds = [];
+
+    // Feedback tab
+    private bool _loadingFeedback;
     private bool _submitted;
     private string _text = string.Empty;
     private List<Feedback> _allFeedback = [];
@@ -76,17 +150,43 @@
     private async Task OpenAsync()
     {
         _open = true;
-        _submitted = false;
-        _text = string.Empty;
-        if (IsAdmin)
+        _tab  = Tab.Players;
+        await LoadPlayersAsync();
+    }
+
+    private async Task SwitchToFeedback()
+    {
+        _tab = Tab.Feedback;
+        if (IsAdmin && _allFeedback.Count == 0)
         {
-            _loading = true;
+            _loadingFeedback = true;
             _allFeedback = await FeedbackRepo.GetAllAsync();
-            _loading = false;
+            _loadingFeedback = false;
         }
     }
 
-    private void Close() => _open = false;
+    private async Task LoadPlayersAsync()
+    {
+        _loadingPlayers = true;
+        var all    = await PlayerRepo.GetAllAsync();
+        var online = Broadcast.GetOnlinePlayers();
+        _onlineIds = online.Select(o => o.Id).ToHashSet();
+
+        // Online players first, then offline sorted by most recently seen
+        _players = all
+            .OrderByDescending(p => _onlineIds.Contains(p.Id))
+            .ThenByDescending(p => p.LastSeen)
+            .ToList();
+
+        _loadingPlayers = false;
+    }
+
+    private void Close()
+    {
+        _open      = false;
+        _submitted = false;
+        _text      = string.Empty;
+    }
 
     private async Task SubmitAsync()
     {
@@ -98,6 +198,16 @@
             SubmittedAt = DateTime.UtcNow,
         });
         _submitted = true;
-        _text = string.Empty;
+        _text      = string.Empty;
+    }
+
+    private static string FormatLastSeen(DateTime lastSeen)
+    {
+        var ago = DateTime.UtcNow - lastSeen.ToUniversalTime();
+        if (ago.TotalMinutes < 2)  return "Just now";
+        if (ago.TotalMinutes < 60) return $"{(int)ago.TotalMinutes}m ago";
+        if (ago.TotalHours   < 24) return $"{(int)ago.TotalHours}h ago";
+        if (ago.TotalDays    < 7)  return $"{(int)ago.TotalDays}d ago";
+        return lastSeen.ToString("MMM d");
     }
 }
