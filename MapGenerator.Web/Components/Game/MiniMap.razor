@@ -4,6 +4,7 @@
 
 <div class="minimap-container" @onclick="() => _showPopup = true" title="Click to expand">
     <canvas @ref="_canvas" id="minimap-canvas" class="minimap-canvas"></canvas>
+    <span class="minimap-label">View World Map</span>
 </div>
 
 @if (_showPopup)

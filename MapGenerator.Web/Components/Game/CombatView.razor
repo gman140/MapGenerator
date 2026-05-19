@@ -63,7 +63,7 @@
 
         <div class="combat-battlefield">
             <div class="combat-player-side">
-                <svg width="120" height="120" class="combat-player-svg @(_playerShaking ? "combat-shake" : "")">
+                <svg width="120" height="120" class="combat-player-svg @(_playerShaking ? "combat-shake" : "") @(_shakingEnemyId != null ? "combat-strike" : "")">
                     <circle cx="60" cy="60" r="28" fill="@PlayerColor" stroke="#fff" stroke-width="3" />
                     <text x="60" y="65" text-anchor="middle" font-size="11" fill="#fff">YOU</text>
                 </svg>
@@ -82,9 +82,9 @@
                 @foreach (var enemy in Session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled))
                 {
                     bool targeted = _targetEnemyId == enemy.InstanceId;
-                    <div class="combat-enemy @(targeted ? "targeted" : "") @(_shakingEnemyId == enemy.InstanceId ? "combat-shake" : "")"
+                    <div class="combat-enemy @(targeted ? "targeted" : "")"
                          @onclick="() => SelectTarget(enemy.InstanceId)">
-                        <svg width="100" height="100">
+                        <svg width="100" height="100" class="@(_shakingEnemyId == enemy.InstanceId ? "combat-shake" : "") @(_playerShaking ? "combat-strike-enemy" : "")">
                             @RenderEnemyShape(enemy.DefinitionId, targeted)
                         </svg>
                         <div class="combat-enemy-name">@enemy.Name</div>

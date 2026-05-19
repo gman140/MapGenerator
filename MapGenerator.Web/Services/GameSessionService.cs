@@ -36,6 +36,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly ICombatEngine _combatEngine;
     private readonly ICombatRepository _combatRepo;
     private readonly IResourceDefinitionProvider _resourceProvider;
+    private readonly ITileInventoryRepository _tileInventoryRepo;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -67,7 +68,8 @@ public class GameSessionService : IAsyncDisposable
         IDungeonRepository dungeonRepo,
         ICombatEngine combatEngine,
         ICombatRepository combatRepo,
-        IResourceDefinitionProvider resourceProvider)
+        IResourceDefinitionProvider resourceProvider,
+        ITileInventoryRepository tileInventoryRepo)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -92,9 +94,10 @@ public class GameSessionService : IAsyncDisposable
         _roadRepo        = roadRepo;
         _dungeonSvc      = dungeonSvc;
         _dungeonRepo     = dungeonRepo;
-        _combatEngine    = combatEngine;
-        _combatRepo      = combatRepo;
-        _resourceProvider = resourceProvider;
+        _combatEngine       = combatEngine;
+        _combatRepo         = combatRepo;
+        _resourceProvider   = resourceProvider;
+        _tileInventoryRepo  = tileInventoryRepo;
     }
 
     public async Task InitAsync(string browserId)
@@ -587,6 +590,15 @@ public class GameSessionService : IAsyncDisposable
             }
             else
             {
+                // Drop inventory onto the tile before clearing
+                int dropQ = Player.DungeonInstanceId != null ? Player.DungeonQ : Player.Q;
+                int dropR = Player.DungeonInstanceId != null ? Player.DungeonR : Player.R;
+
+                foreach (var (itemId, qty) in Player.Inventory)
+                    await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, itemId, qty);
+                foreach (var (itemId, qty) in Player.CraftedItems)
+                    await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, itemId, qty);
+
                 // Same reset as drowning
                 Player.Q              = 0;
                 Player.R              = 0;
