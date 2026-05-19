@@ -1,6 +1,7 @@
 using MapGenerator.Combat.Enums;
 using MapGenerator.Combat.Interfaces;
 using MapGenerator.Combat.Models;
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 
@@ -73,62 +74,91 @@ public class CombatEngine : ICombatEngine
 
     // ── ProcessTurn ──────────────────────────────────────────────────────────
 
-    public CombatSession ProcessTurn(CombatSession session, Player player, CombatAction action)
+    public CombatTurnResult ProcessTurn(CombatSession session, Player player, CombatAction action)
     {
+        var events = new List<CombatEvent>();
+
         int cost = StaminaCosts.GetValueOrDefault(action.Type, 0);
         if (session.PlayerStamina < cost)
         {
-            session.Log.Add("Not enough stamina for that.");
-            return session;
+            string msg = "Not enough stamina for that.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return new CombatTurnResult { Session = session, Events = events };
         }
 
         session.TurnNumber++;
         session.PlayerStamina -= cost;
         bool defendedThisTurn = action.Type == CombatActionType.Defend;
 
-        // Step 2: Player action
+        // Step 2: Player action — emit stamina drop first, then the action
+        if (cost > 0)
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.PlayerUpdate,
+                PlayerStamina = session.PlayerStamina,
+                DelayMs = 120,
+            });
+
         switch (action.Type)
         {
             case CombatActionType.Attack:
-                ExecutePlayerAttack(session, action.TargetEnemyId, isHeavy: false);
+                ExecutePlayerAttack(session, action.TargetEnemyId, isHeavy: false, events);
                 break;
             case CombatActionType.HeavyAttack:
-                ExecutePlayerAttack(session, action.TargetEnemyId, isHeavy: true);
+                ExecutePlayerAttack(session, action.TargetEnemyId, isHeavy: true, events);
                 break;
             case CombatActionType.Defend:
                 session.PlayerDefending = true;
-                session.Log.Add("You plant your feet and raise your guard. Incoming damage will be halved this turn.");
+                string defendMsg = "You plant your feet and raise your guard. Incoming damage will be halved this turn.";
+                session.Log.Add(defendMsg);
+                events.Add(new CombatEvent
+                {
+                    Kind = CombatEventKind.PlayerUpdate,
+                    Log = defendMsg,
+                    PlayerDefending = true,
+                    DelayMs = 200,
+                });
                 break;
             case CombatActionType.Dodge:
                 session.PlayerDodging = true;
-                session.Log.Add("You shift into a ready stance, prepared to slip aside.");
+                string dodgeMsg = "You shift into a ready stance, prepared to slip aside.";
+                session.Log.Add(dodgeMsg);
+                events.Add(new CombatEvent
+                {
+                    Kind = CombatEventKind.PlayerUpdate,
+                    Log = dodgeMsg,
+                    PlayerDodging = true,
+                    DelayMs = 200,
+                });
                 break;
             case CombatActionType.UseItem:
-                ExecutePlayerUseItem(session, player, action.ItemId);
+                ExecutePlayerUseItem(session, player, action.ItemId, events);
                 break;
             case CombatActionType.Flee:
-                if (ExecutePlayerFlee(session, player))
-                    return session;
+                if (ExecutePlayerFlee(session, player, events))
+                    return new CombatTurnResult { Session = session, Events = events };
                 break;
         }
 
-        // Step 3: Check victory
+        // Step 3: Check victory after player action
         if (IsAllDeadOrFled(session))
         {
             session.Phase = CombatPhase.Victory;
-            session.Log.Add("The battle is over. You stand amid the quiet.");
-            session.TurnBoundaryLogIndex = session.Log.Count;
-            return session;
+            string victoryMsg = "The battle is over. You stand amid the quiet.";
+            session.Log.Add(victoryMsg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = victoryMsg, DelayMs = 300 });
+            return new CombatTurnResult { Session = session, Events = events };
         }
 
-        // Mark boundary between player phase and enemy phase for UI animation
-        session.TurnBoundaryLogIndex = session.Log.Count;
+        // Step 4: Enemy turns — add a beat before the enemy phase
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, DelayMs = 350 });
 
-        // Step 4: Enemy turns
-        foreach (var enemy in session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled))
+        foreach (var enemy in session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList())
         {
-            // Step 4a: Check enemy flee
             var def = _enemyProvider.GetById(enemy.DefinitionId);
+
+            // Step 4a: Check enemy flee
             if (def != null
                 && (float)enemy.CurrentHp / enemy.MaxHp < def.FleeHpThreshold
                 && _rng.NextDouble() < def.FleeChance)
@@ -138,20 +168,27 @@ public class CombatEngine : ICombatEngine
                     ? PickRandom(def.FleeTexts)
                     : $"The {enemy.Name} flees!";
                 session.Log.Add(fleeText);
+                events.Add(new CombatEvent
+                {
+                    Kind = CombatEventKind.EnemyFled,
+                    EnemyInstanceId = enemy.InstanceId,
+                    Log = fleeText,
+                });
                 continue;
             }
 
             // Step 4b: Enemy action
-            ExecuteEnemyAction(session, player, enemy, def);
+            ExecuteEnemyAction(session, player, enemy, def, events);
         }
 
-        // Step 4b post: all enemies fled during their own turns → victory
+        // All enemies fled during their own turns → victory
         if (IsAllDeadOrFled(session))
         {
             session.Phase = CombatPhase.Victory;
-            session.Log.Add("The last of them disappears into the dark. The fight is over.");
-            session.TurnBoundaryLogIndex = session.Log.Count;
-            return session;
+            string allFledMsg = "The last of them disappears into the dark. The fight is over.";
+            session.Log.Add(allFledMsg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = allFledMsg, DelayMs = 300 });
+            return new CombatTurnResult { Session = session, Events = events };
         }
 
         // Step 5: Check defeat
@@ -159,13 +196,27 @@ public class CombatEngine : ICombatEngine
         {
             session.PlayerHp = 0;
             session.Phase    = CombatPhase.Defeat;
-            session.Log.Add("You collapse. The darkness takes you.");
-            return session;
+            string defeatMsg = "You collapse. The darkness takes you.";
+            session.Log.Add(defeatMsg);
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.PlayerUpdate,
+                Log = defeatMsg,
+                PlayerHp = 0,
+                DelayMs = 400,
+            });
+            return new CombatTurnResult { Session = session, Events = events };
         }
 
         // Step 6: Recover stamina
         int gain = 3 + (defendedThisTurn ? 2 : 0);
         session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + gain);
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.PlayerUpdate,
+            PlayerStamina = session.PlayerStamina,
+            DelayMs = 150,
+        });
 
         // Step 7: Tick modifiers
         TickModifiers(session);
@@ -174,8 +225,14 @@ public class CombatEngine : ICombatEngine
         session.PlayerDefending = false;
         session.PlayerDodging   = false;
         foreach (var e in session.Enemies) e.IsDefending = false;
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.PlayerUpdate,
+            PlayerDefending = false,
+            PlayerDodging   = false,
+        });
 
-        return session;
+        return new CombatTurnResult { Session = session, Events = events };
     }
 
     // ── IsFinished / Resolve ─────────────────────────────────────────────────
@@ -254,10 +311,16 @@ public class CombatEngine : ICombatEngine
 
     // ── Player attack ────────────────────────────────────────────────────────
 
-    private void ExecutePlayerAttack(CombatSession session, string? targetId, bool isHeavy)
+    private void ExecutePlayerAttack(CombatSession session, string? targetId, bool isHeavy, List<CombatEvent> events)
     {
         var target = GetTargetEnemy(session, targetId);
-        if (target == null) { session.Log.Add("No valid target."); return; }
+        if (target == null)
+        {
+            string noTarget = "No valid target.";
+            session.Log.Add(noTarget);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = noTarget, DelayMs = 200 });
+            return;
+        }
 
         int effAtk = EffectivePlayerAttack(session);
         int effDef = EffectiveEnemyDefense(target);
@@ -268,20 +331,94 @@ public class CombatEngine : ICombatEngine
         target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
 
         string verb = isHeavy ? "drive a heavy blow into" : "strike";
-        string fell = target.CurrentHp == 0 ? $" The {target.Name} falls." : string.Empty;
-        session.Log.Add($"You {verb} the {target.Name} for {damage} damage.{fell}");
+        bool killed = target.CurrentHp == 0;
+        string fell = killed ? $" The {target.Name} falls." : string.Empty;
+        string log = $"You {verb} the {target.Name} for {damage} damage.{fell}";
+        session.Log.Add(log);
+
+        // Shake + HP update (simultaneous)
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.ShakeEnemy,
+            EnemyInstanceId = target.InstanceId,
+            Log = log,
+            EnemyHp = target.CurrentHp,
+            DelayMs = 380,
+        });
+
+        if (killed)
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.EnemyDied,
+                EnemyInstanceId = target.InstanceId,
+            });
     }
 
     // ── Player use item ──────────────────────────────────────────────────────
 
-    private void ExecutePlayerUseItem(CombatSession session, Player player, string? itemId)
+    private void ExecutePlayerUseItem(CombatSession session, Player player, string? itemId, List<CombatEvent> events)
     {
-        if (string.IsNullOrEmpty(itemId)) { session.Log.Add("No item selected."); return; }
+        if (string.IsNullOrEmpty(itemId))
+        {
+            string msg = "No item selected.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return;
+        }
 
         int qty = player.Inventory.GetValueOrDefault(itemId)
                 + player.CraftedItems.GetValueOrDefault(itemId);
-        if (qty <= 0) { session.Log.Add("You don't have that item."); return; }
+        if (qty <= 0)
+        {
+            string msg = "You don't have that item.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return;
+        }
 
+        // Check resource-based combat consumables first
+        var resDef = _resourceProvider.GetById(itemId);
+        if (resDef != null && resDef.Traits.HasFlag(ItemTrait.CombatConsumable))
+        {
+            ConsumeItem(player, itemId);
+            var evt = new CombatEvent { Kind = CombatEventKind.PlayerUpdate, DelayMs = 300 };
+            var parts = new List<string>();
+
+            if (resDef.CombatHpRestore > 0)
+            {
+                int before = session.PlayerHp;
+                session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + resDef.CombatHpRestore);
+                int healed = session.PlayerHp - before;
+                evt.PlayerHp = session.PlayerHp;
+                parts.Add($"restored {healed} HP");
+            }
+            if (resDef.CombatStaminaRestore > 0)
+            {
+                session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + resDef.CombatStaminaRestore);
+                evt.PlayerStamina = session.PlayerStamina;
+                parts.Add($"recovered {resDef.CombatStaminaRestore} stamina");
+            }
+            if (resDef.CombatBuffStat.HasValue && resDef.CombatBuffTurns > 0)
+            {
+                session.ActiveModifiers.Add(new CombatModifier
+                {
+                    Id             = $"Item:{itemId}",
+                    Stat           = resDef.CombatBuffStat.Value,
+                    Value          = resDef.CombatBuffValue,
+                    TurnsRemaining = resDef.CombatBuffTurns,
+                    Source         = $"Item:{itemId}",
+                });
+                parts.Add(resDef.CombatBuffLabel ?? $"+{resDef.CombatBuffValue} for {resDef.CombatBuffTurns}t");
+            }
+
+            string msg = $"You use {resDef.Name}. " + (parts.Count > 0 ? string.Join(", ", parts) + "." : "Nothing happened.");
+            session.Log.Add(msg);
+            evt.Log = msg;
+            events.Add(evt);
+            return;
+        }
+
+        // Fall back to food items
         var food = _foodProvider.GetById(itemId);
         if (food != null)
         {
@@ -289,76 +426,85 @@ public class CombatEngine : ICombatEngine
             int before = session.PlayerHp;
             session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + heal);
             int healed = session.PlayerHp - before;
-
-            // Restore satiety on the player object too
             player.Satiety = Math.Min(100, player.Satiety + food.SatietyRestore);
-
             ConsumeItem(player, itemId);
-            session.Log.Add($"You eat the {food.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})");
+
+            string msg = $"You eat the {food.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.PlayerUpdate,
+                Log = msg,
+                PlayerHp = session.PlayerHp,
+                DelayMs = 300,
+            });
             return;
         }
 
-        session.Log.Add("You can't use that here.");
+        string cantUse = "You can't use that here.";
+        session.Log.Add(cantUse);
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = cantUse, DelayMs = 200 });
     }
 
     // ── Player flee ──────────────────────────────────────────────────────────
 
-    private bool ExecutePlayerFlee(CombatSession session, Player player)
+    private bool ExecutePlayerFlee(CombatSession session, Player player, List<CombatEvent> events)
     {
         const float BaseFleeChance = 0.60f;
         if (_rng.NextDouble() < BaseFleeChance)
         {
-            session.Phase     = CombatPhase.Victory;
+            session.Phase      = CombatPhase.Victory;
             session.PlayerFled = true;
-            session.Log.Add("You seize an opening and sprint away. You escape.");
+            string msg = "You seize an opening and sprint away. You escape.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 300 });
             return true;
         }
-        session.Log.Add("You attempt to flee but can't find an opening. The enemies press in.");
+        string failMsg = "You attempt to flee but can't find an opening. The enemies press in.";
+        session.Log.Add(failMsg);
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = failMsg, DelayMs = 300 });
         return false;
     }
 
     // ── Enemy action ─────────────────────────────────────────────────────────
 
-    private void ExecuteEnemyAction(CombatSession session, Player player, Enemy enemy, EnemyDefinition? def)
+    private void ExecuteEnemyAction(CombatSession session, Player player, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
     {
         var actionType = PickWeightedAction(enemy.ActionTable);
 
         switch (actionType)
         {
             case EnemyActionType.Attack:
-                ExecuteEnemyAttack(session, enemy, def, isHeavy: false);
+                ExecuteEnemyAttack(session, enemy, def, isHeavy: false, events);
                 break;
             case EnemyActionType.HeavyAttack:
-                ExecuteEnemyAttack(session, enemy, def, isHeavy: true);
+                ExecuteEnemyAttack(session, enemy, def, isHeavy: true, events);
                 break;
             case EnemyActionType.Defend:
-                ExecuteEnemyDefend(session, enemy, def);
+                ExecuteEnemyDefend(session, enemy, def, events);
                 break;
             case EnemyActionType.Buff:
-                ExecuteEnemyBuff(session, enemy, def);
+                ExecuteEnemyBuff(session, enemy, def, events);
                 break;
             case EnemyActionType.Regenerate:
-                ExecuteEnemyRegen(session, enemy, def);
+                ExecuteEnemyRegen(session, enemy, def, events);
                 break;
         }
     }
 
-    private void ExecuteEnemyAttack(CombatSession session, Enemy enemy, EnemyDefinition? def, bool isHeavy)
+    private void ExecuteEnemyAttack(CombatSession session, Enemy enemy, EnemyDefinition? def, bool isHeavy, List<CombatEvent> events)
     {
         int effAtk = EffectiveEnemyAttack(enemy);
         int effDef = EffectivePlayerDefense(session);
         double variance = 0.85 + _rng.NextDouble() * 0.30;
         double mult = isHeavy ? 1.5 : 1.0;
 
-        // DamageMultiplier from modifiers (Bear's Rear Up)
         float extraMult = 1.0f + enemy.ActiveModifiers
             .Where(m => m.Stat == ModifierStat.DamageMultiplier)
             .Sum(m => m.Value);
         enemy.ActiveModifiers.RemoveAll(m => m.Stat == ModifierStat.DamageMultiplier);
 
         int damage = (int)Math.Max(1, (effAtk - effDef) * mult * variance * extraMult);
-
-        // Defend halves damage
         if (session.PlayerDefending) damage = (int)Math.Max(1, damage * 0.5);
 
         // Dodge roll
@@ -368,17 +514,23 @@ public class CombatEngine : ICombatEngine
             double roll = _rng.NextDouble();
             if (roll < dodge)
             {
-                session.Log.Add("You sidestep the blow completely!");
+                string dodgeMsg = "You sidestep the blow completely!";
+                session.Log.Add(dodgeMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = dodgeMsg, DelayMs = 300 });
                 return;
             }
             if (roll < dodge * 2)
             {
                 damage = (int)Math.Max(1, damage * 0.5);
-                session.Log.Add("You partially deflect the attack...");
+                string partialMsg = "You partially deflect the attack...";
+                session.Log.Add(partialMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = partialMsg, DelayMs = 200 });
             }
             else
             {
-                session.Log.Add("Your dodge fails.");
+                string failMsg = "Your dodge fails.";
+                session.Log.Add(failMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = failMsg, DelayMs = 150 });
             }
         }
 
@@ -388,14 +540,23 @@ public class CombatEngine : ICombatEngine
         string flavorText = pool?.Count > 0
             ? PickRandom(pool)
             : $"The {enemy.Name} attacks you.";
-        session.Log.Add($"{flavorText} [{damage} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]");
+        string log = $"{flavorText} [{damage} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]";
+        session.Log.Add(log);
+
+        // Announce the attack with a pause, then shake + HP drop
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = log, DelayMs = 380 });
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.ShakePlayer,
+            PlayerHp = session.PlayerHp,
+            DelayMs = 350,
+        });
     }
 
-    private void ExecuteEnemyDefend(CombatSession session, Enemy enemy, EnemyDefinition? def)
+    private void ExecuteEnemyDefend(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
     {
         enemy.IsDefending = true;
 
-        // Bear's Rear Up: also boost next attack
         if (def?.DefendDamageBonus > 0)
         {
             enemy.ActiveModifiers.Add(new CombatModifier
@@ -412,9 +573,10 @@ public class CombatEngine : ICombatEngine
             ? PickRandom(def.DefendTexts)
             : $"The {enemy.Name} braces for your next blow.";
         session.Log.Add(text);
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = text, DelayMs = 300 });
     }
 
-    private void ExecuteEnemyBuff(CombatSession session, Enemy enemy, EnemyDefinition? def)
+    private void ExecuteEnemyBuff(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
     {
         if (def?.BuffStat == null) return;
 
@@ -431,9 +593,10 @@ public class CombatEngine : ICombatEngine
             ? PickRandom(def.BuffTexts)
             : $"The {enemy.Name} strengthens itself.";
         session.Log.Add(text);
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = text, DelayMs = 300 });
     }
 
-    private void ExecuteEnemyRegen(CombatSession session, Enemy enemy, EnemyDefinition? def)
+    private void ExecuteEnemyRegen(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
     {
         int amount = def?.RegenerateAmount ?? 5;
         int before = enemy.CurrentHp;
@@ -444,6 +607,14 @@ public class CombatEngine : ICombatEngine
             ? PickRandom(def.RegenerateTexts)
             : $"The {enemy.Name} regenerates {healed} HP.";
         session.Log.Add(text);
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.EnemyUpdate,
+            EnemyInstanceId = enemy.InstanceId,
+            Log = text,
+            EnemyHp = enemy.CurrentHp,
+            DelayMs = 300,
+        });
     }
 
     // ── Equipment modifiers ──────────────────────────────────────────────────

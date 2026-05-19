@@ -6,7 +6,7 @@ namespace MapGenerator.Combat.Interfaces;
 public interface ICombatEngine
 {
     CombatSession StartCombat(CombatStartContext context);
-    CombatSession ProcessTurn(CombatSession session, Player player, CombatAction action);
+    CombatTurnResult ProcessTurn(CombatSession session, Player player, CombatAction action);
     bool IsFinished(CombatSession session);
     CombatResult Resolve(CombatSession session);
 

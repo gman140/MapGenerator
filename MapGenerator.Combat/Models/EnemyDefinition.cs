@@ -1,4 +1,5 @@
 using MapGenerator.Combat.Enums;
+using MapGenerator.Domain.Enums;
 
 namespace MapGenerator.Combat.Models;
 

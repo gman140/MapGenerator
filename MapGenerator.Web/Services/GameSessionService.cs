@@ -540,16 +540,15 @@ public class GameSessionService : IAsyncDisposable
         return await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
     }
 
-    public async Task<CombatSession?> ProcessCombatTurnAsync(CombatAction action)
+    public async Task<CombatTurnResult?> ProcessCombatTurnAsync(CombatAction action)
     {
         if (Player?.ActiveCombatSessionId == null) return null;
         var session = await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
         if (session == null) return null;
 
-        session = _combatEngine.ProcessTurn(session, Player, action);
-        await _combatRepo.SaveAsync(session);
-        // Result is not applied here — UI shows the end screen first, then calls FinalizeCombatAsync
-        return session;
+        var result = _combatEngine.ProcessTurn(session, Player, action);
+        await _combatRepo.SaveAsync(result.Session);
+        return result;
     }
 
     public async Task<CombatResult?> GetPendingCombatResultAsync()

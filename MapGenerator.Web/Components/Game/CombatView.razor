@@ -1,5 +1,6 @@
 @using MapGenerator.Combat.Enums
 @using MapGenerator.Combat.Models
+@inject MapGenerator.Domain.Interfaces.IResourceDefinitionProvider ResourceProvider
 
 <div class="combat-view">
     @if (EndResult != null)
@@ -76,13 +77,18 @@
                 {
                     <div class="combat-status-badge dodge">🌀 Dodging</div>
                 }
+                @foreach (var mod in Session.ActiveModifiers.Where(m => m.TurnsRemaining.HasValue))
+                {
+                    <div class="combat-status-badge buff">@ModifierLabel(mod)</div>
+                }
             </div>
 
             <div class="combat-enemy-side">
                 @foreach (var enemy in Session.Enemies.Where(e =>
                     (e.CurrentHp > 0 && !e.HasFled) ||
                     _dyingEnemyIds.Contains(e.InstanceId) ||
-                    _fleeingEnemyIds.Contains(e.InstanceId)))
+                    _fleeingEnemyIds.Contains(e.InstanceId) ||
+                    (e.CurrentHp <= 0 && !e.HasFled && !_completedDeathIds.Contains(e.InstanceId))))
                 {
                     bool dying   = _dyingEnemyIds.Contains(enemy.InstanceId);
                     bool fleeing = _fleeingEnemyIds.Contains(enemy.InstanceId);
@@ -101,12 +107,10 @@
                             </div>
                             <span>@enemy.CurrentHp / @enemy.MaxHp</span>
                         </div>
-                    </div>
-                }
-                @foreach (var enemy in Session.Enemies.Where(e => e.HasFled && !_fleeingEnemyIds.Contains(e.InstanceId)))
-                {
-                    <div class="combat-enemy fled">
-                        <div class="combat-enemy-name">@enemy.Name <em>(fled)</em></div>
+                        @foreach (var mod in enemy.ActiveModifiers.Where(m => m.TurnsRemaining.HasValue))
+                        {
+                            <div class="combat-status-badge buff enemy-buff">@ModifierLabel(mod)</div>
+                        }
                     </div>
                 }
             </div>
@@ -148,7 +152,7 @@
                         @onclick="() => TakeTurn(CombatActionType.Defend)">
                     🛡 Defend <span class="cost">(+2⚡)</span>
                 </button>
-                @if (HasHealingItems)
+                @if (HasCombatItems)
                 {
                     <button class="combat-btn item" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
                             @onclick="() => _showItemPicker = !_showItemPicker">
@@ -161,13 +165,19 @@
                 </button>
             </div>
 
-            @if (_showItemPicker && HasHealingItems)
+            @if (_showItemPicker && HasCombatItems)
             {
                 <div class="combat-item-picker">
-                    @foreach (var (id, qty) in HealingItems)
+                    @foreach (var (id, qty) in CombatItems)
                     {
+                        var def = ResourceProvider.GetById(id);
                         <button class="combat-item-btn" @onclick="() => UseItem(id)">
-                            @id <span class="qty">×@qty</span>
+                            <span class="item-name">@(def?.Name ?? id)</span>
+                            @if (def?.CombatBuffLabel != null)
+                            {
+                                <span class="item-effect">@def.CombatBuffLabel</span>
+                            }
+                            <span class="qty">×@qty</span>
                         </button>
                     }
                 </div>
@@ -175,10 +185,7 @@
         }
 
         <div class="combat-log">
-            @{
-                int displayCount = LogDisplayCount > 0 ? LogDisplayCount : Session.Log.Count;
-            }
-            @foreach (var line in Session.Log.Take(displayCount).AsEnumerable().Reverse().Take(8))
+            @foreach (var line in Session.Log.AsEnumerable().Reverse().Take(8))
             {
                 <div class="combat-log-line">@line</div>
             }
@@ -196,83 +203,77 @@
     [Parameter] public CombatResult? EndResult { get; set; }
     [Parameter] public EventCallback OnConfirmEnd { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
-    [Parameter] public int LogDisplayCount { get; set; }  // 0 = show all
 
     private string? _targetEnemyId;
     private bool _showItemPicker;
     private bool _waitingForResult;
-    private bool _enemyPhase;
     private string? _shakingEnemyId;
     private bool _playerShaking;
-    private HashSet<string> _dyingEnemyIds   = [];
-    private HashSet<string> _fleeingEnemyIds = [];
+    private HashSet<string> _dyingEnemyIds     = [];
+    private HashSet<string> _fleeingEnemyIds   = [];
+    private HashSet<string> _completedDeathIds = [];
 
-    private IEnumerable<(string Id, int Qty)> HealingItems =>
+    private IEnumerable<(string Id, int Qty)> CombatItems =>
         PlayerInventory
             .Concat(PlayerCraftedItems)
             .GroupBy(kv => kv.Key)
             .Select(g => (g.Key, g.Sum(kv => kv.Value)))
-            .Where(t => t.Item2 > 0);
+            .Where(t => t.Item2 > 0
+                && ResourceProvider.GetById(t.Key) is { } def
+                && def.Traits.HasFlag(ItemTrait.CombatConsumable));
 
-    private bool HasHealingItems => HealingItems.Any();
-    private bool CannotTakeAction() => Session.Phase == CombatPhase.PlayerTurn && _waitingForResult;
+    private bool HasCombatItems => CombatItems.Any();
+    private bool CannotTakeAction() => _waitingForResult;
 
-    private void SelectTarget(string instanceId)
-    {
-        _targetEnemyId = instanceId;
-    }
+    private void SelectTarget(string instanceId) => _targetEnemyId = instanceId;
 
     private async Task TakeTurn(CombatActionType type)
     {
-        _showItemPicker = false;
+        _showItemPicker   = false;
         _waitingForResult = true;
-        _enemyPhase = false;
-
-        if (type is CombatActionType.Attack or CombatActionType.HeavyAttack)
-            ShakeEnemy(GetTarget());
-
-        var action = new CombatAction
-        {
-            Type = type,
-            TargetEnemyId = GetTarget(),
-        };
-        await OnAction.InvokeAsync(action);
+        await OnAction.InvokeAsync(new CombatAction { Type = type, TargetEnemyId = GetTarget() });
         _waitingForResult = false;
-        _enemyPhase = false;
     }
 
     private async Task UseItem(string itemId)
     {
-        _showItemPicker = false;
+        _showItemPicker   = false;
         _waitingForResult = true;
-        _enemyPhase = false;
-        var action = new CombatAction
-        {
-            Type   = CombatActionType.UseItem,
-            ItemId = itemId,
-        };
-        await OnAction.InvokeAsync(action);
+        await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.UseItem, ItemId = itemId });
         _waitingForResult = false;
-        _enemyPhase = false;
     }
 
-    internal void SetEnemyPhase(bool active)
-    {
-        _enemyPhase = active;
-        if (!active) ShakePlayer();
-        StateHasChanged();
-    }
+    // ── Animation triggers (called by Game.razor during event replay) ─────────
 
-    private void ShakeEnemy(string? instanceId)
+    internal void TriggerEnemyShake(string instanceId)
     {
         _shakingEnemyId = instanceId;
-        _ = ClearAfterAsync(380, () => { _shakingEnemyId = null; });
+        _ = ClearAfterAsync(380, () => _shakingEnemyId = null);
     }
 
-    private void ShakePlayer()
+    internal void TriggerPlayerShake()
     {
         _playerShaking = true;
-        _ = ClearAfterAsync(380, () => { _playerShaking = false; });
+        _ = ClearAfterAsync(380, () => _playerShaking = false);
+    }
+
+    internal async Task TriggerEnemyDieAsync(string instanceId)
+    {
+        _dyingEnemyIds = [instanceId];
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(680);
+        _dyingEnemyIds = [];
+        _completedDeathIds.Add(instanceId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    internal async Task TriggerEnemyFleeAsync(string instanceId)
+    {
+        _fleeingEnemyIds = [instanceId];
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(580);
+        _fleeingEnemyIds = [];
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ClearAfterAsync(int ms, Action clear)
@@ -282,18 +283,21 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    internal async Task AnimateEnemyOutcomesAsync(IEnumerable<string> dyingIds, IEnumerable<string> fleeingIds)
+    private static string ModifierLabel(CombatModifier mod)
     {
-        _dyingEnemyIds   = dyingIds.ToHashSet();
-        _fleeingEnemyIds = fleeingIds.ToHashSet();
-        if (_dyingEnemyIds.Count == 0 && _fleeingEnemyIds.Count == 0) return;
-
-        await InvokeAsync(StateHasChanged);
-        await Task.Delay(700);
-
-        _dyingEnemyIds   = [];
-        _fleeingEnemyIds = [];
-        await InvokeAsync(StateHasChanged);
+        string icon = mod.Stat switch
+        {
+            ModifierStat.Attack          => "⚔",
+            ModifierStat.Defense         => "🛡",
+            ModifierStat.DodgeChance     => "💨",
+            ModifierStat.StaminaRegen    => "⚡",
+            ModifierStat.DamageMultiplier => "💥",
+            _                            => "✦",
+        };
+        string val = mod.Stat == ModifierStat.DodgeChance
+            ? $"+{mod.Value * 100:0}%"
+            : $"+{mod.Value:0}";
+        return $"{icon} {val} ({mod.TurnsRemaining}t)";
     }
 
     private string? GetTarget()

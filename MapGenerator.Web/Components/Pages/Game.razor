@@ -29,21 +29,7 @@ else
 {
     <div class="game-layout">
         <div class="map-area">
-            @if ((Session.Player.IsInCombat || _combatResult != null) && _combatSession != null)
-            {
-                <CombatView @ref="_combatView"
-                            Session="_combatSession"
-                            PlayerColor="@Session.Player.Color"
-                            PlayerName="@Session.Player.Username"
-                            PlayerInventory="Session.Player.Inventory"
-                            PlayerCraftedItems="Session.Player.CraftedItems"
-                            OnAction="HandleCombatActionAsync"
-                            EndResult="_combatResult"
-                            OnConfirmEnd="HandleCombatConfirmAsync"
-                            IsAdmin="Session.Player.IsAdmin"
-                            LogDisplayCount="_combatLogDisplayCount" />
-            }
-            else if (Session.Player.IsInDungeon && _dungeonFloor != null)
+            @if (Session.Player.IsInDungeon && _dungeonFloor != null)
             {
                 <DungeonView Floor="_dungeonFloor"
                              PlayerQ="Session.Player.DungeonQ"
@@ -103,8 +89,7 @@ else
                          OnLayEgg="HandleLayEggAsync"
                          OnInvestigate="HandleInvestigateAsync"
                          OnGather="HandleGatherAsync"
-                         OnUsePoultice="HandleUsePoulticeAsync"
-                         OnDance="HandleDanceAsync"
+OnDance="HandleDanceAsync"
                          OnLeaveNote="() => { _showNoteModal = true; _noteText = string.Empty; }"
                          OnPlantSign="() => { _showSignModal = true; _signText = string.Empty; }"
                          OnEnterDungeon="HandleEnterDungeonAsync"
@@ -129,6 +114,22 @@ else
                        OnSendWorld="SendWorldAsync" />
         </div>
     </div>
+
+    @if ((Session.Player.IsInCombat || _combatResult != null) && _combatSession != null)
+    {
+        <div class="combat-overlay">
+            <CombatView @ref="_combatView"
+                        Session="_combatSession"
+                        PlayerColor="@Session.Player.Color"
+                        PlayerName="@Session.Player.Username"
+                        PlayerInventory="Session.Player.Inventory"
+                        PlayerCraftedItems="Session.Player.CraftedItems"
+                        OnAction="HandleCombatActionAsync"
+                        EndResult="_combatResult"
+                        OnConfirmEnd="HandleCombatConfirmAsync"
+                        IsAdmin="Session.Player.IsAdmin" />
+        </div>
+    }
 
     @if (_oceanWarning)
     {
@@ -217,7 +218,6 @@ else
     // Combat state
     private CombatSession? _combatSession;
     private CombatResult? _combatResult;
-    private int _combatLogDisplayCount;   // 0 = show all
     private CombatView? _combatView;
 
     // Dungeon state
@@ -518,19 +518,6 @@ else
         StateHasChanged();
     }
 
-    private async Task HandleUsePoulticeAsync()
-    {
-        var success = await Session.UsePoulticeAsync();
-        if (!success) return;
-        _cooldownUntil = 0;
-        _localMessages.Add(new ChatMessage
-        {
-            SenderName = "World", Content = "You apply the poultice. The ache fades.",
-            IsSystemMessage = true, SentAt = DateTime.UtcNow
-        });
-        StateHasChanged();
-    }
-
     private async Task HandleEnterDungeonAsync()
     {
         var (success, message, revealedOnEntry) = await Session.EnterDungeonAsync();
@@ -638,47 +625,62 @@ else
 
     private async Task HandleCombatActionAsync(CombatAction action)
     {
-        if (Session.Player == null) return;
+        if (Session.Player == null || _combatSession == null) return;
 
-        // Snapshot which enemies are alive before this turn resolves
-        var previouslyLive = _combatSession?.Enemies
-            .Where(e => e.CurrentHp > 0 && !e.HasFled)
-            .Select(e => e.InstanceId)
-            .ToHashSet() ?? [];
+        var turnResult = await Session.ProcessCombatTurnAsync(action);
+        if (turnResult == null) return;
 
-        _combatSession = await Session.ProcessCombatTurnAsync(action);
-        if (_combatSession == null) return;
+        // Replay events against the display session so animations and bar changes
+        // happen at the right moment rather than all jumping to the final state at once.
+        foreach (var evt in turnResult.Events)
+        {
+            // Apply state changes to the display session
+            if (evt.PlayerHp >= 0)        _combatSession.PlayerHp       = evt.PlayerHp;
+            if (evt.PlayerStamina >= 0)   _combatSession.PlayerStamina  = evt.PlayerStamina;
+            if (evt.PlayerDefending != null) _combatSession.PlayerDefending = evt.PlayerDefending.Value;
+            if (evt.PlayerDodging   != null) _combatSession.PlayerDodging   = evt.PlayerDodging.Value;
+            if (evt.EnemyHp >= 0 && evt.EnemyInstanceId != null)
+            {
+                var e = _combatSession.Enemies.FirstOrDefault(e => e.InstanceId == evt.EnemyInstanceId);
+                if (e != null) e.CurrentHp = evt.EnemyHp;
+            }
+            if (evt.Log != null)
+                _combatSession.Log.Add(evt.Log);
+
+            // Trigger animations
+            switch (evt.Kind)
+            {
+                case CombatEventKind.ShakePlayer:
+                    _combatView?.TriggerPlayerShake();
+                    break;
+                case CombatEventKind.ShakeEnemy when evt.EnemyInstanceId != null:
+                    _combatView?.TriggerEnemyShake(evt.EnemyInstanceId);
+                    break;
+                case CombatEventKind.EnemyDied when evt.EnemyInstanceId != null && _combatView != null:
+                    StateHasChanged();
+                    await _combatView.TriggerEnemyDieAsync(evt.EnemyInstanceId);
+                    break;
+                case CombatEventKind.EnemyFled when evt.EnemyInstanceId != null && _combatView != null:
+                {
+                    StateHasChanged();
+                    await _combatView.TriggerEnemyFleeAsync(evt.EnemyInstanceId);
+                    var fled = _combatSession.Enemies.FirstOrDefault(e => e.InstanceId == evt.EnemyInstanceId);
+                    if (fled != null) fled.HasFled = true;
+                    break;
+                }
+            }
+
+            if (evt.DelayMs > 0)
+            {
+                StateHasChanged();
+                await Task.Delay(evt.DelayMs);
+            }
+        }
+
+        // Sync display session to final persisted state
+        _combatSession = turnResult.Session;
 
         bool finished = _combatSession.Phase is CombatPhase.Victory or CombatPhase.Defeat;
-        bool hasEnemyPhase = !finished
-            && _combatSession.TurnBoundaryLogIndex < _combatSession.Log.Count;
-
-        if (hasEnemyPhase)
-        {
-            // Phase 1: show player action log only, hold action buttons with "Enemy is acting..."
-            _combatLogDisplayCount = _combatSession.TurnBoundaryLogIndex;
-            _combatView?.SetEnemyPhase(true);
-            StateHasChanged();
-            // Delay gives the player time to read their action result before enemy log appears
-            await Task.Delay(750);
-        }
-
-        // Phase 2: show full log
-        _combatLogDisplayCount = 0;
-        if (_combatView != null) _combatView.SetEnemyPhase(false);
-
-        // Animate enemies that just died or fled this turn before transitioning
-        if (_combatView != null && previouslyLive.Count > 0)
-        {
-            var newlyDead = _combatSession.Enemies
-                .Where(e => e.CurrentHp <= 0 && previouslyLive.Contains(e.InstanceId))
-                .Select(e => e.InstanceId);
-            var newlyFled = _combatSession.Enemies
-                .Where(e => e.HasFled && previouslyLive.Contains(e.InstanceId))
-                .Select(e => e.InstanceId);
-            await _combatView.AnimateEnemyOutcomesAsync(newlyDead, newlyFled);
-        }
-
         if (finished)
             _combatResult = await Session.GetPendingCombatResultAsync();
 
@@ -690,7 +692,6 @@ else
         await Session.FinalizeCombatAsync();
         _combatSession = null;
         _combatResult  = null;
-        _combatLogDisplayCount = 0;
         if (Session.Player.IsInDungeon)
             _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
         StateHasChanged();

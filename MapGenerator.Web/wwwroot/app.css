@@ -35,7 +35,7 @@
 html, body { height: 100svh; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
 
 /* ── Login Screen ─────────────────────────────────────────────────────────── */
-.login-screen { display: flex; align-items: center; justify-content: center; height: 100vh; }
+.login-screen { display: flex; align-items: center; justify-content: center; height: 100svh; }
 .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2.5rem; width: 340px; display: flex; flex-direction: column; gap: 1rem; }
 .login-box h1 { font-size: 1.5rem; color: var(--accent); text-align: center; }
 .login-box label { display: flex; flex-direction: column; gap: .3rem; color: var(--text-dim); font-size: .85rem; }
@@ -53,7 +53,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
     display: grid;
     grid-template-columns: 1fr 220px;
     grid-template-rows: 1fr 220px;
-    height: 100vh;
+    height: 100svh;
     gap: 4px;
     padding: 4px;
 }
@@ -239,10 +239,10 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
 /* ── Loading & Misc ───────────────────────────────────────────────────────── */
-.loading-screen { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--text-dim); font-size: 1.1rem; }
+.loading-screen { display: flex; align-items: center; justify-content: center; height: 100svh; color: var(--text-dim); font-size: 1.1rem; }
 
 /* ── Admin Panel ──────────────────────────────────────────────────────────── */
-.admin-panel { max-width: 600px; margin: 3rem auto; padding: 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; height: 100vh; }
+.admin-panel { max-width: 600px; margin: 3rem auto; padding: 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; height: 100svh; }
 .admin-panel h2 { color: var(--accent); }
 .admin-panel h3 { color: var(--text); margin-bottom: .5rem; }
 .warning-text { color: var(--warn); font-size: .85rem; }
@@ -441,7 +441,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 @keyframes enemy-flee {
   0%   { transform: translateX(0);     opacity: 1; }
   15%  { transform: translateX(-8px);  opacity: 1; }
-  100% { transform: translateX(150px); opacity: 0; }
+  100% { transform: translateX(150px) scale(0.2); opacity: 0; }
 }
 .combat-enemy-dying   { animation: enemy-die  0.65s ease-in  forwards; transform-origin: center bottom; pointer-events: none; }
 .combat-enemy-fleeing { animation: enemy-flee 0.55s ease-out forwards; pointer-events: none; }
@@ -470,8 +470,20 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 }
 .combat-strike-enemy { animation: combat-strike-enemy 0.25s ease-out }
 
+/* ── Combat overlay ──────────────────────────────────────────────────────── */
+.combat-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(5, 5, 8, 0.82);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ── Combat view ─────────────────────────────────────────────────────────── */
-.combat-view { display: flex; flex-direction: column; gap: .6rem; padding: .75rem; height: 100%; box-sizing: border-box; width: min(540px, 100%); }
+.combat-view { display: flex; flex-direction: column; gap: .6rem; padding: 1rem 1.25rem; height: 100svh; max-height: 100svh; box-sizing: border-box; width: min(560px, 100vw); overflow-y: auto; }
 .combat-hud { display: flex; justify-content: center; }
 .combat-context { font-size: .8rem; color: var(--text-dim); letter-spacing: .04em; }
 .combat-battlefield { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 130px; }
@@ -479,8 +491,10 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-player-svg { filter: drop-shadow(0 0 8px rgba(80,160,240,.4)); }
 .combat-player-label { font-size: .78rem; color: var(--text); }
 .combat-status-badge { font-size: .7rem; padding: .1rem .4rem; border-radius: 3px; }
-.combat-status-badge.defend { background: rgba(80,120,200,.2); border: 1px solid rgba(80,120,200,.4); color: #80a0e0; }
-.combat-status-badge.dodge  { background: rgba(140,80,200,.2); border: 1px solid rgba(140,80,200,.4); color: #b080e0; }
+.combat-status-badge.defend    { background: rgba(80,120,200,.2); border: 1px solid rgba(80,120,200,.4); color: #80a0e0; }
+.combat-status-badge.dodge     { background: rgba(140,80,200,.2); border: 1px solid rgba(140,80,200,.4); color: #b080e0; }
+.combat-status-badge.buff      { background: rgba(100,200,120,.15); border: 1px solid rgba(100,200,120,.35); color: #80d090; }
+.combat-status-badge.buff.enemy-buff { background: rgba(200,100,80,.15); border: 1px solid rgba(200,100,80,.35); color: #e08870; }
 .combat-enemy-side { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; flex: 1; }
 .combat-enemy { display: flex; flex-direction: column; align-items: center; gap: .2rem; cursor: pointer; padding: .3rem; border-radius: 6px; border: 2px solid transparent; transition: border-color .15s; }
 .combat-enemy:hover { border-color: rgba(255,224,102,.4); }
@@ -516,8 +530,11 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-btn.flee    { border-color: rgba(180,140,60,.5); color: #d0a060; }
 .combat-btn.flee:hover:not(:disabled)    { background: rgba(180,140,60,.15); }
 .combat-item-picker { display: flex; flex-wrap: wrap; gap: .3rem; padding: .3rem 0 0; }
-.combat-item-btn { font-size: .75rem; padding: .2rem .5rem; border-radius: 4px; border: 1px solid rgba(80,180,80,.4); background: rgba(80,180,80,.1); color: #80d080; cursor: pointer; }
+.combat-item-btn { display: flex; align-items: center; gap: .3rem; font-size: .75rem; padding: .2rem .5rem; border-radius: 4px; border: 1px solid rgba(80,180,80,.4); background: rgba(80,180,80,.1); color: #80d080; cursor: pointer; }
 .combat-item-btn:hover { background: rgba(80,180,80,.2); }
+.combat-item-btn .item-name { color: var(--text); }
+.combat-item-btn .item-effect { font-size: .7rem; color: #80d090; opacity: .85; }
+.combat-item-btn .qty { color: var(--text-dim); font-size: .7rem; }
 .combat-waiting { font-size: .8rem; color: var(--text-dim); font-style: italic; }
 .combat-log { display: flex; flex-direction: column; gap: .15rem; border-top: 1px solid var(--border); padding-top: .4rem; flex: 1; overflow-y: auto; }
 .combat-log-line { font-size: .75rem; color: var(--text-dim); line-height: 1.45; }

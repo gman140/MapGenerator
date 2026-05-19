@@ -1,4 +1,4 @@
-namespace MapGenerator.Combat.Enums;
+namespace MapGenerator.Domain.Enums;
 
 public enum ModifierStat
 {

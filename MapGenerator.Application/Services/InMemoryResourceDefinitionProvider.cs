@@ -1,3 +1,4 @@
+using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
 
@@ -46,7 +47,9 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "CattailCakes",   Name = "Cattail Cakes",   Description = "Dried cattail root ground with grain and pressed into small cakes. Earthy and filling." },
 
         // ── Uncommon (quantity 1) ─────────────────────────────────────────────
-        new() { Id = "Herbs",     Name = "Herbs",     Description = "Fragrant leaves of ambiguous medicinal value. Edible, and sometimes medicinal." },
+        new() { Id = "Herbs", Name = "Herbs", Description = "Fragrant leaves of ambiguous medicinal value. Edible, and sometimes medicinal.",
+                Traits = ItemTrait.Resource | ItemTrait.CombatConsumable,
+                CombatHpRestore = 15, CombatBuffLabel = "Heal +15" },
         new() { Id = "Feathers",  Name = "Feathers",  Description = "Shed or left behind. The bird is not here to explain." },
         new() { Id = "Salt",      Name = "Salt",      Description = "Crystallized from water, wind, or time." },
         new() { Id = "Clay",      Name = "Clay",      Description = "Dense, grey, workable. Remembers the shape of your hands." },
@@ -65,7 +68,10 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "CrowFeather",   Name = "Crow Feather",   Description = "Black and glossy. Left with intention, you suspect." },
         new() { Id = "RiverGlass",    Name = "River Glass",    Description = "A pebble worn so smooth by water it has become something else entirely." },
         new() { Id = "PaleMushroom",  Name = "Pale Mushroom",  Description = "White and silent and growing where it probably shouldn't." },
-        new() { Id = "BoneFragment",  Name = "Bone Fragment",  Description = "Old. You prefer not to speculate further." },
+        new() { Id = "BoneFragment", Name = "Bone Fragment", Description = "Old. You prefer not to speculate further.",
+                Traits = ItemTrait.Resource | ItemTrait.CombatConsumable,
+                CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 4f, CombatBuffTurns = 2,
+                CombatBuffLabel = "Def +4" },
         new() { Id = "FrozenFlower",  Name = "Frozen Flower",  Description = "Perfectly preserved. Has been waiting to be found." },
         new() { Id = "Ash",           Name = "Ash",            Description = "Grey powder from something that burned completely." },
         new() { Id = "HollowStone",   Name = "Hollow Stone",   Description = "A stone with a void inside. Something used to live here." },
@@ -103,16 +109,33 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "HoodedCowl",  Name = "Hooded Cowl",  Description = "Darkness inside. It helps you slip away from things that would rather you didn't.", EquipmentSlot = "Hat", DodgeChanceBonus = 0.10f },
 
         // ── Enemy loot drops ──────────────────────────────────────────────────
-        new() { Id = "SlimeGel",     Name = "Slime Gel",     Description = "A viscous, quivering substance left behind by the slime. Warm." },
+        new() { Id = "SlimeGel", Name = "Slime Gel", Description = "A viscous, quivering substance left behind by the slime. Warm.",
+                Traits = ItemTrait.Loot | ItemTrait.CombatConsumable,
+                CombatHpRestore = 10, CombatBuffLabel = "Heal +10" },
         new() { Id = "GooShard",     Name = "Goo Shard",     Description = "A crystallized piece of slime. It shouldn't be solid, and yet." },
         new() { Id = "EggFragment",  Name = "Egg Fragment",  Description = "A piece of something that was an egg until recently. Still warm." },
-        new() { Id = "GoldenYolk",   Name = "Golden Yolk",   Description = "The yolk of a sentient egg. It is deeply unsettling how golden it is." },
+        new() { Id = "GoldenYolk", Name = "Golden Yolk", Description = "The yolk of a sentient egg. It is deeply unsettling how golden it is.",
+                Traits = ItemTrait.Loot | ItemTrait.CombatConsumable,
+                CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 6f, CombatBuffTurns = 2,
+                CombatBuffLabel = "Atk +6" },
         new() { Id = "WolfPelt",     Name = "Wolf Pelt",     Description = "Thick and coarse. The wolf won't need it anymore." },
         new() { Id = "Fang",         Name = "Fang",          Description = "Long and curved. Sharper than it has any business being." },
         new() { Id = "BearHide",     Name = "Bear Hide",     Description = "Dense, thick fur and leather together. Heavy with former intent." },
         new() { Id = "Claw",         Name = "Claw",          Description = "A bear's claw, curved like a question you'd rather not answer." },
-        new() { Id = "TrollHide",    Name = "Troll Hide",    Description = "Rough and grey and very thick. It absorbed a great deal before this." },
-        new() { Id = "CrushedRock",  Name = "Crushed Rock",  Description = "Stone ground to coarse powder by something with more strength than patience." },
+        new() { Id = "TrollHide",   Name = "Troll Hide",   Description = "Rough and grey and very thick. It absorbed a great deal before this.", Traits = ItemTrait.Loot },
+        new() { Id = "CrushedRock", Name = "Crushed Rock", Description = "Stone ground to coarse powder by something with more strength than patience.", Traits = ItemTrait.Loot },
+
+        // ── Combat consumables ────────────────────────────────────────────────
+        new() { Id = "Poultice", Name = "Poultice", Description = "Herbs, moss, and reed, pressed together with intent. Smells of the ground. Works better than it smells.",
+                Traits = ItemTrait.CombatConsumable,
+                CombatHpRestore = 40, CombatBuffLabel = "Heal +40" },
+        new() { Id = "StaminaDraught", Name = "Stamina Draught", Description = "A bitter, reedy brew. Tastes like effort. Restores your will to keep moving.",
+                Traits = ItemTrait.CombatConsumable,
+                CombatStaminaRestore = 5, CombatBuffLabel = "Stamina +5" },
+        new() { Id = "WarPaint", Name = "War Paint", Description = "Charred bone and coal, smeared with purpose. It changes something behind the eyes.",
+                Traits = ItemTrait.CombatConsumable,
+                CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 10f, CombatBuffTurns = 3,
+                CombatBuffLabel = "Atk +10" },
     ];
 
     private static readonly Dictionary<string, ResourceDefinition> _byId =

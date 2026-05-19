@@ -32,9 +32,6 @@ public class CombatSession
     public CombatPhase Phase { get; set; }
     public List<string> Log { get; set; } = [];
 
-    // Set after player action, before enemy actions — used by UI to animate the two phases
-    public int TurnBoundaryLogIndex { get; set; }
-
     // True when the player successfully used the Flee action
     public bool PlayerFled { get; set; }
 

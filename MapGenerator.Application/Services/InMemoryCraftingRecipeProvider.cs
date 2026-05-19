@@ -86,7 +86,7 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Moss",  Quantity = 2 },
                 new() { ResourceId = "Reed",  Quantity = 1 },
             ],
-            Effects = [ItemEffect.ClearMovementCooldown],
+            Effects = [],
         },
         new()
         {
@@ -395,6 +395,32 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             [
                 new() { ResourceId = "Fiber",    Quantity = 4 },
                 new() { ResourceId = "WolfPelt", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id          = "StaminaDraught",
+            Name        = "Stamina Draught",
+            Description = "Reed and peat, steeped until it becomes something worth drinking. Only barely.",
+            IsConsumable = true,
+            Ingredients =
+            [
+                new() { ResourceId = "Reed", Quantity = 2 },
+                new() { ResourceId = "Peat", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id          = "WarPaint",
+            Name        = "War Paint",
+            Description = "Crushed coal and bone fragment, mixed until it looks like something that means business.",
+            IsConsumable = true,
+            Ingredients =
+            [
+                new() { ResourceId = "Coal",         Quantity = 1 },
+                new() { ResourceId = "BoneFragment", Quantity = 1 },
             ],
             Effects = [],
         },

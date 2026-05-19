@@ -33,14 +33,7 @@
                     <span class="action-cooldown">@_eggCooldownText</span>
                 }
             </button>
-            @if (Player.Inventory.GetValueOrDefault("Poultice") > 0)
-            {
-                <button class="action-item" @onclick="HandleUsePoultice">
-                    🌿 Use Poultice
-                    <span class="action-cooldown">×@Player.Inventory["Poultice"]</span>
-                </button>
-            }
-            <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
+<button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
                 💃 Dance
                 @if (DanceOnCooldown)
                 {
@@ -82,8 +75,7 @@
     [Parameter] public EventCallback OnLeaveNote { get; set; }
     [Parameter] public EventCallback OnPlantSign { get; set; }
     [Parameter] public EventCallback OnGather { get; set; }
-    [Parameter] public EventCallback OnUsePoultice { get; set; }
-    [Parameter] public EventCallback OnDance { get; set; }
+[Parameter] public EventCallback OnDance { get; set; }
     [Parameter] public EventCallback OnEnterDungeon { get; set; }
     [Parameter] public EventCallback OnUseRope { get; set; }
     [Parameter] public EventCallback OnUseStaircase { get; set; }
@@ -170,8 +162,7 @@
     private async Task HandleLeaveNote()    { await OnLeaveNote.InvokeAsync(); }
     private async Task HandlePlantSign()    { await OnPlantSign.InvokeAsync(); }
     private async Task HandleGather()       { await OnGather.InvokeAsync(); }
-    private async Task HandleUsePoultice()  { await OnUsePoultice.InvokeAsync(); }
-    private async Task HandleDance()        { await OnDance.InvokeAsync(); }
+private async Task HandleDance()        { await OnDance.InvokeAsync(); }
     private async Task HandleEnterDungeon()  { await OnEnterDungeon.InvokeAsync(); }
     private async Task HandleUseRope()       { await OnUseRope.InvokeAsync(); }
     private async Task HandleUseStaircase()  { await OnUseStaircase.InvokeAsync(); }

@@ -1,6 +1,7 @@
 using MapGenerator.Combat.Enums;
 using MapGenerator.Combat.Interfaces;
 using MapGenerator.Combat.Models;
+using MapGenerator.Domain.Enums;
 
 namespace MapGenerator.Combat.Services;
 
