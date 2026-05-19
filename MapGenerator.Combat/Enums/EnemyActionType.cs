@@ -7,4 +7,5 @@ public enum EnemyActionType
     Defend,
     Buff,
     Regenerate,
+    DoubleStrike,
 }

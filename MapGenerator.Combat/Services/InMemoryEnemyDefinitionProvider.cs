@@ -189,10 +189,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             ],
             LootTable =
             [
-                new() { ItemId = "BearHide", Chance = 0.50f },
-                new() { ItemId = "Claw",     Chance = 0.50f },
-                new() { ItemId = "Herbs",    Chance = 0.40f },
-                new() { ItemId = "Coal",     Chance = 0.20f },
+                new() { ItemId = "BearHide",     Chance = 0.50f },
+                new() { ItemId = "Claw",         Chance = 0.50f },
+                new() { ItemId = "Herbs",        Chance = 0.40f },
+                new() { ItemId = "Coal",         Chance = 0.20f },
+                new() { ItemId = "SoothingSalve",Chance = 0.10f },
             ],
             AppearTexts =
             [
@@ -425,6 +426,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { ItemId = "Mushroom",    Chance = 0.45f },
                 new() { ItemId = "PaleMushroom",Chance = 0.20f },
                 new() { ItemId = "Moss",        Chance = 0.30f },
+                new() { ItemId = "Antidote",    Chance = 0.15f },
             ],
             AppearTexts =
             [
@@ -476,9 +478,10 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             BuffStat = ModifierStat.DodgeChance, BuffValue = 0.15f, BuffTurns = 2,
             LootTable =
             [
-                new() { ItemId = "Sand",  Chance = 0.50f },
-                new() { ItemId = "Ash",   Chance = 0.40f },
-                new() { ItemId = "Flint", Chance = 0.25f },
+                new() { ItemId = "Sand",         Chance = 0.50f },
+                new() { ItemId = "Ash",          Chance = 0.40f },
+                new() { ItemId = "Flint",        Chance = 0.25f },
+                new() { ItemId = "SoothingSalve",Chance = 0.12f },
             ],
             AppearTexts =
             [
@@ -700,10 +703,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             RegenerateAmount = 8,
             LootTable =
             [
-                new() { ItemId = "Peat",  Chance = 0.55f },
-                new() { ItemId = "Moss",  Chance = 0.50f },
-                new() { ItemId = "Herbs", Chance = 0.35f },
-                new() { ItemId = "Amber", Chance = 0.15f },
+                new() { ItemId = "Peat",     Chance = 0.55f },
+                new() { ItemId = "Moss",     Chance = 0.50f },
+                new() { ItemId = "Herbs",    Chance = 0.35f },
+                new() { ItemId = "Amber",    Chance = 0.15f },
+                new() { ItemId = "Antidote", Chance = 0.12f },
             ],
             AppearTexts =
             [

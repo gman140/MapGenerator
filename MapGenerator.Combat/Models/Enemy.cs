@@ -1,5 +1,3 @@
-using MapGenerator.Combat.Models;
-
 namespace MapGenerator.Combat.Models;
 
 public class Enemy
@@ -15,4 +13,14 @@ public class Enemy
     public bool HasFled { get; set; }
     public List<CombatModifier> ActiveModifiers { get; set; } = [];
     public List<EnemyActionEntry> ActionTable { get; set; } = [];
+
+    // Affix applied at spawn (null = no affix)
+    public string? AffixId { get; set; }
+    public string? AffixLabel { get; set; }
+
+    // On-hit status effect from the affix (null = none)
+    public OnHitEffect? OnHitEffect { get; set; }
+
+    // If true, player dodge chance is bypassed for all this enemy's attacks
+    public bool ActionsCantBeDodged { get; set; }
 }

@@ -46,18 +46,18 @@ public class CombatEngine : ICombatEngine
 
         var session = new CombatSession
         {
-            Id                  = Guid.NewGuid().ToString("N"),
-            PlayerId            = player.Id,
-            PlayerHp            = player.MaxHp,
-            PlayerMaxHp         = player.MaxHp,
-            PlayerStamina       = 5,
-            PlayerMaxStamina    = player.MaxStamina,
-            PlayerBaseAttack    = player.BaseAttack,
-            PlayerBaseDefense   = player.BaseDefense,
+            Id                    = Guid.NewGuid().ToString("N"),
+            PlayerId              = player.Id,
+            PlayerHp              = player.MaxHp,
+            PlayerMaxHp           = player.MaxHp,
+            PlayerStamina         = 4,
+            PlayerMaxStamina      = player.MaxStamina,
+            PlayerBaseAttack      = player.BaseAttack,
+            PlayerBaseDefense     = player.BaseDefense,
             PlayerBaseDodgeChance = player.BaseDodgeChance,
-            Enemies             = enemies,
-            Phase               = CombatPhase.PlayerTurn,
-            ContextLabel        = BuildContextLabel(context),
+            Enemies               = enemies,
+            Phase                 = CombatPhase.PlayerTurn,
+            ContextLabel          = BuildContextLabel(context),
         };
 
         ApplyEquipmentModifiers(session, player);
@@ -91,7 +91,6 @@ public class CombatEngine : ICombatEngine
         session.PlayerStamina -= cost;
         bool defendedThisTurn = action.Type == CombatActionType.Defend;
 
-        // Step 2: Player action — emit stamina drop first, then the action
         if (cost > 0)
             events.Add(new CombatEvent
             {
@@ -141,7 +140,7 @@ public class CombatEngine : ICombatEngine
                 break;
         }
 
-        // Step 3: Check victory after player action
+        // Check victory after player action
         if (IsAllDeadOrFled(session))
         {
             session.Phase = CombatPhase.Victory;
@@ -151,14 +150,12 @@ public class CombatEngine : ICombatEngine
             return new CombatTurnResult { Session = session, Events = events };
         }
 
-        // Step 4: Enemy turns — add a beat before the enemy phase
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, DelayMs = 350 });
 
         foreach (var enemy in session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList())
         {
             var def = _enemyProvider.GetById(enemy.DefinitionId);
 
-            // Step 4a: Check enemy flee
             if (def != null
                 && (float)enemy.CurrentHp / enemy.MaxHp < def.FleeHpThreshold
                 && _rng.NextDouble() < def.FleeChance)
@@ -177,11 +174,9 @@ public class CombatEngine : ICombatEngine
                 continue;
             }
 
-            // Step 4b: Enemy action
             ExecuteEnemyAction(session, player, enemy, def, events);
         }
 
-        // All enemies fled during their own turns → victory
         if (IsAllDeadOrFled(session))
         {
             session.Phase = CombatPhase.Victory;
@@ -191,7 +186,7 @@ public class CombatEngine : ICombatEngine
             return new CombatTurnResult { Session = session, Events = events };
         }
 
-        // Step 5: Check defeat
+        // Check defeat
         if (session.PlayerHp <= 0)
         {
             session.PlayerHp = 0;
@@ -208,8 +203,8 @@ public class CombatEngine : ICombatEngine
             return new CombatTurnResult { Session = session, Events = events };
         }
 
-        // Step 6: Recover stamina
-        int gain = 3 + (defendedThisTurn ? 2 : 0);
+        // Recover stamina
+        int gain = 2 + (defendedThisTurn ? 2 : 0);
         session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + gain);
         events.Add(new CombatEvent
         {
@@ -218,10 +213,27 @@ public class CombatEngine : ICombatEngine
             DelayMs = 150,
         });
 
-        // Step 7: Tick modifiers
-        TickModifiers(session);
+        // Tick modifiers (DoT modifiers deal damage here)
+        TickModifiers(session, events);
 
-        // Step 8: Clear turn flags
+        // Check defeat from DoT
+        if (session.PlayerHp <= 0)
+        {
+            session.PlayerHp = 0;
+            session.Phase    = CombatPhase.Defeat;
+            string dotDefeat = "The affliction consumes you. You fall.";
+            session.Log.Add(dotDefeat);
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.PlayerUpdate,
+                Log = dotDefeat,
+                PlayerHp = 0,
+                DelayMs = 400,
+            });
+            return new CombatTurnResult { Session = session, Events = events };
+        }
+
+        // Clear turn flags
         session.PlayerDefending = false;
         session.PlayerDodging   = false;
         foreach (var e in session.Enemies) e.IsDefending = false;
@@ -248,7 +260,6 @@ public class CombatEngine : ICombatEngine
         var loot = new Dictionary<string, int>();
         var defeated = new Dictionary<string, int>();
 
-        // Dead and fled enemies both drop loot
         foreach (var enemy in session.Enemies.Where(e => e.CurrentHp <= 0 || e.HasFled))
         {
             defeated[enemy.DefinitionId] = defeated.GetValueOrDefault(enemy.DefinitionId) + 1;
@@ -277,14 +288,14 @@ public class CombatEngine : ICombatEngine
 
         return new CombatResult
         {
-            Victory         = session.Phase == CombatPhase.Victory,
-            Fled            = fled,
-            PlayerDied      = playerDied,
-            HpRemaining     = session.PlayerHp,
+            Victory          = session.Phase == CombatPhase.Victory,
+            Fled             = fled,
+            PlayerDied       = playerDied,
+            HpRemaining      = session.PlayerHp,
             StaminaRemaining = session.PlayerStamina,
-            LootGained      = loot,
-            EnemiesDefeated = defeated,
-            SummaryMessage  = summary,
+            LootGained       = loot,
+            EnemiesDefeated  = defeated,
+            SummaryMessage   = summary,
         };
     }
 
@@ -336,7 +347,6 @@ public class CombatEngine : ICombatEngine
         string log = $"You {verb} the {target.Name} for {damage} damage.{fell}";
         session.Log.Add(log);
 
-        // Shake + HP update (simultaneous)
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.ShakeEnemy,
@@ -376,7 +386,6 @@ public class CombatEngine : ICombatEngine
             return;
         }
 
-        // Check resource-based combat consumables first
         var resDef = _resourceProvider.GetById(itemId);
         if (resDef != null && resDef.Traits.HasFlag(ItemTrait.CombatConsumable))
         {
@@ -410,6 +419,12 @@ public class CombatEngine : ICombatEngine
                 });
                 parts.Add(resDef.CombatBuffLabel ?? $"+{resDef.CombatBuffValue} for {resDef.CombatBuffTurns}t");
             }
+            if (resDef.ClearsStatuses?.Length > 0)
+            {
+                int cleared = session.ActiveModifiers.RemoveAll(m => resDef.ClearsStatuses.Contains(m.Stat));
+                if (cleared > 0)
+                    parts.Add($"cured {cleared} affliction(s)");
+            }
 
             string msg = $"You use {resDef.Name}. " + (parts.Count > 0 ? string.Join(", ", parts) + "." : "Nothing happened.");
             session.Log.Add(msg);
@@ -418,7 +433,6 @@ public class CombatEngine : ICombatEngine
             return;
         }
 
-        // Fall back to food items
         var food = _foodProvider.GetById(itemId);
         if (food != null)
         {
@@ -480,6 +494,9 @@ public class CombatEngine : ICombatEngine
             case EnemyActionType.HeavyAttack:
                 ExecuteEnemyAttack(session, enemy, def, isHeavy: true, events);
                 break;
+            case EnemyActionType.DoubleStrike:
+                ExecuteEnemyDoubleStrike(session, enemy, def, events);
+                break;
             case EnemyActionType.Defend:
                 ExecuteEnemyDefend(session, enemy, def, events);
                 break;
@@ -492,23 +509,23 @@ public class CombatEngine : ICombatEngine
         }
     }
 
-    private void ExecuteEnemyAttack(CombatSession session, Enemy enemy, EnemyDefinition? def, bool isHeavy, List<CombatEvent> events)
+    private void ExecuteEnemyAttack(CombatSession session, Enemy enemy, EnemyDefinition? def, bool isHeavy, List<CombatEvent> events, double extraMult = 1.0)
     {
         int effAtk = EffectiveEnemyAttack(enemy);
         int effDef = EffectivePlayerDefense(session);
         double variance = 0.85 + _rng.NextDouble() * 0.30;
         double mult = isHeavy ? 1.5 : 1.0;
 
-        float extraMult = 1.0f + enemy.ActiveModifiers
+        float buffMult = 1.0f + enemy.ActiveModifiers
             .Where(m => m.Stat == ModifierStat.DamageMultiplier)
             .Sum(m => m.Value);
         enemy.ActiveModifiers.RemoveAll(m => m.Stat == ModifierStat.DamageMultiplier);
 
-        int damage = (int)Math.Max(1, (effAtk - effDef) * mult * variance * extraMult);
+        int damage = (int)Math.Max(1, (effAtk - effDef) * mult * extraMult * variance * buffMult);
         if (session.PlayerDefending) damage = (int)Math.Max(1, damage * 0.5);
 
-        // Dodge roll
-        if (session.PlayerDodging)
+        // Dodge roll — skipped for Spectral enemies
+        if (session.PlayerDodging && !enemy.ActionsCantBeDodged)
         {
             float dodge = EffectivePlayerDodgeChance(session);
             double roll = _rng.NextDouble();
@@ -543,7 +560,6 @@ public class CombatEngine : ICombatEngine
         string log = $"{flavorText} [{damage} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]";
         session.Log.Add(log);
 
-        // Announce the attack with a pause, then shake + HP drop
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = log, DelayMs = 380 });
         events.Add(new CombatEvent
         {
@@ -551,6 +567,24 @@ public class CombatEngine : ICombatEngine
             PlayerHp = session.PlayerHp,
             DelayMs = 350,
         });
+
+        // On-hit status proc
+        if (enemy.OnHitEffect != null && _rng.NextDouble() < enemy.OnHitEffect.Chance)
+            ApplyOrRefreshStatus(session, enemy.OnHitEffect, events);
+    }
+
+    private void ExecuteEnemyDoubleStrike(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
+    {
+        string intro = $"The {enemy.Name} strikes twice in rapid succession!";
+        session.Log.Add(intro);
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = intro, DelayMs = 300 });
+
+        ExecuteEnemyAttack(session, enemy, def, isHeavy: false, events, extraMult: 0.65);
+        if (session.PlayerHp > 0)
+        {
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, DelayMs = 200 });
+            ExecuteEnemyAttack(session, enemy, def, isHeavy: false, events, extraMult: 0.65);
+        }
     }
 
     private void ExecuteEnemyDefend(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
@@ -617,6 +651,39 @@ public class CombatEngine : ICombatEngine
         });
     }
 
+    // ── Player status effects ────────────────────────────────────────────────
+
+    private static void ApplyOrRefreshStatus(CombatSession session, OnHitEffect effect, List<CombatEvent> events)
+    {
+        var existing = session.ActiveModifiers.FirstOrDefault(m => m.Stat == effect.StatusType);
+        if (existing != null)
+        {
+            existing.TurnsRemaining = Math.Max(existing.TurnsRemaining ?? 0, effect.Turns);
+            return;
+        }
+
+        session.ActiveModifiers.Add(new CombatModifier
+        {
+            Id             = $"Status:{effect.StatusType}",
+            Stat           = effect.StatusType,
+            Value          = effect.Value,
+            TurnsRemaining = effect.Turns,
+            Source         = $"Status:{effect.StatusType}",
+        });
+
+        string label = effect.StatusType switch
+        {
+            ModifierStat.Disease      => "Disease",
+            ModifierStat.Burn         => "Burn",
+            ModifierStat.Venom        => "Venom",
+            ModifierStat.StaminaDrain => "a Curse",
+            _                         => effect.StatusType.ToString(),
+        };
+        string msg = $"You are afflicted with {label}!";
+        session.Log.Add(msg);
+        events.Add(new CombatEvent { Kind = CombatEventKind.StatusApplied, Log = msg, DelayMs = 250 });
+    }
+
     // ── Equipment modifiers ──────────────────────────────────────────────────
 
     private void ApplyEquipmentModifiers(CombatSession session, Player player)
@@ -673,14 +740,36 @@ public class CombatEngine : ICombatEngine
     private static int EffectiveEnemyDefense(Enemy e)
     {
         int def = e.Defense;
-        if (e.IsDefending) def = (int)(def * 2.5);  // defending roughly doubles effective defense
+        if (e.IsDefending) def = (int)(def * 2.5);
         return def;
     }
 
     // ── Modifier tick ─────────────────────────────────────────────────────────
 
-    private static void TickModifiers(CombatSession session)
+    private static void TickModifiers(CombatSession session, List<CombatEvent> events)
     {
+        // Apply DoT damage before decrementing so the turn they expire still deals damage
+        for (int i = session.ActiveModifiers.Count - 1; i >= 0; i--)
+        {
+            var mod = session.ActiveModifiers[i];
+            if (mod.Stat is ModifierStat.Disease or ModifierStat.Burn or ModifierStat.Venom)
+            {
+                int dmg = (int)Math.Max(1, session.PlayerMaxHp * mod.Value);
+                session.PlayerHp = Math.Max(0, session.PlayerHp - dmg);
+                string msg = $"[{mod.Stat}] deals {dmg} damage. ({session.PlayerHp}/{session.PlayerMaxHp} HP)";
+                session.Log.Add(msg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.StatusTick, Log = msg, PlayerHp = session.PlayerHp, DelayMs = 280 });
+            }
+            else if (mod.Stat == ModifierStat.StaminaDrain)
+            {
+                int drained = (int)Math.Min(session.PlayerStamina, mod.Value);
+                session.PlayerStamina = Math.Max(0, session.PlayerStamina - drained);
+                string msg = $"[Curse] drains {drained} stamina. ({session.PlayerStamina}/{session.PlayerMaxStamina})";
+                session.Log.Add(msg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.StatusTick, Log = msg, PlayerStamina = session.PlayerStamina, DelayMs = 280 });
+            }
+        }
+
         TickList(session.ActiveModifiers);
         foreach (var enemy in session.Enemies)
             TickList(enemy.ActiveModifiers);

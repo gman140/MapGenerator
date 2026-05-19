@@ -580,3 +580,26 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .sprite-tool-btn:hover { background: rgba(255,255,255,.1); }
 .sprite-tool-btn.active { border-color: rgba(80,200,120,.4); background: rgba(80,200,120,.15); color: #80d090; }
 .sprite-save-error { font-size: .75rem; color: #e08080; border: 1px solid rgba(220,80,80,.3); border-radius: 4px; padding: .3rem .6rem; background: rgba(200,60,60,.1); }
+
+/* ── Enemy affix CSS filters ─────────────────────────────────────────────── */
+@keyframes affix-shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-3px) rotate(-1deg); } 60% { transform: translateX(3px) rotate(1deg); } }
+@keyframes affix-pulse { 0%,100% { filter: brightness(1) saturate(1.8) hue-rotate(20deg); } 50% { filter: brightness(1.4) saturate(2.4) hue-rotate(20deg); } }
+@keyframes affix-drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes affix-jitter { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-2px,1px); } 50% { transform: translate(2px,-1px); } 75% { transform: translate(-1px,2px); } }
+@keyframes affix-curse  { 0%,100% { filter: brightness(0.9) saturate(1.5) hue-rotate(240deg); } 50% { filter: brightness(1.2) saturate(2) hue-rotate(260deg); } }
+@keyframes affix-frenzy { 0%,100% { transform: scaleX(1) rotate(0); } 30% { transform: scaleX(1.04) rotate(0.5deg); } 60% { transform: scaleX(.97) rotate(-0.5deg); } }
+
+.affix-rabid    { filter: saturate(1.8) hue-rotate(-10deg) brightness(1.1); animation: affix-shake 0.7s ease-in-out infinite; }
+.affix-burning  { filter: saturate(2) hue-rotate(20deg) brightness(1.2); animation: affix-pulse 1.2s ease-in-out infinite; }
+.affix-venomous { filter: saturate(1.6) hue-rotate(80deg) brightness(1.05); animation: affix-drift 2.5s ease-in-out infinite; }
+.affix-armored  { filter: brightness(0.8) saturate(0.6) contrast(1.2); }
+.affix-spectral { filter: brightness(1.1) saturate(0.3) contrast(1.1) opacity(0.82); animation: affix-drift 3s ease-in-out infinite; }
+.affix-enraged  { filter: saturate(2.4) hue-rotate(-20deg) brightness(1.25); animation: affix-jitter 0.35s steps(1) infinite; }
+.affix-cursed   { animation: affix-curse 2s ease-in-out infinite; }
+.affix-frenzied { filter: saturate(2) hue-rotate(-5deg) brightness(1.15); animation: affix-frenzy 0.4s ease-in-out infinite; }
+
+/* ── Player status badges ────────────────────────────────────────────────── */
+.combat-status-badge.status-disease     { background: rgba(120,60,200,.25); border-color: rgba(140,80,210,.5); color: #c080ff; }
+.combat-status-badge.status-burn        { background: rgba(220,100,20,.25); border-color: rgba(240,120,30,.5); color: #ff9040; }
+.combat-status-badge.status-venom       { background: rgba(60,180,60,.25); border-color: rgba(80,200,80,.5); color: #60e060; }
+.combat-status-badge.status-staminadrain { background: rgba(100,80,160,.25); border-color: rgba(120,90,180,.5); color: #a080e0; }

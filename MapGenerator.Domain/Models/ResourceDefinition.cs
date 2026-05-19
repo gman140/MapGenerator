@@ -24,4 +24,7 @@ public class ResourceDefinition
     public float CombatBuffValue { get; init; }
     public int CombatBuffTurns { get; init; }
     public string? CombatBuffLabel { get; init; }  // display name for buff badge
+
+    // Status cures — modifier stat types removed when this item is used in combat
+    public ModifierStat[]? ClearsStatuses { get; init; }
 }

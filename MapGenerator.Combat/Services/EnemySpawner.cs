@@ -7,6 +7,7 @@ namespace MapGenerator.Combat.Services;
 public class EnemySpawner
 {
     private readonly IEnemyDefinitionProvider _enemyProvider;
+    private readonly IEnemyAffixProvider _affixProvider;
 
     // Biome encounter rates (0..1)
     private static readonly Dictionary<string, float> BiomeEncounterRates = new(StringComparer.OrdinalIgnoreCase)
@@ -22,36 +23,62 @@ public class EnemySpawner
         ["Jungle"]   = 0.05f,
     };
 
-    // Possible enemies by biome — pools weighted toward difficulty appropriate for the terrain.
-    // Peaceful biomes only spawn easy enemies; dangerous biomes allow harder ones.
+    // Biome affix chance (0..1) — peaceful biomes have no affixes
+    private static readonly Dictionary<string, float> BiomeAffixChance = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Glacier"]   = 0f, ["Shallows"] = 0f, ["Beach"]    = 0f,
+        ["Plains"]    = 0f, ["Grassland"] = 0f,
+        ["River"]     = 0.05f,
+        ["Tundra"]    = 0.10f, ["Snow"]  = 0.10f,
+        ["Desert"]    = 0.15f, ["Savanna"] = 0.15f,
+        ["Forest"]    = 0.20f, ["Mountain"] = 0.20f,
+        ["Marsh"]     = 0.30f, ["Swamp"]   = 0.35f,
+        ["Jungle"]    = 0.40f, ["Volcano"] = 0.45f,
+    };
+
+    // Affix pools per biome — thematically appropriate affixes
+    private static readonly Dictionary<string, string[]> BiomeAffixPools = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["River"]    = ["venomous", "rabid"],
+        ["Tundra"]   = ["rabid", "armored", "frenzied"],
+        ["Snow"]     = ["rabid", "armored", "enraged"],
+        ["Desert"]   = ["burning", "cursed", "spectral"],
+        ["Savanna"]  = ["rabid", "enraged", "venomous"],
+        ["Forest"]   = ["venomous", "rabid", "cursed", "frenzied"],
+        ["Mountain"] = ["armored", "enraged", "frenzied"],
+        ["Marsh"]    = ["venomous", "rabid", "cursed", "spectral"],
+        ["Swamp"]    = ["venomous", "rabid", "cursed", "spectral", "frenzied"],
+        ["Jungle"]   = ["venomous", "burning", "rabid", "cursed", "frenzied", "enraged"],
+        ["Volcano"]  = ["burning", "enraged", "spectral", "armored", "frenzied"],
+    };
+
+    // All affixes available in dungeons
+    private static readonly string[] DungeonAffixPool =
+        ["rabid", "burning", "venomous", "armored", "spectral", "enraged", "cursed", "frenzied"];
+
+    private const float DungeonAffixChance = 0.30f;
+
+    // Possible enemies by biome
     private static readonly Dictionary<string, string[]> BiomeEnemies = new(StringComparer.OrdinalIgnoreCase)
     {
-        // Peaceful — easy enemies only
         ["Grassland"] = ["HexRabbit", "HexRabbit", "HexRabbit", "SentientEgg", "MushroomSprite"],
         ["Plains"]    = ["HexRabbit", "HexRabbit", "SentientEgg", "DustWraith"],
         ["Beach"]     = ["HexRabbit", "Slime", "Slime"],
         ["River"]     = ["BeaverSerpent", "Slime", "HexRabbit", "TwiceBornHeron"],
         ["Glacier"]   = ["HexRabbit", "Slime"],
         ["Shallows"]  = ["Slime", "HexRabbit"],
-
-        // Mixed — easy/medium
         ["Tundra"]    = ["HexRabbit", "BeaverSerpent", "Wolf", "TwiceBornHeron"],
         ["Snow"]      = ["Wolf", "BeaverSerpent", "Bear", "TwiceBornHeron"],
         ["Desert"]    = ["DustWraith", "DustWraith", "SentientEgg"],
         ["Savanna"]   = ["DustWraith", "Wolf", "SentientEgg"],
-
-        // Dangerous — medium/hard
         ["Swamp"]     = ["Slime", "BeaverSerpent", "SentientEgg", "MushroomSprite", "FermentedThing", "TwiceBornHeron"],
         ["Marsh"]     = ["Slime", "BeaverSerpent", "MushroomSprite", "SentientEgg", "TwiceBornHeron"],
         ["Forest"]    = ["MushroomSprite", "HexRabbit", "BeaverSerpent", "Wolf", "SentientEgg", "PaleLibrarian"],
         ["Mountain"]  = ["Bear", "Wolf", "BeaverSerpent", "StoneShepherd"],
-
-        // Very dangerous — medium/hard, no easy enemies
         ["Jungle"]    = ["Wolf", "Bear", "MushroomSprite", "SentientEgg", "FermentedThing"],
         ["Volcano"]   = ["DustWraith", "Bear", "Wolf", "StoneShepherd"],
     };
 
-    // Possible enemies by dungeon theme (corridor encounters — bosses handled separately)
     private static readonly Dictionary<string, string[]> DungeonThemeEnemies = new(StringComparer.OrdinalIgnoreCase)
     {
         ["CrystalCavern"]  = ["Slime", "StoneShepherd"],
@@ -62,9 +89,10 @@ public class EnemySpawner
 
     private static readonly string[] BossPool = ["CaveTroll", "TheArrangement", "CoronatedRat"];
 
-    public EnemySpawner(IEnemyDefinitionProvider enemyProvider)
+    public EnemySpawner(IEnemyDefinitionProvider enemyProvider, IEnemyAffixProvider affixProvider)
     {
-        _enemyProvider = enemyProvider;
+        _enemyProvider  = enemyProvider;
+        _affixProvider  = affixProvider;
     }
 
     public float GetEncounterRate(string biomeType, bool inDungeon) =>
@@ -74,12 +102,11 @@ public class EnemySpawner
     {
         var enemies = new List<Enemy>();
 
-        // Boss room picks randomly from the boss pool
         if (context.RoomType == "Boss")
         {
             string bossId = BossPool[rng.Next(BossPool.Length)];
             var def = _enemyProvider.GetById(bossId);
-            if (def != null) enemies.Add(SpawnFromDef(def, rng));
+            if (def != null) enemies.Add(SpawnFromDef(def, rng, affixId: null));
             return enemies;
         }
 
@@ -90,11 +117,25 @@ public class EnemySpawner
             ? (rng.Next(2) == 0 ? 1 : Math.Min(2, context.DungeonFloor.Value))
             : 1;
 
+        bool isDungeon = context.DungeonTheme != null;
+        float affixChance = isDungeon
+            ? DungeonAffixChance
+            : BiomeAffixChance.GetValueOrDefault(context.BiomeType ?? string.Empty, 0f);
+        string[] affixPool = isDungeon
+            ? DungeonAffixPool
+            : (BiomeAffixPools.GetValueOrDefault(context.BiomeType ?? string.Empty) ?? []);
+
         for (int i = 0; i < count; i++)
         {
             string id = pool[rng.Next(pool.Length)];
             var def = _enemyProvider.GetById(id);
-            if (def != null) enemies.Add(SpawnFromDef(def, rng));
+            if (def == null) continue;
+
+            string? affixId = null;
+            if (affixPool.Length > 0 && rng.NextDouble() < affixChance)
+                affixId = affixPool[rng.Next(affixPool.Length)];
+
+            enemies.Add(SpawnFromDef(def, rng, affixId));
         }
 
         return enemies;
@@ -113,21 +154,54 @@ public class EnemySpawner
         return [];
     }
 
-    private static Enemy SpawnFromDef(EnemyDefinition def, Random rng)
+    private Enemy SpawnFromDef(EnemyDefinition def, Random rng, string? affixId)
     {
-        // Slight HP variance (+/- 10%) so fights feel different each time
         int hp = (int)(def.BaseHp * (0.90 + rng.NextDouble() * 0.20));
+        int atk = def.BaseAttack;
+        int def2 = def.BaseDefense;
+
+        var actionTable = new List<EnemyActionEntry>(def.ActionTable);
+        string? affixLabel = null;
+        OnHitEffect? onHit = null;
+        bool cantBeDodged = false;
+
+        if (affixId != null)
+        {
+            var affix = _affixProvider.GetById(affixId);
+            if (affix != null)
+            {
+                affixLabel  = affix.Label;
+                onHit       = affix.OnHit;
+                cantBeDodged = affix.ActionsCantBeDodged;
+
+                hp  = (int)(hp  * affix.HpMultiplier);
+                atk = (int)(atk * affix.AttackMultiplier) + affix.AttackBonus;
+                def2 += affix.DefenseBonus;
+
+                actionTable.AddRange(affix.BonusActions);
+            }
+            else
+            {
+                affixId = null;
+            }
+        }
+
+        string name = affixLabel != null ? $"{affixLabel} {def.Name}" : def.Name;
 
         return new Enemy
         {
-            InstanceId   = Guid.NewGuid().ToString("N"),
-            DefinitionId = def.Id,
-            Name         = def.Name,
-            CurrentHp    = hp,
-            MaxHp        = hp,
-            Attack       = def.BaseAttack,
-            Defense      = def.BaseDefense,
-            ActionTable  = [.. def.ActionTable],
+            InstanceId          = Guid.NewGuid().ToString("N"),
+            DefinitionId        = def.Id,
+            Name                = name,
+            CurrentHp           = hp,
+            MaxHp               = hp,
+            Attack              = atk,
+            Defense             = def2,
+            ActionTable         = actionTable,
+            AffixId             = affixId,
+            AffixLabel          = affixLabel,
+            OnHitEffect         = onHit,
+            ActionsCantBeDodged = cantBeDodged,
         };
     }
 }

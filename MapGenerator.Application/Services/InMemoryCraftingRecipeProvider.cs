@@ -424,6 +424,34 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             ],
             Effects = [],
         },
+        new()
+        {
+            Id           = "Antidote",
+            Name         = "Antidote",
+            Description  = "Herbs and amber steeped with pale mushroom. Bitter and immediate. Cures Disease and Venom.",
+            IsConsumable = true,
+            Ingredients  =
+            [
+                new() { ResourceId = "Herbs",       Quantity = 2 },
+                new() { ResourceId = "PaleMushroom",Quantity = 1 },
+                new() { ResourceId = "Amber",       Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id           = "SoothingSalve",
+            Name         = "Soothing Salve",
+            Description  = "Clay, moss, and herbs worked into a cooling paste. Cures Burn and stamina drain.",
+            IsConsumable = true,
+            Ingredients  =
+            [
+                new() { ResourceId = "Herbs", Quantity = 2 },
+                new() { ResourceId = "Moss",  Quantity = 2 },
+                new() { ResourceId = "Clay",  Quantity = 1 },
+            ],
+            Effects = [],
+        },
     ];
 
     private static readonly Dictionary<string, CraftingRecipe> _byId =

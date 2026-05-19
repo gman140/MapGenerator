@@ -7,4 +7,8 @@ public enum ModifierStat
     DodgeChance,
     StaminaRegen,
     DamageMultiplier,
+    Disease,
+    Burn,
+    Venom,
+    StaminaDrain,
 }

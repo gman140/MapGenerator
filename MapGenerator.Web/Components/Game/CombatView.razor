@@ -1,6 +1,8 @@
 @using MapGenerator.Combat.Enums
 @using MapGenerator.Combat.Models
+@using MapGenerator.Domain.Enums
 @inject MapGenerator.Domain.Interfaces.IResourceDefinitionProvider ResourceProvider
+
 
 <div class="combat-view">
     @if (EndResult != null)
@@ -96,7 +98,7 @@
                 }
                 @foreach (var mod in Session.ActiveModifiers.Where(m => m.TurnsRemaining.HasValue))
                 {
-                    <div class="combat-status-badge buff">@ModifierLabel(mod)</div>
+                    <div class="combat-status-badge @ModifierBadgeClass(mod.Stat)">@ModifierLabel(mod)</div>
                 }
             </div>
 
@@ -114,7 +116,7 @@
                     string animationClass = dying ? "combat-enemy-dying" : fleeing ? "combat-enemy-fleeing" : shaking ? "combat-shake" : _playerShaking ? "combat-strike-enemy" : "";
                     <div class="combat-enemy @(targeted ? "targeted" : "")"
                          @onclick="() => SelectTarget(enemy.InstanceId)">
-                        <EnemySprite DefinitionId="@enemy.DefinitionId" Targeted="@targeted" Class="@animationClass" />
+                        <EnemySprite DefinitionId="@enemy.DefinitionId" Targeted="@targeted" Class="@animationClass" Affix="@enemy.AffixId" />
                         <div class="combat-enemy-name">@enemy.Name</div>
                         <div class="combat-enemy-hp">
                             <div class="combat-hp-bar">
@@ -298,16 +300,39 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private static bool IsDoT(ModifierStat s) =>
+        s is ModifierStat.Disease or ModifierStat.Burn or ModifierStat.Venom or ModifierStat.StaminaDrain;
+
+    private static string ModifierBadgeClass(ModifierStat s) => s switch
+    {
+        ModifierStat.Disease      => "status-disease",
+        ModifierStat.Burn         => "status-burn",
+        ModifierStat.Venom        => "status-venom",
+        ModifierStat.StaminaDrain => "status-staminadrain",
+        _                         => "buff",
+    };
+
     private static string ModifierLabel(CombatModifier mod)
     {
+        if (IsDoT(mod.Stat))
+        {
+            return mod.Stat switch
+            {
+                ModifierStat.Disease      => $"🦠 Disease ({mod.TurnsRemaining}t)",
+                ModifierStat.Burn         => $"🔥 Burn ({mod.TurnsRemaining}t)",
+                ModifierStat.Venom        => $"🐍 Venom ({mod.TurnsRemaining}t)",
+                ModifierStat.StaminaDrain => $"💀 Curse ({mod.TurnsRemaining}t)",
+                _                         => mod.Stat.ToString(),
+            };
+        }
         string icon = mod.Stat switch
         {
-            ModifierStat.Attack          => "⚔",
-            ModifierStat.Defense         => "🛡",
-            ModifierStat.DodgeChance     => "💨",
-            ModifierStat.StaminaRegen    => "⚡",
+            ModifierStat.Attack           => "⚔",
+            ModifierStat.Defense          => "🛡",
+            ModifierStat.DodgeChance      => "💨",
+            ModifierStat.StaminaRegen     => "⚡",
             ModifierStat.DamageMultiplier => "💥",
-            _                            => "✦",
+            _                             => "✦",
         };
         string val = mod.Stat == ModifierStat.DodgeChance
             ? $"+{mod.Value * 100:0}%"

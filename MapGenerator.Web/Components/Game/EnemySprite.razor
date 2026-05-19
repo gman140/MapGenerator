@@ -1,4 +1,5 @@
-<svg width="100" height="100" class="@Class">
+<span class="@Class" style="display:inline-block;line-height:0">
+<svg width="100" height="100" class="@AffixClass">
     @if (DefinitionId == "Slime")
     {
         <ellipse cx="50" cy="58" rx="28" ry="20" fill="#3a8a3a" stroke="@Stroke" stroke-width="@Sw" />
@@ -114,12 +115,15 @@
         <polygon points="50,10 70,28 80,55 65,85 35,85 20,55 30,28" fill="#4a4a3a" stroke="@Stroke" stroke-width="@Sw" />
     }
 </svg>
+</span>
 
 @code {
     [Parameter, EditorRequired] public string DefinitionId { get; set; } = string.Empty;
     [Parameter] public bool Targeted { get; set; }
     [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string? Affix { get; set; }
 
-    private string Stroke => Targeted ? "#ffe066" : "#aaa";
-    private string Sw     => Targeted ? "3" : "1.5";
+    private string Stroke     => Targeted ? "#ffe066" : "#aaa";
+    private string Sw         => Targeted ? "3" : "1.5";
+    private string AffixClass => string.IsNullOrEmpty(Affix) ? string.Empty : $"affix-{Affix}";
 }

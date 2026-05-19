@@ -9,6 +9,8 @@ public enum CombatEventKind
     EnemyDied,      // enemy HP reached 0 — trigger death animation
     EnemyFled,      // enemy fled — trigger flee animation
     Pause,          // no state change, just wait for dramatic effect
+    StatusApplied,  // a status effect was applied to the player
+    StatusTick,     // a status effect dealt damage/drained stamina this turn
 }
 
 public class CombatEvent

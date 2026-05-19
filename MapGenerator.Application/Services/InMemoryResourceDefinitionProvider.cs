@@ -139,6 +139,14 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
                 Traits = ItemTrait.CombatConsumable,
                 CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 10f, CombatBuffTurns = 3,
                 CombatBuffLabel = "Atk +10" },
+        new() { Id = "Antidote", Name = "Antidote", Description = "Herbs and amber steeped with pale mushroom. Bitter and immediate. The affliction recedes.",
+                Traits = ItemTrait.CombatConsumable,
+                CombatBuffLabel = "Cure Disease/Venom",
+                ClearsStatuses = [ModifierStat.Disease, ModifierStat.Venom] },
+        new() { Id = "SoothingSalve", Name = "Soothing Salve", Description = "Clay, moss, and herbs worked into a cooling paste. Applied quickly, it draws the harm out.",
+                Traits = ItemTrait.CombatConsumable,
+                CombatBuffLabel = "Cure Burn/Curse",
+                ClearsStatuses = [ModifierStat.Burn, ModifierStat.StaminaDrain] },
     ];
 
     private static readonly Dictionary<string, ResourceDefinition> _byId =
