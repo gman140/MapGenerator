@@ -104,7 +104,14 @@ public class GameSessionService : IAsyncDisposable
     {
         Player = await _playerSvc.RestorePlayerAsync(browserId);
         if (Player != null)
-            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
+        {
+            if (Player.SpritePixels.Length == 0)
+            {
+                Player.SpritePixels = GenerateDefaultSprite(Player.Color);
+                await _playerRepo.UpdateAsync(Player);
+            }
+            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
+        }
         IsLoaded = true;
     }
 
@@ -113,7 +120,12 @@ public class GameSessionService : IAsyncDisposable
         var (player, error) = await _playerSvc.CreatePlayerAsync(username, browserId);
         if (player == null) return (false, error);
         Player = player;
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
+        if (Player.SpritePixels.Length == 0)
+        {
+            Player.SpritePixels = GenerateDefaultSprite(Player.Color);
+            await _playerRepo.UpdateAsync(Player);
+        }
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
         return (true, null);
     }
 
@@ -152,7 +164,7 @@ public class GameSessionService : IAsyncDisposable
         if (updated == null) return;
         Player = updated;
         await _visitRepo.RecordArrivalAsync(Player.Id, Player.Q, Player.R);
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.EggsDestroyed);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
     }
 
     public async Task<(bool success, string kisserMsg)> KissAsync(string targetId, string targetName)
@@ -276,6 +288,35 @@ public class GameSessionService : IAsyncDisposable
         Player.Color = color;
         await _playerRepo.UpdateAsync(Player);
         _broadcast.UpdatePlayerColor(Player.Id, color);
+    }
+
+    public async Task UpdateSpriteAsync(string[] pixels)
+    {
+        if (Player == null) return;
+        Player.SpritePixels = pixels;
+        await _playerRepo.UpdateAsync(Player);
+        _broadcast.UpdatePlayerSprite(Player.Id, pixels);
+    }
+
+    public static string[] GenerateDefaultSprite(string color)
+    {
+        string filled = color.Length == 7 ? color + "ff" : color;
+        var skinColors = new List<string>(["#ffd5adff", "#baec8bff", "#743800ff", "#be5600ff", "#ffffffff", "#fd50508f"]);
+        string skinFilled = skinColors[Random.Shared.Next(skinColors.Count)];
+        var pixels = new string[256];
+        var blackPixels = new HashSet<int>([5,6,7,8,9,10,20,27,67,70,73,76,83,86,89,92,99,108,116,123,131,133,134,135,136,137,138,140,146,157,162,165,170,173,179,180,187,188,196,203,212,215,216,219,229,230,233,234]);
+        var filledPixels = new HashSet<int>([35,36,37,38,39,40,41,42,43,44,46,51,52,53,54,55,56,57,58,59,60,61,78]);
+        var skinPixels = new HashSet<int>([21,22,23,24,25,26,68,69,71,72,74,75,84,85,87,88,90,91,100,101,102,103,104,105,106,107,117,118,119,120,121,122,132,139,147,148,149,150,151,152,153,154,155,156,163,164,166,167,168,169,171,172,181,182,183,184,185,186,197,198,199,200,201,202,213,214,217,218]);
+        for (int i = 0; i < 256; i++) {
+            pixels[i] = "";
+            if (blackPixels.Contains(i))
+                pixels[i] = "#000000ff";
+            else if (filledPixels.Contains(i))
+                pixels[i] = filled;
+            else if (skinPixels.Contains(i))
+                pixels[i] = skinFilled;
+        }
+        return pixels;
     }
 
     public async Task<ChatMessage?> SendLocalMessageAsync(string content)

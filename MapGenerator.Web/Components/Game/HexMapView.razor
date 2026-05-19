@@ -142,21 +142,10 @@
 
                             if (isPlayerTile)
                             {
-                                if (sharing)
-                                {
-                                    double px = cx - 6; double py = cy - 6;
-                                    <circle cx="@px.ToString("F1")" cy="@py.ToString("F1")"
-                                            r="@(HexSize * 0.22)"
-                                            class="player-dot self"
-                                            style="fill: @Player.Color" />
-                                }
-                                else
-                                {
-                                    <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
-                                            r="@(HexSize * 0.35)"
-                                            class="player-dot self"
-                                            style="fill: @Player.Color" />
-                                }
+                                double spriteSize = sharing ? HexSize * 0.5 : HexSize;
+                                double spx = sharing ? cx - 6 : cx;
+                                double spy = sharing ? cy - 6 : cy;
+                                @RenderSprite(spx, spy, spriteSize, Player.SpritePixels)
                             }
 
                             int maxOthers = sharing ? 3 : 4;
@@ -165,13 +154,11 @@
                                 int slot = sharing ? i + 1 : i;
                                 double ox = cx + (slot % 2 == 0 ? -6 : 6);
                                 double oy = cy + (slot < 2 ? -6 : 6);
-                                <circle @key="others[i].Id"
-                                        cx="@ox.ToString("F1")" cy="@oy.ToString("F1")"
-                                        r="@(HexSize * 0.22)"
-                                        class="player-dot other"
-                                        style="fill: @others[i].Color">
+                                double oSize = HexSize * 0.5;
+                                <g @key="others[i].Id">
                                     <title>@others[i].Username</title>
-                                </circle>
+                                    @RenderSprite(ox, oy, oSize, others[i].SpritePixels)
+                                </g>
                             }
                         }
                     </g>
@@ -232,7 +219,7 @@
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public EventCallback<(int q, int r)> OnTileClicked { get; set; }
-    [Parameter] public List<(string Id, string Username, int Q, int R, string Color)> OnlinePlayers { get; set; } = [];
+    [Parameter] public List<(string Id, string Username, int Q, int R, string Color, string[] SpritePixels)> OnlinePlayers { get; set; } = [];
     [Parameter] public IReadOnlySet<(int, int)>? RevealedTiles { get; set; }
 
     private const double HexSize    = 32;
@@ -267,6 +254,27 @@ protected override void OnParametersSet()
         int dq = q - Player.Q, dr = r - Player.R;
         return Math.Max(Math.Abs(dq), Math.Max(Math.Abs(dr), Math.Abs(dq + dr)));
     }
+
+    private RenderFragment RenderSprite(double cx, double cy, double size, string[] pixels) => builder =>
+    {
+        if (pixels.Length == 0) return;
+        double pxSize = size / 16.0;
+        double startX = cx - size / 2.0;
+        double startY = cy - size / 2.0;
+        int seq = 0;
+        for (int i = 0; i < 256 && i < pixels.Length; i++)
+        {
+            if (string.IsNullOrEmpty(pixels[i])) continue;
+            int px = i % 16, py = i / 16;
+            builder.OpenElement(seq++, "rect");
+            builder.AddAttribute(seq++, "x", F(startX + px * pxSize));
+            builder.AddAttribute(seq++, "y", F(startY + py * pxSize));
+            builder.AddAttribute(seq++, "width", F(pxSize + 0.5));
+            builder.AddAttribute(seq++, "height", F(pxSize + 0.5));
+            builder.AddAttribute(seq++, "fill", pixels[i]);
+            builder.CloseElement();
+        }
+    };
 
     private static string HexPath(double cx, double cy, int q, int r)
     {

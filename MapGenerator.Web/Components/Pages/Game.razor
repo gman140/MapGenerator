@@ -36,6 +36,7 @@ else
                              PlayerR="Session.Player.DungeonR"
                              FloorNumber="Session.Player.DungeonFloor"
                              PlayerColor="Session.Player.Color"
+                             PlayerSprite="Session.Player.SpritePixels"
                              HasLantern="_playerHasLantern"
                              RevealedRooms="_revealedDungeonRooms"
                              OnRoomClicked="HandleDungeonRoomClickAsync" />
@@ -55,7 +56,7 @@ else
                         CooldownUntil="_cooldownUntil"
                         LastKissedAt="Session.Player.LastKissedAt"
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
-                        OnColorChanged="HandleColorChangedAsync"
+                        OnEditSprite="() => _showSpriteEditor = true"
                         OnKissPlayer="HandleKissPlayerAsync" />
             <InventoryModal Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
@@ -120,7 +121,7 @@ OnDance="HandleDanceAsync"
         <div class="combat-overlay">
             <CombatView @ref="_combatView"
                         Session="_combatSession"
-                        PlayerColor="@Session.Player.Color"
+                        PlayerSprite="Session.Player.SpritePixels"
                         PlayerName="@Session.Player.Username"
                         PlayerInventory="Session.Player.Inventory"
                         PlayerCraftedItems="Session.Player.CraftedItems"
@@ -190,6 +191,13 @@ OnDance="HandleDanceAsync"
         </div>
     }
 
+    @if (_showSpriteEditor)
+    {
+        <SpriteEditorModal Player="Session.Player"
+                           OnSave="HandleSpriteUpdateAsync"
+                           OnCancel="() => _showSpriteEditor = false" />
+    }
+
     @if (_moveError != null)
     {
         <div class="toast-error">@_moveError</div>
@@ -212,6 +220,7 @@ OnDance="HandleDanceAsync"
 
     private bool _showNoteModal;
     private bool _showSignModal;
+    private bool _showSpriteEditor;
     private string _noteText = string.Empty;
     private string _signText = string.Empty;
 
@@ -841,9 +850,10 @@ OnDance="HandleDanceAsync"
         StateHasChanged();
     }
 
-    private async Task HandleColorChangedAsync(string color)
+    private async Task HandleSpriteUpdateAsync(string[] pixels)
     {
-        await Session.UpdateColorAsync(color);
+        _showSpriteEditor = false;
+        await Session.UpdateSpriteAsync(pixels);
         StateHasChanged();
     }
 

@@ -1,0 +1,164 @@
+@using MapGenerator.Domain.Models
+@using MapGenerator.Web.Services
+
+<div class="modal-overlay" @onclick="HandleCancel">
+    <div class="sprite-editor-modal" @onclick:stopPropagation
+         @onmouseup="() => _isPainting = false"
+         @oncontextmenu:preventDefault>
+        <h3 class="modal-title">Edit Sprite</h3>
+
+        <div class="sprite-editor-body">
+            <div class="sprite-grid-wrap"
+                 @onmouseleave="() => _isPainting = false">
+                <div class="sprite-grid"
+                     @onmouseup="() => _isPainting = false">
+                    @for (int i = 0; i < 256; i++)
+                    {
+                        int idx = i;
+                        string fill = string.IsNullOrEmpty(_pixels[idx]) ? "transparent" : _pixels[idx];
+                        <div class="sprite-cell @(string.IsNullOrEmpty(_pixels[idx]) ? "transparent" : "")"
+                             style="background: @fill"
+                             @onmousedown="(e) => HandleMouseDown(idx, e)"
+                             @onmouseenter="() => { if (_isPainting) ApplyPaint(idx); }"
+                             @oncontextmenu:preventDefault>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="sprite-preview-wrap">
+                <div class="sprite-preview-label">Preview</div>
+                <svg width="64" height="64" class="sprite-preview-svg">
+                    @for (int i = 0; i < 256; i++)
+                    {
+                        if (!string.IsNullOrEmpty(_pixels[i]))
+                        {
+                            int px = i % 16, py = i / 16;
+                            <rect x="@(px * 4)" y="@(py * 4)" width="4" height="4" fill="@_pixels[i]" />
+                        }
+                    }
+                </svg>
+            </div>
+        </div>
+
+        <div class="sprite-editor-tools">
+            <label class="sprite-tool-label">
+                Color
+                <input type="color" class="sprite-color-input" value="@_hexColor" @onchange="HandleColorChange" />
+            </label>
+            <label class="sprite-tool-label">
+                Opacity
+                <input type="range" min="0" max="255" value="@_alpha" class="sprite-alpha-slider"
+                       @onchange="HandleAlphaChange" />
+                <span class="sprite-alpha-value">@((int)Math.Round(_alpha / 255.0 * 100))%</span>
+            </label>
+            <button class="sprite-tool-btn @(_erasing ? "active" : "")"
+                    @onclick="() => { _erasing = !_erasing; }">
+                @(_erasing ? "✏ Paint" : "⬜ Erase")
+            </button>
+            <button class="sprite-tool-btn" @onclick="ApplyDefault">Default</button>
+            <button class="sprite-tool-btn" @onclick="ClearAll">Clear All</button>
+        </div>
+
+        @if (_saveError != null)
+        {
+            <div class="sprite-save-error">@_saveError</div>
+        }
+
+        <div class="modal-actions">
+            <button @onclick="HandleCancel">Cancel</button>
+            <button class="btn-primary" @onclick="HandleSave">Save</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public EventCallback<string[]> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string[] _pixels = new string[256];
+    private string _hexColor = "#ffffff";
+    private double _alpha = 255;
+    private bool _erasing;
+    private bool _isPainting;
+    private bool _paintingAsErase;
+    private string? _saveError;
+
+    protected override void OnParametersSet()
+    {
+        if (_pixels.All(p => p == null))
+            Reset();
+    }
+
+    protected override void OnInitialized() => Reset();
+
+    private void Reset()
+    {
+        _pixels = new string[256];
+        var src = Player.SpritePixels;
+        for (int i = 0; i < 256 && i < src.Length; i++)
+            _pixels[i] = src[i] ?? "";
+        _hexColor = Player.Color.Length >= 7 ? Player.Color[..7] : Player.Color;
+        _alpha = 255;
+    }
+
+    private void HandleMouseDown(int idx, MouseEventArgs e)
+    {
+        _isPainting = true;
+        _paintingAsErase = e.Button == 2;
+        ApplyPaint(idx);
+        StateHasChanged();
+    }
+
+    private void ApplyPaint(int idx)
+    {
+        _pixels[idx] = (_erasing || _paintingAsErase) ? "" : BuildColor();
+        StateHasChanged();
+    }
+
+    private void ApplyDefault()
+    {
+        _pixels = GameSessionService.GenerateDefaultSprite(BuildColor());
+    }
+
+    private string BuildColor()
+    {
+        int a = (int)Math.Clamp(Math.Round(_alpha), 0, 255);
+        return _hexColor + a.ToString("x2");
+    }
+
+    private void HandleColorChange(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(val))
+            _hexColor = val;
+        _erasing = false;
+    }
+
+    private void HandleAlphaChange(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out double v))
+            _alpha = v;
+    }
+
+    private void ClearAll()
+    {
+        for (int i = 0; i < 256; i++)
+            _pixels[i] = "";
+    }
+
+    private async Task HandleSave()
+    {
+        int filled = _pixels.Count(p => !string.IsNullOrEmpty(p));
+        if (filled < 50)
+        {
+            _saveError = $"At least 50 pixels must be painted ({filled} currently set).";
+            return;
+        }
+        _saveError = null;
+        await OnSave.InvokeAsync([.. _pixels]);
+    }
+
+    private async Task HandleCancel() => await OnCancel.InvokeAsync();
+}

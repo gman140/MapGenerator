@@ -14,6 +14,7 @@ public class Player
     public long GatherCooldownUntil { get; set; }   // Unix ms
     public long StunnedUntil { get; set; }           // Unix ms
     public string Color { get; set; } = "#50a0f0";
+    public string[] SpritePixels { get; set; } = [];
     public DateTime? LastEggLaidAt { get; set; }
     public DateTime? LastDancedAt { get; set; }
     public DateTime? LastKissedAt { get; set; }

@@ -21,15 +21,15 @@ public class GameBroadcastService
     public event Action? RoadsChanged;
     public event Action<string, int, int>? EggExploded;             // playerId, q, r
 
-    // playerId -> (username, q, r, color, eggsDestroyed)
-    private readonly Dictionary<string, (string Username, int Q, int R, string Color, int EggsDestroyed)> _online = [];
+    // playerId -> (username, q, r, color, spritePixels, eggsDestroyed)
+    private readonly Dictionary<string, (string Username, int Q, int R, string Color, string[] SpritePixels, int EggsDestroyed)> _online = [];
     private readonly Lock _lock = new();
 
     public GameBroadcastService(IHubContext<GameHub> hub) => _hub = hub;
 
-    public void PlayerCameOnline(string playerId, string username, int q, int r, string color, int eggsDestroyed = 0)
+    public void PlayerCameOnline(string playerId, string username, int q, int r, string color, string[] spritePixels, int eggsDestroyed = 0)
     {
-        lock (_lock) _online[playerId] = (username, q, r, color, eggsDestroyed);
+        lock (_lock) _online[playerId] = (username, q, r, color, spritePixels, eggsDestroyed);
         PlayerConnected?.Invoke(playerId, username);
     }
 
@@ -44,9 +44,19 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, color, p.EggsDestroyed);
+                _online[playerId] = (p.Username, p.Q, p.R, color, p.SpritePixels, p.EggsDestroyed);
         }
         PlayerColorChanged?.Invoke(playerId, color);
+    }
+
+    public void UpdatePlayerSprite(string playerId, string[] pixels)
+    {
+        lock (_lock)
+        {
+            if (_online.TryGetValue(playerId, out var p))
+                _online[playerId] = (p.Username, p.Q, p.R, p.Color, pixels, p.EggsDestroyed);
+        }
+        PlayerColorChanged?.Invoke(playerId, string.Empty);
     }
 
     public void UpdatePlayerEggsDestroyed(string playerId, int eggsDestroyed)
@@ -54,13 +64,13 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, p.Color, eggsDestroyed);
+                _online[playerId] = (p.Username, p.Q, p.R, p.Color, p.SpritePixels, eggsDestroyed);
         }
     }
 
-    public List<(string Id, string Username, int Q, int R, string Color)> GetOnlinePlayers()
+    public List<(string Id, string Username, int Q, int R, string Color, string[] SpritePixels)> GetOnlinePlayers()
     {
-        lock (_lock) return _online.Select(kv => (kv.Key, kv.Value.Username, kv.Value.Q, kv.Value.R, kv.Value.Color)).ToList();
+        lock (_lock) return _online.Select(kv => (kv.Key, kv.Value.Username, kv.Value.Q, kv.Value.R, kv.Value.Color, kv.Value.SpritePixels)).ToList();
     }
 
     public List<(string Id, string Username, int EggsDestroyed)> GetOnlinePlayersOnTile(int q, int r)
@@ -77,7 +87,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, newQ, newR, p.Color, p.EggsDestroyed);
+                _online[playerId] = (p.Username, newQ, newR, p.Color, p.SpritePixels, p.EggsDestroyed);
         }
         PlayerMoved?.Invoke(playerId, oldQ, oldR, newQ, newR);
 

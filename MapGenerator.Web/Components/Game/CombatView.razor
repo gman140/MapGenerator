@@ -65,8 +65,25 @@
         <div class="combat-battlefield">
             <div class="combat-player-side">
                 <svg width="120" height="120" class="combat-player-svg @(_playerShaking ? "combat-shake" : "") @(_shakingEnemyId != null ? "combat-strike" : "")">
-                    <circle cx="60" cy="60" r="28" fill="@PlayerColor" stroke="#fff" stroke-width="3" />
-                    <text x="60" y="65" text-anchor="middle" font-size="11" fill="#fff">YOU</text>
+                    @{
+                        const double CombatSpriteSize = 56.0;
+                        double cpxSz = CombatSpriteSize / 16.0;
+                        double cpsx  = 60.0 - CombatSpriteSize / 2.0;
+                        double cpsy  = 56.0 - CombatSpriteSize / 2.0;
+                    }
+                    @for (int _ci = 0; _ci < 256 && _ci < PlayerSprite.Length; _ci++)
+                    {
+                        if (!string.IsNullOrEmpty(PlayerSprite[_ci]))
+                        {
+                            int _cpx = _ci % 16, _cpy = _ci / 16;
+                            <rect x="@((cpsx + _cpx * cpxSz).ToString("F1"))"
+                                  y="@((cpsy + _cpy * cpxSz).ToString("F1"))"
+                                  width="@((cpxSz + 0.3).ToString("F1"))"
+                                  height="@((cpxSz + 0.3).ToString("F1"))"
+                                  fill="@PlayerSprite[_ci]" />
+                        }
+                    }
+                    <text x="60" y="110" text-anchor="middle" font-size="11" fill="#fff">YOU</text>
                 </svg>
                 <div class="combat-player-label">@PlayerName</div>
                 @if (Session.PlayerDefending)
@@ -193,7 +210,7 @@
 
 @code {
     [Parameter, EditorRequired] public CombatSession Session { get; set; } = null!;
-    [Parameter, EditorRequired] public string PlayerColor { get; set; } = "#50a0f0";
+    [Parameter, EditorRequired] public string[] PlayerSprite { get; set; } = [];
     [Parameter, EditorRequired] public string PlayerName { get; set; } = "You";
     [Parameter, EditorRequired] public Dictionary<string, int> PlayerInventory { get; set; } = new();
     [Parameter, EditorRequired] public Dictionary<string, int> PlayerCraftedItems { get; set; } = new();

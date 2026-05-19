@@ -52,13 +52,28 @@
                   style="pointer-events: none;" />
         }
 
-        @* Player dot — drawn above rooms, below overlay *@
+        @* Player sprite — drawn above rooms, below overlay *@
         @{
             var (pcx, pcy) = RoomCenter(PlayerQ, PlayerR);
+            const double SpriteSize = 18.0;
+            double pxSz = SpriteSize / 16.0;
+            double psx  = pcx - SpriteSize / 2.0;
+            double psy  = pcy - SpriteSize / 2.0;
         }
-        <circle cx="@pcx.ToString("F0")" cy="@pcy.ToString("F0")" r="8"
-                fill="@PlayerColor" stroke="#fff" stroke-width="2"
-                style="pointer-events: none;" />
+        <g style="pointer-events: none;">
+            @for (int _si = 0; _si < 256 && _si < PlayerSprite.Length; _si++)
+            {
+                if (!string.IsNullOrEmpty(PlayerSprite[_si]))
+                {
+                    int _spx = _si % 16, _spy = _si / 16;
+                    <rect x="@((psx + _spx * pxSz).ToString("F1"))"
+                          y="@((psy + _spy * pxSz).ToString("F1"))"
+                          width="@((pxSz + 0.3).ToString("F1"))"
+                          height="@((pxSz + 0.3).ToString("F1"))"
+                          fill="@PlayerSprite[_si]" />
+                }
+            }
+        </g>
 
         @* Transparent overlay — sole source of mouse events *@
         <rect x="0" y="0"
@@ -103,6 +118,7 @@
     [Parameter, EditorRequired] public int PlayerR { get; set; }
     [Parameter, EditorRequired] public int FloorNumber { get; set; }
     [Parameter, EditorRequired] public string PlayerColor { get; set; } = "#50a0f0";
+    [Parameter] public string[] PlayerSprite { get; set; } = [];
     [Parameter] public bool HasLantern { get; set; }
     [Parameter] public HashSet<(int Q, int R)> RevealedRooms { get; set; } = [];
     [Parameter] public EventCallback<(int Q, int R)> OnRoomClicked { get; set; }

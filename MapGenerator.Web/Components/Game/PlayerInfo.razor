@@ -11,10 +11,18 @@
 
 <div class="player-info">
     <div class="player-name">
-        <label class="color-swatch-label" title="Change your color">
-            <input type="color" value="@Player.Color" @onchange="HandleColorChange" class="color-swatch-input" />
-            <span class="color-swatch" style="background: @Player.Color"></span>
-        </label>
+        <button class="sprite-edit-btn" title="Edit your sprite" @onclick="async () => await OnEditSprite.InvokeAsync()">
+            <svg width="32" height="32" class="sprite-edit-preview">
+                @for (int i = 0; i < 256 && i < Player.SpritePixels.Length; i++)
+                {
+                    if (!string.IsNullOrEmpty(Player.SpritePixels[i]))
+                    {
+                        int px = i % 16, py = i / 16;
+                        <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@Player.SpritePixels[i]" />
+                    }
+                }
+            </svg>
+        </button>
         <span>@Player.Username</span>
         @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
         @{ var selfTitle = GetTitle(Player.EggsDestroyed); }
@@ -125,7 +133,7 @@
     [Parameter] public long CooldownUntil { get; set; }
     [Parameter] public DateTime? LastKissedAt { get; set; }
     [Parameter] public List<(string Id, string Username, int EggsDestroyed)> OnlinePlayers { get; set; } = [];
-    [Parameter] public EventCallback<string> OnColorChanged { get; set; }
+    [Parameter] public EventCallback OnEditSprite { get; set; }
     [Parameter] public EventCallback<(string Id, string Username)> OnKissPlayer { get; set; }
 
     private long _cooldownRemaining;
@@ -196,13 +204,6 @@
         BuffType.HungerDrainReduction => $"🌿 Hunger −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
         _                             => buff.Type.ToString(),
     };
-
-    private async Task HandleColorChange(ChangeEventArgs e)
-    {
-        var color = e.Value?.ToString();
-        if (!string.IsNullOrEmpty(color))
-            await OnColorChanged.InvokeAsync(color);
-    }
 
     public void Dispose() => _timer?.Dispose();
 }
