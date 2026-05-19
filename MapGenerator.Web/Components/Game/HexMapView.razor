@@ -136,20 +136,35 @@
                             }
                         }
 
-                        @if (isPlayerTile)
-                        {
-                            <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
-                                    r="@(HexSize * 0.35)"
-                                    class="player-dot self"
-                                    style="fill: @Player.Color" />
-                        }
-
                         @{
-                            var others = OnlinePlayers.Where(p => p.Q == tq && p.R == tr).ToList();
-                            @for (int i = 0; i < Math.Min(others.Count, 4); i++)
+                            var others = OnlinePlayers.Where(p => p.Q == tq && p.R == tr && p.Id != Player.Id).ToList();
+                            bool sharing = isPlayerTile && others.Count > 0;
+
+                            if (isPlayerTile)
                             {
-                                double ox = cx + (i % 2 == 0 ? -6 : 6);
-                                double oy = cy + (i < 2 ? -6 : 6);
+                                if (sharing)
+                                {
+                                    double px = cx - 6; double py = cy - 6;
+                                    <circle cx="@px.ToString("F1")" cy="@py.ToString("F1")"
+                                            r="@(HexSize * 0.22)"
+                                            class="player-dot self"
+                                            style="fill: @Player.Color" />
+                                }
+                                else
+                                {
+                                    <circle cx="@cx.ToString("F1")" cy="@cy.ToString("F1")"
+                                            r="@(HexSize * 0.35)"
+                                            class="player-dot self"
+                                            style="fill: @Player.Color" />
+                                }
+                            }
+
+                            int maxOthers = sharing ? 3 : 4;
+                            for (int i = 0; i < Math.Min(others.Count, maxOthers); i++)
+                            {
+                                int slot = sharing ? i + 1 : i;
+                                double ox = cx + (slot % 2 == 0 ? -6 : 6);
+                                double oy = cy + (slot < 2 ? -6 : 6);
                                 <circle @key="others[i].Id"
                                         cx="@ox.ToString("F1")" cy="@oy.ToString("F1")"
                                         r="@(HexSize * 0.22)"
