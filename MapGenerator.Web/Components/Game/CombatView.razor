@@ -79,12 +79,19 @@
             </div>
 
             <div class="combat-enemy-side">
-                @foreach (var enemy in Session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled))
+                @foreach (var enemy in Session.Enemies.Where(e =>
+                    (e.CurrentHp > 0 && !e.HasFled) ||
+                    _dyingEnemyIds.Contains(e.InstanceId) ||
+                    _fleeingEnemyIds.Contains(e.InstanceId)))
                 {
-                    bool targeted = _targetEnemyId == enemy.InstanceId;
+                    bool dying   = _dyingEnemyIds.Contains(enemy.InstanceId);
+                    bool fleeing = _fleeingEnemyIds.Contains(enemy.InstanceId);
+                    bool shaking = _shakingEnemyId == enemy.InstanceId;
+                    bool targeted = _targetEnemyId == enemy.InstanceId && !dying && !fleeing;
+                    string animationClass = dying ? "combat-enemy-dying" : fleeing ? "combat-enemy-fleeing" : shaking ? "combat-shake" : _playerShaking ? "combat-strike-enemy" : "";
                     <div class="combat-enemy @(targeted ? "targeted" : "")"
                          @onclick="() => SelectTarget(enemy.InstanceId)">
-                        <svg width="100" height="100" class="@(_shakingEnemyId == enemy.InstanceId ? "combat-shake" : "") @(_playerShaking ? "combat-strike-enemy" : "")">
+                        <svg width="100" height="100" class="@animationClass">
                             @RenderEnemyShape(enemy.DefinitionId, targeted)
                         </svg>
                         <div class="combat-enemy-name">@enemy.Name</div>
@@ -96,7 +103,7 @@
                         </div>
                     </div>
                 }
-                @foreach (var enemy in Session.Enemies.Where(e => e.HasFled))
+                @foreach (var enemy in Session.Enemies.Where(e => e.HasFled && !_fleeingEnemyIds.Contains(e.InstanceId)))
                 {
                     <div class="combat-enemy fled">
                         <div class="combat-enemy-name">@enemy.Name <em>(fled)</em></div>
@@ -197,6 +204,8 @@
     private bool _enemyPhase;
     private string? _shakingEnemyId;
     private bool _playerShaking;
+    private HashSet<string> _dyingEnemyIds   = [];
+    private HashSet<string> _fleeingEnemyIds = [];
 
     private IEnumerable<(string Id, int Qty)> HealingItems =>
         PlayerInventory
@@ -270,6 +279,20 @@
     {
         await Task.Delay(ms);
         clear();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    internal async Task AnimateEnemyOutcomesAsync(IEnumerable<string> dyingIds, IEnumerable<string> fleeingIds)
+    {
+        _dyingEnemyIds   = dyingIds.ToHashSet();
+        _fleeingEnemyIds = fleeingIds.ToHashSet();
+        if (_dyingEnemyIds.Count == 0 && _fleeingEnemyIds.Count == 0) return;
+
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(700);
+
+        _dyingEnemyIds   = [];
+        _fleeingEnemyIds = [];
         await InvokeAsync(StateHasChanged);
     }
 

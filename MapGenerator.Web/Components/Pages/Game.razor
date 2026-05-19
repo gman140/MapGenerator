@@ -639,6 +639,13 @@ else
     private async Task HandleCombatActionAsync(CombatAction action)
     {
         if (Session.Player == null) return;
+
+        // Snapshot which enemies are alive before this turn resolves
+        var previouslyLive = _combatSession?.Enemies
+            .Where(e => e.CurrentHp > 0 && !e.HasFled)
+            .Select(e => e.InstanceId)
+            .ToHashSet() ?? [];
+
         _combatSession = await Session.ProcessCombatTurnAsync(action);
         if (_combatSession == null) return;
 
@@ -659,6 +666,18 @@ else
         // Phase 2: show full log
         _combatLogDisplayCount = 0;
         if (_combatView != null) _combatView.SetEnemyPhase(false);
+
+        // Animate enemies that just died or fled this turn before transitioning
+        if (_combatView != null && previouslyLive.Count > 0)
+        {
+            var newlyDead = _combatSession.Enemies
+                .Where(e => e.CurrentHp <= 0 && previouslyLive.Contains(e.InstanceId))
+                .Select(e => e.InstanceId);
+            var newlyFled = _combatSession.Enemies
+                .Where(e => e.HasFled && previouslyLive.Contains(e.InstanceId))
+                .Select(e => e.InstanceId);
+            await _combatView.AnimateEnemyOutcomesAsync(newlyDead, newlyFled);
+        }
 
         if (finished)
             _combatResult = await Session.GetPendingCombatResultAsync();
