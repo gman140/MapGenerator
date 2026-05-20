@@ -475,6 +475,7 @@ public class GameSessionService : IAsyncDisposable
             DefinitionId = def.Id,
             Nickname     = def.Name,
             MoveIds      = selectedMoves,
+            SpritePixels = (string[])def.DefaultSprite.Clone(),
         };
 
         await _companionRepo.SaveAsync(companion);

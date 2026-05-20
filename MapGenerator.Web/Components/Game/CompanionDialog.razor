@@ -1,5 +1,6 @@
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Models
+@using MapGenerator.Combat.Enums
 @using MapGenerator.Web.Services
 
 <div class="modal-overlay" @onclick="HandleCancel">
@@ -46,7 +47,9 @@
                         {
                             <div class="companion-move-row">
                                 <span class="companion-move-name">@move.Name</span>
-                                <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
+                                @if (move.Kind == CompanionMoveKind.Attack) {
+                                    <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
+                                }
                                 <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
                                 @if (move.HitsAll) { <span class="companion-move-aoe">AOE</span> }
                             </div>
@@ -186,7 +189,10 @@
 
     private void ApplyDefault()
     {
-        _pixels = GameSessionService.GenerateDefaultSprite(BuildColor());
+        _pixels = new string[256];
+        var src = Definition.DefaultSprite;
+        for (int i = 0; i < 256 && i < src.Length; i++)
+            _pixels[i] = src[i] ?? "";
     }
 
     private void ClearAll()
