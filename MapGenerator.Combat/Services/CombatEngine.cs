@@ -13,6 +13,7 @@ public class CombatEngine : ICombatEngine
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly IFoodDefinitionProvider _foodProvider;
     private readonly ISpellDefinitionProvider _spellProvider;
+    private readonly ICompanionDefinitionProvider _companionProvider;
     private readonly EnemySpawner _spawner;
     private readonly Random _rng = new();
 
@@ -33,13 +34,15 @@ public class CombatEngine : ICombatEngine
         IResourceDefinitionProvider resourceProvider,
         IFoodDefinitionProvider foodProvider,
         ISpellDefinitionProvider spellProvider,
+        ICompanionDefinitionProvider companionProvider,
         EnemySpawner spawner)
     {
-        _enemyProvider    = enemyProvider;
-        _resourceProvider = resourceProvider;
-        _foodProvider     = foodProvider;
-        _spellProvider    = spellProvider;
-        _spawner          = spawner;
+        _enemyProvider      = enemyProvider;
+        _resourceProvider   = resourceProvider;
+        _foodProvider       = foodProvider;
+        _spellProvider      = spellProvider;
+        _companionProvider  = companionProvider;
+        _spawner            = spawner;
     }
 
     // ── StartCombat ──────────────────────────────────────────────────────────
@@ -169,6 +172,22 @@ public class CombatEngine : ICombatEngine
             session.Log.Add(victoryMsg);
             events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = victoryMsg, DelayMs = 300 });
             return new CombatTurnResult { Session = session, Events = events };
+        }
+
+        // Companion turn (invulnerable; acts every turn if present)
+        if (session.CompanionPresent && session.CompanionMoveIds.Count > 0)
+        {
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, DelayMs = 200 });
+            ExecuteCompanionAction(session, events);
+
+            if (IsAllDeadOrFled(session))
+            {
+                session.Phase = CombatPhase.Victory;
+                string cVictory = "The last enemy falls. You and your companion stand victorious.";
+                session.Log.Add(cVictory);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = cVictory, DelayMs = 300 });
+                return new CombatTurnResult { Session = session, Events = events };
+            }
         }
 
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, DelayMs = 350 });
@@ -661,6 +680,58 @@ public class CombatEngine : ICombatEngine
             PlayerMana = session.PlayerMana,
             DelayMs = 300,
         });
+    }
+
+    // ── Companion action ──────────────────────────────────────────────────────
+
+    private void ExecuteCompanionAction(CombatSession session, List<CombatEvent> events)
+    {
+        if (session.CompanionDefinitionId == null || session.CompanionMoveIds.Count == 0) return;
+
+        string moveId = session.CompanionMoveIds[_rng.Next(session.CompanionMoveIds.Count)];
+        var move = _companionProvider.GetMove(session.CompanionDefinitionId, moveId);
+        if (move == null) return;
+
+        string companionName = string.IsNullOrEmpty(session.CompanionName) ? "Your companion" : session.CompanionName;
+
+        string header = move.HitsAll
+            ? $"{companionName} uses {move.Name} on all enemies!"
+            : $"{companionName} uses {move.Name}!";
+        session.Log.Add(header);
+        events.Add(new CombatEvent { Kind = CombatEventKind.CompanionAction, Log = header, DelayMs = 250 });
+
+        var targets = move.HitsAll
+            ? session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList()
+            : [GetTargetEnemy(session, null)!];
+        targets = targets.Where(t => t != null).ToList();
+
+        foreach (var target in targets)
+        {
+            var def = _enemyProvider.GetById(target.DefinitionId);
+            double variance = 0.85 + _rng.NextDouble() * 0.30;
+            int rawDamage = (int)Math.Max(1, session.CompanionBaseAttack * move.Power * variance);
+            var (typeMod, typeLog) = GetTypeEffectiveness(move.DamageType, def);
+            int damage = (int)Math.Max(1, rawDamage * typeMod);
+
+            target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
+            bool killed = target.CurrentHp == 0;
+            string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
+            string fell = killed ? $" The {target.Name} falls." : string.Empty;
+            string hitLog = $"It strikes the {target.Name} for {damage} damage.{typeNote}{fell}";
+            session.Log.Add(hitLog);
+
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.ShakeEnemy,
+                EnemyInstanceId = target.InstanceId,
+                Log = hitLog,
+                EnemyHp = target.CurrentHp,
+                DelayMs = 320,
+            });
+
+            if (killed)
+                events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+        }
     }
 
     // ── Enemy action ─────────────────────────────────────────────────────────

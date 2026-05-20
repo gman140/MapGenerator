@@ -224,6 +224,28 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .pstab-spend-btn.disabled, .pstab-spend-btn:disabled { opacity: .38; cursor: default; }
 .pstab-footnote { font-size: .68rem; color: var(--text-dim); font-style: italic; }
 
+/* ── Companion Panel ──────────────────────────────────────────────────────── */
+.companion-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: .6rem .75rem; display: flex; flex-direction: column; gap: .35rem; }
+.companion-header { display: flex; align-items: center; gap: .4rem; }
+.companion-emoji  { font-size: 1.1rem; }
+.companion-name   { font-size: .9rem; font-weight: 700; color: var(--text); }
+.companion-element { font-size: .68rem; font-weight: 600; padding: .1rem .4rem; border-radius: 10px; background: var(--border); color: var(--text-dim); }
+.companion-element.companion-element-fire    { background: rgba(200,80,20,.25);  color: #e08040; }
+.companion-element.companion-element-frost   { background: rgba(80,160,220,.2);  color: #70c0ff; }
+.companion-element.companion-element-storm   { background: rgba(200,160,20,.2);  color: #e0d050; }
+.companion-element.companion-element-nature  { background: rgba(60,160,80,.2);   color: #60c870; }
+.companion-element.companion-element-dark    { background: rgba(120,60,200,.2);  color: #b080f0; }
+.companion-species { font-size: .72rem; color: var(--text-dim); font-style: italic; }
+.companion-moves   { display: flex; flex-wrap: wrap; gap: .25rem; }
+.companion-move-chip { font-size: .65rem; padding: .12rem .4rem; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+.companion-move-chip.hits-all { border-color: #6040a0; color: #b090e0; }
+
+/* ── Companion action buttons ─────────────────────────────────────────────── */
+.companion-hatch-btn   { background: rgba(180,140,60,.18); color: #d4a840; border: 1px solid rgba(180,140,60,.4) !important; }
+.companion-hatch-btn:hover { background: rgba(180,140,60,.35) !important; }
+.companion-release-btn { background: rgba(160,90,200,.15); color: #b070e0; border: 1px solid rgba(160,90,200,.35) !important; }
+.companion-release-btn:hover { background: rgba(160,90,200,.3) !important; }
+
 /* ── Chat Panel ───────────────────────────────────────────────────────────── */
 .chat-panel    { display: flex; flex-direction: column; height: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .chat-tabs     { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); }

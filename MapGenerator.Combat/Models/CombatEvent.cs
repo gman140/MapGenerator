@@ -12,6 +12,7 @@ public enum CombatEventKind
     StatusApplied,     // a status effect was applied to the player
     StatusTick,        // a status effect dealt damage/drained stamina this turn
     PlayerManaUpdate,  // mana changed
+    CompanionAction,   // companion took an action this turn
 }
 
 public class CombatEvent

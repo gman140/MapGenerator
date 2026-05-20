@@ -1,0 +1,35 @@
+@using MapGenerator.Combat.Models
+@using MapGenerator.Domain.Models
+
+<div class="companion-panel">
+    <div class="companion-header">
+        <span class="companion-emoji">@Definition.Emoji</span>
+        <span class="companion-name">@Companion.Nickname</span>
+        <span class="companion-element companion-element-@Definition.ElementType.ToString().ToLower()">
+            @Definition.ElementType
+        </span>
+    </div>
+
+    @if (Companion.Nickname != Definition.Name)
+    {
+        <div class="companion-species">@Definition.Name</div>
+    }
+
+    <div class="companion-moves">
+        @foreach (var moveId in Companion.MoveIds)
+        {
+            var move = Definition.Moves.FirstOrDefault(m => m.Id == moveId);
+            if (move != null)
+            {
+                <span class="companion-move-chip @(move.HitsAll ? "hits-all" : "")">
+                    @move.Name
+                </span>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PlayerCompanion Companion { get; set; } = null!;
+    [Parameter, EditorRequired] public CompanionDefinition Definition { get; set; } = null!;
+}

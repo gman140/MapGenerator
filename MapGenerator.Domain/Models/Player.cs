@@ -62,4 +62,7 @@ public class Player
     public int Experience { get; set; } = 0;
     public int UnspentStatPoints { get; set; } = 0;
     public Dictionary<string, int> StatPurchases { get; set; } = new();
+
+    // Companion
+    public string? CompanionId { get; set; }
 }

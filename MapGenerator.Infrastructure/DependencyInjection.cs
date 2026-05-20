@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IDungeonRepository, DungeonRepository>();
         services.AddScoped<ICombatRepository, CombatRepository>();
         services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+        services.AddScoped<ICompanionRepository, CompanionRepository>();
         return services;
     }
 }

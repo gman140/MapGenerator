@@ -44,4 +44,11 @@ public class CombatSession
 
     // Context for display
     public string? ContextLabel { get; set; }  // e.g. "Jungle", "Floor 2 — Ancient Tomb"
+
+    // Companion (invulnerable; acts each turn if present)
+    public bool CompanionPresent { get; set; }
+    public string? CompanionDefinitionId { get; set; }
+    public List<string> CompanionMoveIds { get; set; } = [];
+    public int CompanionBaseAttack { get; set; }
+    public string CompanionName { get; set; } = string.Empty;
 }

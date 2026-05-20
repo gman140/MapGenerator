@@ -107,7 +107,16 @@ OnDance="HandleDanceAsync"
                          IsOnStaircaseUp="_isOnStaircaseUp"
                          IsOnStaircaseDown="_isOnStaircaseDown"
                          IsOnFloorOne="Session.Player.DungeonFloor == 1"
-                         CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)" />
+                         CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)"
+                         TileHasEgg="Session.TileHasEgg()"
+                         HasCompanion="Session.Player.CompanionId != null"
+                         OnHatch="HandleHatchAsync"
+                         OnRelease="HandleReleaseAsync" />
+            @if (Session.Companion != null && Session.CompanionDefinition != null)
+            {
+                <CompanionPanel Companion="Session.Companion"
+                                Definition="Session.CompanionDefinition" />
+            }
         </div>
         <div class="chat-area">
             <ChatPanel LocalMessages="_localMessages"
@@ -777,6 +786,28 @@ OnDance="HandleDanceAsync"
             _dungeonFloor = null;
             _revealedDungeonRooms = [];
         }
+        StateHasChanged();
+    }
+
+    private async Task HandleHatchAsync()
+    {
+        var (success, message) = await Session.HatchCompanionAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleReleaseAsync()
+    {
+        var (_, message) = await Session.ReleaseCompanionAsync();
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = message,
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
         StateHasChanged();
     }
 

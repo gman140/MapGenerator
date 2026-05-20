@@ -32,6 +32,7 @@ public class MongoDbContext
         RegisterMapWithPlainStringId<CombatModifier>();
         RegisterMap<EnemyActionEntry>();
         RegisterMap<Feedback>();
+        RegisterMapWithPlainStringId<PlayerCompanion>();
     }
 
     private static void RegisterMap<T>() where T : class
@@ -85,4 +86,5 @@ public class MongoDbContext
     public IMongoCollection<DungeonInstance> Dungeons => _db.GetCollection<DungeonInstance>("dungeons");
     public IMongoCollection<CombatSession> CombatSessions => _db.GetCollection<CombatSession>("combatSessions");
     public IMongoCollection<Feedback> Feedback => _db.GetCollection<Feedback>("feedback");
+    public IMongoCollection<PlayerCompanion> Companions => _db.GetCollection<PlayerCompanion>("companions");
 }

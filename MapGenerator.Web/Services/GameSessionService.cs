@@ -37,10 +37,14 @@ public class GameSessionService : IAsyncDisposable
     private readonly ICombatRepository _combatRepo;
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly ITileInventoryRepository _tileInventoryRepo;
+    private readonly ICompanionRepository _companionRepo;
+    private readonly ICompanionDefinitionProvider _companionDefProvider;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
     public bool IsStunned => Player != null && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < Player.StunnedUntil;
+    public PlayerCompanion? Companion { get; private set; }
+    public CompanionDefinition? CompanionDefinition { get; private set; }
 
     public GameSessionService(
         PlayerService playerSvc,
@@ -69,7 +73,9 @@ public class GameSessionService : IAsyncDisposable
         ICombatEngine combatEngine,
         ICombatRepository combatRepo,
         IResourceDefinitionProvider resourceProvider,
-        ITileInventoryRepository tileInventoryRepo)
+        ITileInventoryRepository tileInventoryRepo,
+        ICompanionRepository companionRepo,
+        ICompanionDefinitionProvider companionDefProvider)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -94,10 +100,12 @@ public class GameSessionService : IAsyncDisposable
         _roadRepo        = roadRepo;
         _dungeonSvc      = dungeonSvc;
         _dungeonRepo     = dungeonRepo;
-        _combatEngine       = combatEngine;
-        _combatRepo         = combatRepo;
-        _resourceProvider   = resourceProvider;
-        _tileInventoryRepo  = tileInventoryRepo;
+        _combatEngine         = combatEngine;
+        _combatRepo           = combatRepo;
+        _resourceProvider     = resourceProvider;
+        _tileInventoryRepo    = tileInventoryRepo;
+        _companionRepo        = companionRepo;
+        _companionDefProvider = companionDefProvider;
     }
 
     public async Task InitAsync(string browserId)
@@ -111,8 +119,17 @@ public class GameSessionService : IAsyncDisposable
                 await _playerRepo.UpdateAsync(Player);
             }
             _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
+
+            if (Player.CompanionId != null)
+                await LoadCompanionAsync(Player.CompanionId);
         }
         IsLoaded = true;
+    }
+
+    private async Task LoadCompanionAsync(string companionId)
+    {
+        Companion = await _companionRepo.GetByIdAsync(companionId);
+        CompanionDefinition = Companion != null ? _companionDefProvider.GetById(Companion.DefinitionId) : null;
     }
 
     public async Task<(bool ok, string? error)> CreatePlayerAsync(string username, string browserId)
@@ -420,6 +437,68 @@ public class GameSessionService : IAsyncDisposable
         return tile != null && _gatherSvc.TileHasResources(tile);
     }
 
+    public bool TileHasEgg()
+    {
+        if (Player == null || Player.IsInDungeon) return false;
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        return tile != null && tile.EggCount > 0;
+    }
+
+    // ── Companion ──────────────────────────────────────────────────────────────
+
+    public async Task<(bool success, string message)> HatchCompanionAsync()
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (IsStunned) return (false, "You are stunned and cannot act.");
+        if (Player.CompanionId != null) return (false, "You already have a companion. Release it first.");
+
+        var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
+        if (tile == null || tile.EggCount <= 0) return (false, "There are no eggs here to hatch.");
+
+        var allDefs = _companionDefProvider.GetAll();
+        if (allDefs.Count == 0) return (false, "No companion types available.");
+        var def = allDefs[Random.Shared.Next(allDefs.Count)];
+
+        var allMoveIds = def.Moves.Select(m => m.Id).OrderBy(_ => Random.Shared.Next()).ToList();
+        var selectedMoves = allMoveIds.Take(4).ToList();
+
+        var companion = new PlayerCompanion
+        {
+            Id           = Guid.NewGuid().ToString("N"),
+            PlayerId     = Player.Id,
+            DefinitionId = def.Id,
+            Nickname     = def.Name,
+            MoveIds      = selectedMoves,
+        };
+
+        await _companionRepo.SaveAsync(companion);
+        Player.CompanionId = companion.Id;
+        Player.LastSeen    = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+
+        Companion           = companion;
+        CompanionDefinition = def;
+
+        return (true, $"The egg stirs and cracks open. A {def.Name} emerges, blinks at you once, and decides to follow.");
+    }
+
+    public async Task<(bool success, string message)> ReleaseCompanionAsync()
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (Player.CompanionId == null) return (false, "You don't have a companion.");
+
+        string name = Companion?.Nickname ?? "companion";
+        await _companionRepo.DeleteAsync(Player.CompanionId);
+        Player.CompanionId = null;
+        Player.LastSeen    = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+
+        Companion           = null;
+        CompanionDefinition = null;
+
+        return (true, $"You bid farewell. Your {name} wanders off into the world.");
+    }
+
     public async Task<HashSet<(int, int)>?> LoadRevealedTilesAsync()
     {
         if (Player == null || Player.IsAdmin) return null;
@@ -577,7 +656,20 @@ public class GameSessionService : IAsyncDisposable
     public async Task<CombatSession?> GetActiveCombatAsync()
     {
         if (Player?.ActiveCombatSessionId == null) return null;
-        return await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
+        var session = await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
+        if (session == null) return null;
+
+        if (Companion != null && CompanionDefinition != null && !session.CompanionPresent)
+        {
+            session.CompanionPresent       = true;
+            session.CompanionDefinitionId  = Companion.DefinitionId;
+            session.CompanionMoveIds       = [.. Companion.MoveIds];
+            session.CompanionBaseAttack    = CompanionDefinition.BaseAttack;
+            session.CompanionName          = Companion.Nickname;
+            await _combatRepo.SaveAsync(session);
+        }
+
+        return session;
     }
 
     public async Task<CombatTurnResult?> ProcessCombatTurnAsync(CombatAction action)
