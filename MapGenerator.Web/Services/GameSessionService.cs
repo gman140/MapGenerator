@@ -683,6 +683,13 @@ public class GameSessionService : IAsyncDisposable
         var session = await _combatRepo.GetByIdAsync(Player.ActiveCombatSessionId);
         if (session == null) return null;
 
+        // Session was already finished but player exited before confirming end screen — clean it up.
+        if (_combatEngine.IsFinished(session))
+        {
+            await ApplyCombatResultAsync(session);
+            return null;
+        }
+
         if (Companion != null && CompanionDefinition != null && !session.CompanionPresent)
         {
             session.CompanionPresent       = true;

@@ -63,7 +63,7 @@ public class CombatEngine : ICombatEngine
             PlayerBaseAttack      = player.BaseAttack,
             PlayerBaseDefense     = player.BaseDefense,
             PlayerBaseDodgeChance = player.BaseDodgeChance,
-            PlayerMana            = player.CurrentMana,
+            PlayerMana            = 2,
             PlayerMaxMana         = player.MaxMana,
             PlayerBaseMagic       = player.BaseMagic,
             Enemies               = enemies,
@@ -666,7 +666,7 @@ public class CombatEngine : ICombatEngine
                 events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
 
             if (!killed && spell.OnHit != null && _rng.NextDouble() < spell.OnHit.Chance)
-                ApplyOrRefreshStatus(session, spell.OnHit, events);
+                ApplyOrRefreshEnemyStatus(target, spell.OnHit, session, events);
         }
     }
 
@@ -1028,6 +1028,35 @@ public class CombatEngine : ICombatEngine
         events.Add(new CombatEvent { Kind = CombatEventKind.StatusApplied, Log = msg, DelayMs = 250 });
     }
 
+    private static void ApplyOrRefreshEnemyStatus(Enemy target, OnHitEffect effect, CombatSession session, List<CombatEvent> events)
+    {
+        var existing = target.ActiveModifiers.FirstOrDefault(m => m.Stat == effect.StatusType);
+        if (existing != null)
+        {
+            existing.TurnsRemaining = Math.Max(existing.TurnsRemaining ?? 0, effect.Turns);
+            return;
+        }
+
+        target.ActiveModifiers.Add(new CombatModifier
+        {
+            Id             = $"Status:{effect.StatusType}",
+            Stat           = effect.StatusType,
+            Value          = effect.Value,
+            TurnsRemaining = effect.Turns,
+            Source         = $"Status:{effect.StatusType}",
+        });
+
+        string label = effect.StatusType switch
+        {
+            ModifierStat.Burn         => "Burn",
+            ModifierStat.Venom        => "Venom",
+            _                         => effect.StatusType.ToString(),
+        };
+        string msg = $"The {target.Name} is afflicted with {label}!";
+        session.Log.Add(msg);
+        events.Add(new CombatEvent { Kind = CombatEventKind.StatusApplied, Log = msg, DelayMs = 250 });
+    }
+
     // ── Equipment modifiers ──────────────────────────────────────────────────
 
     private void ApplyEquipmentModifiers(CombatSession session, Player player)
@@ -1111,6 +1140,32 @@ public class CombatEngine : ICombatEngine
                 string msg = $"[Curse] drains {drained} stamina. ({session.PlayerStamina}/{session.PlayerMaxStamina})";
                 session.Log.Add(msg);
                 events.Add(new CombatEvent { Kind = CombatEventKind.StatusTick, Log = msg, PlayerStamina = session.PlayerStamina, DelayMs = 280 });
+            }
+        }
+
+        // Apply DoT damage to enemies
+        foreach (var enemy in session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled))
+        {
+            for (int i = enemy.ActiveModifiers.Count - 1; i >= 0; i--)
+            {
+                var mod = enemy.ActiveModifiers[i];
+                if (mod.Stat is ModifierStat.Burn or ModifierStat.Venom)
+                {
+                    int dmg = (int)Math.Max(1, mod.Value);
+                    enemy.CurrentHp = Math.Max(0, enemy.CurrentHp - dmg);
+                    string msg = $"[{mod.Stat}] burns the {enemy.Name} for {dmg} damage. ({enemy.CurrentHp} HP)";
+                    session.Log.Add(msg);
+                    events.Add(new CombatEvent
+                    {
+                        Kind = CombatEventKind.EnemyUpdate,
+                        EnemyInstanceId = enemy.InstanceId,
+                        EnemyHp = enemy.CurrentHp,
+                        Log = msg,
+                        DelayMs = 280,
+                    });
+                    if (enemy.CurrentHp == 0)
+                        events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = enemy.InstanceId });
+                }
             }
         }
 

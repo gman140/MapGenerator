@@ -228,7 +228,7 @@
                         @onclick="() => { _showSpellPicker = !_showSpellPicker; _showItemPicker = false; }">
                     ✦ Spells
                 </button>
-                <button class="combat-btn refocus" disabled="@(Session.PlayerMana >= Session.PlayerMaxMana || CannotTakeAction())"
+                <button class="combat-btn refocus" disabled="@CannotTakeAction()"
                         @onclick="() => TakeTurn(CombatActionType.Refocus)">
                     🌀 Refocus <span class="cost">(+3✦)</span>
                 </button>
@@ -461,8 +461,8 @@
             _                             => "✦",
         };
         string val = mod.Stat == ModifierStat.DodgeChance
-            ? $"+{mod.Value * 100:0}%"
-            : $"+{mod.Value:0}";
+            ? $"{(mod.Value >= 0 ? "+" : "")}{mod.Value * 100:0}%"
+            : $"{(mod.Value >= 0 ? "+" : "")}{mod.Value:0}";
         return $"{icon} {val} ({mod.TurnsRemaining}t)";
     }
 

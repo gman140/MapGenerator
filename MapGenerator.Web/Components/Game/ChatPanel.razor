@@ -10,7 +10,7 @@
     <div class="chat-messages" @ref="_messagesRef">
         @if (_tab == "local")
         {
-            @foreach (var msg in LocalMessages)
+            @foreach (var msg in LocalMessages.AsEnumerable().Reverse())
             {
                 <div class="chat-msg @(msg.IsSystemMessage ? "system" : "")">
                     @if (!msg.IsSystemMessage)
@@ -28,7 +28,7 @@
         }
         else
         {
-            @foreach (var msg in WorldMessages)
+            @foreach (var msg in WorldMessages.AsEnumerable().Reverse())
             {
                 <div class="chat-msg world-msg">
                     <span class="chat-sender">@msg.SenderName</span>
