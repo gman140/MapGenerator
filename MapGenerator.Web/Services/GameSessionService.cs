@@ -483,6 +483,9 @@ public class GameSessionService : IAsyncDisposable
         Player.LastSeen    = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(Player);
 
+        var newEggCount = await _mapRepo.DecrementEggCountAsync(tile.Q, tile.R);
+        _mapCache.UpdateCachedEggCount(tile.Q, tile.R, newEggCount);
+
         Companion           = companion;
         CompanionDefinition = def;
 

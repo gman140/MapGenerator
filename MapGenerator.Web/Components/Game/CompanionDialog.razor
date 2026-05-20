@@ -49,8 +49,8 @@
                                 <span class="companion-move-name">@move.Name</span>
                                 @if (move.Kind == CompanionMoveKind.Attack) {
                                     <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
+                                    <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
                                 }
-                                <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
                                 @if (move.HitsAll) { <span class="companion-move-aoe">AOE</span> }
                             </div>
                         }
