@@ -7,6 +7,7 @@ public class CombatResult
     public bool PlayerDied { get; set; }
     public int HpRemaining { get; set; }
     public int StaminaRemaining { get; set; }
+    public int ManaRemaining { get; set; }
     public Dictionary<string, int> LootGained { get; set; } = new();
     public Dictionary<string, int> EnemiesDefeated { get; set; } = new();
     public string? SummaryMessage { get; set; }

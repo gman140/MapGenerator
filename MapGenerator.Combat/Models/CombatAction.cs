@@ -7,4 +7,5 @@ public class CombatAction
     public CombatActionType Type { get; set; }
     public string? TargetEnemyId { get; set; }
     public string? ItemId { get; set; }
+    public string? SpellId { get; set; }
 }

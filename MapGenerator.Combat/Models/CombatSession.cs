@@ -22,6 +22,11 @@ public class CombatSession
     public float PlayerBaseDodgeChance { get; set; }
     public DamageType PlayerWeaponDamageType { get; set; } = DamageType.Bludgeoning;
 
+    // Mana
+    public int PlayerMana { get; set; }
+    public int PlayerMaxMana { get; set; }
+    public int PlayerBaseMagic { get; set; }
+
     // Turn flags (cleared at end of each turn)
     public bool PlayerDefending { get; set; }
     public bool PlayerDodging { get; set; }

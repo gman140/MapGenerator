@@ -40,6 +40,9 @@ public class Player
     public int BaseAttack { get; set; } = 10;
     public int BaseDefense { get; set; } = 5;
     public float BaseDodgeChance { get; set; } = 0.10f;
+    public int MaxMana { get; set; } = 10;
+    public int CurrentMana { get; set; } = 10;
+    public int BaseMagic { get; set; } = 8;
 
     // Equipment slots (item ID or null)
     public string? EquippedWeaponId { get; set; }

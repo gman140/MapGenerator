@@ -662,6 +662,7 @@ public class GameSessionService : IAsyncDisposable
 
         Player.CurrentHp      = result.HpRemaining;
         Player.CurrentStamina = result.StaminaRemaining;
+        Player.CurrentMana    = result.ManaRemaining;
 
         if (result.PlayerDied)
         {

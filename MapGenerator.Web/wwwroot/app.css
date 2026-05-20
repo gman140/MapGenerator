@@ -598,6 +598,9 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-stamina-bar.wide { flex: 1; }
 .combat-hp-fill { height: 100%; background: linear-gradient(90deg, #3a8a3a, #60c040); border-radius: 5px; transition: width .3s; }
 .combat-stamina-fill { height: 100%; background: linear-gradient(90deg, #3060c0, #60a0f0); border-radius: 5px; transition: width .3s; }
+.combat-mana-bar { height: 10px; background: rgba(255,255,255,.1); border-radius: 5px; overflow: hidden; flex: 1; }
+.combat-mana-bar.wide { flex: 1; }
+.combat-mana-fill { height: 100%; background: linear-gradient(90deg, #6020b0, #9050e0); border-radius: 5px; transition: width .3s; }
 .combat-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
 .combat-btn { font-size: .8rem; padding: .3rem .65rem; border-radius: 5px; border: 1px solid var(--border); background: rgba(255,255,255,.06); color: var(--text); cursor: pointer; transition: background .15s; }
 .combat-btn:hover:not(:disabled) { background: rgba(255,255,255,.12); }
@@ -615,6 +618,18 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-btn.item:hover:not(:disabled)    { background: rgba(80,180,80,.15); }
 .combat-btn.flee    { border-color: rgba(180,140,60,.5); color: #d0a060; }
 .combat-btn.flee:hover:not(:disabled)    { background: rgba(180,140,60,.15); }
+.combat-btn.spell   { border-color: rgba(140,60,220,.5); color: #b080f0; }
+.combat-btn.spell:hover:not(:disabled)   { background: rgba(140,60,220,.15); }
+.combat-btn.refocus { border-color: rgba(100,60,180,.5); color: #9070d0; }
+.combat-btn.refocus:hover:not(:disabled) { background: rgba(100,60,180,.15); }
+.combat-spell-picker { display: flex; flex-direction: column; gap: .3rem; padding: .3rem 0 0; }
+.combat-spell-btn { display: flex; align-items: baseline; gap: .4rem; font-size: .75rem; padding: .3rem .6rem; border-radius: 4px; border: 1px solid rgba(140,60,220,.4); background: rgba(140,60,220,.1); color: #b080f0; cursor: pointer; text-align: left; }
+.combat-spell-btn:hover:not(:disabled) { background: rgba(140,60,220,.2); }
+.combat-spell-btn:disabled { opacity: .4; cursor: default; }
+.combat-spell-btn .spell-name { font-weight: 600; color: #c8a0ff; min-width: 7rem; }
+.combat-spell-btn .spell-cost { font-size: .7rem; color: #9060d0; min-width: 3rem; }
+.combat-spell-btn .spell-desc { font-size: .7rem; color: var(--text-dim); opacity: .85; }
+.combat-spell-btn.spell-insufficient { opacity: .5; }
 .combat-item-picker { display: flex; flex-wrap: wrap; gap: .3rem; padding: .3rem 0 0; }
 .combat-item-btn { display: flex; align-items: center; gap: .3rem; font-size: .75rem; padding: .2rem .5rem; border-radius: 4px; border: 1px solid rgba(80,180,80,.4); background: rgba(80,180,80,.1); color: #80d080; cursor: pointer; }
 .combat-item-btn:hover { background: rgba(80,180,80,.2); }

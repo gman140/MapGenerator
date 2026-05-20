@@ -8,4 +8,6 @@ public enum CombatActionType
     Defend,
     UseItem,
     Flee,
+    Spell,
+    Refocus,
 }

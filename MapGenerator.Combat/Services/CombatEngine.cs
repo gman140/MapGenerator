@@ -12,6 +12,7 @@ public class CombatEngine : ICombatEngine
     private readonly IEnemyDefinitionProvider _enemyProvider;
     private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly IFoodDefinitionProvider _foodProvider;
+    private readonly ISpellDefinitionProvider _spellProvider;
     private readonly EnemySpawner _spawner;
     private readonly Random _rng = new();
 
@@ -23,17 +24,21 @@ public class CombatEngine : ICombatEngine
         [CombatActionType.Defend]      = 0,
         [CombatActionType.UseItem]     = 1,
         [CombatActionType.Flee]        = 0,
+        [CombatActionType.Spell]       = 0,  // mana cost handled separately
+        [CombatActionType.Refocus]     = 0,
     };
 
     public CombatEngine(
         IEnemyDefinitionProvider enemyProvider,
         IResourceDefinitionProvider resourceProvider,
         IFoodDefinitionProvider foodProvider,
+        ISpellDefinitionProvider spellProvider,
         EnemySpawner spawner)
     {
         _enemyProvider    = enemyProvider;
         _resourceProvider = resourceProvider;
         _foodProvider     = foodProvider;
+        _spellProvider    = spellProvider;
         _spawner          = spawner;
     }
 
@@ -55,6 +60,9 @@ public class CombatEngine : ICombatEngine
             PlayerBaseAttack      = player.BaseAttack,
             PlayerBaseDefense     = player.BaseDefense,
             PlayerBaseDodgeChance = player.BaseDodgeChance,
+            PlayerMana            = player.CurrentMana,
+            PlayerMaxMana         = player.MaxMana,
+            PlayerBaseMagic       = player.BaseMagic,
             Enemies               = enemies,
             Phase                 = CombatPhase.PlayerTurn,
             ContextLabel          = BuildContextLabel(context),
@@ -145,6 +153,12 @@ public class CombatEngine : ICombatEngine
                 if (ExecutePlayerFlee(session, player, events))
                     return new CombatTurnResult { Session = session, Events = events };
                 break;
+            case CombatActionType.Spell:
+                ExecutePlayerSpell(session, action.SpellId, action.TargetEnemyId, events);
+                break;
+            case CombatActionType.Refocus:
+                ExecuteRefocus(session, events);
+                break;
         }
 
         // Check victory after player action
@@ -213,10 +227,15 @@ public class CombatEngine : ICombatEngine
         // Recover stamina
         int gain = 2 + (defendedThisTurn ? 2 : 0);
         session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + gain);
+
+        // Recover mana (+1/turn)
+        session.PlayerMana = Math.Min(session.PlayerMaxMana, session.PlayerMana + 1);
+
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.PlayerUpdate,
             PlayerStamina = session.PlayerStamina,
+            PlayerMana = session.PlayerMana,
             DelayMs = 150,
         });
 
@@ -300,6 +319,7 @@ public class CombatEngine : ICombatEngine
             PlayerDied       = playerDied,
             HpRemaining      = session.PlayerHp,
             StaminaRemaining = session.PlayerStamina,
+            ManaRemaining    = session.PlayerMana,
             LootGained       = loot,
             EnemiesDefeated  = defeated,
             SummaryMessage   = summary,
@@ -490,6 +510,139 @@ public class CombatEngine : ICombatEngine
         session.Log.Add(failMsg);
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = failMsg, DelayMs = 300 });
         return false;
+    }
+
+    // ── Player spell ─────────────────────────────────────────────────────────
+
+    private void ExecutePlayerSpell(CombatSession session, string? spellId, string? targetId, List<CombatEvent> events)
+    {
+        if (string.IsNullOrEmpty(spellId))
+        {
+            string msg = "No spell selected.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return;
+        }
+
+        var spell = _spellProvider.GetById(spellId);
+        if (spell == null)
+        {
+            string msg = "Unknown spell.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return;
+        }
+
+        if (session.PlayerMana < spell.ManaCost)
+        {
+            string msg = $"Not enough mana to cast {spell.Name}. ({session.PlayerMana}/{spell.ManaCost} mana)";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return;
+        }
+
+        session.PlayerMana -= spell.ManaCost;
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.PlayerManaUpdate,
+            PlayerMana = session.PlayerMana,
+            DelayMs = 80,
+        });
+
+        // Self-heal spell
+        if (spell.TargetType == TargetType.Self)
+        {
+            int heal = spell.HealAmount + session.PlayerBaseMagic / 2;
+            int before = session.PlayerHp;
+            session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + heal);
+            int healed = session.PlayerHp - before;
+            string msg = $"You cast {spell.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.PlayerUpdate,
+                Log = msg,
+                PlayerHp = session.PlayerHp,
+                DelayMs = 350,
+            });
+            return;
+        }
+
+        // Damage spells
+        var targets = spell.TargetType == TargetType.AllEnemies
+            ? session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList()
+            : [GetTargetEnemy(session, targetId)!];
+        targets = targets.Where(t => t != null).ToList();
+
+        if (targets.Count == 0)
+        {
+            string msg = "No valid target.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 200 });
+            return;
+        }
+
+        string castMsg = spell.TargetType == TargetType.AllEnemies
+            ? $"You cast {spell.Name}, striking all enemies!"
+            : $"You cast {spell.Name}!";
+        session.Log.Add(castMsg);
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = castMsg, DelayMs = 250 });
+
+        foreach (var target in targets)
+        {
+            var enemyDef = _enemyProvider.GetById(target.DefinitionId);
+            double variance = 0.85 + _rng.NextDouble() * 0.30;
+            int rawDamage = (int)Math.Max(1, session.PlayerBaseMagic * spell.Power * variance);
+
+            int damage = spell.SecondaryDamageType.HasValue
+                ? ApplySplitDamage(rawDamage, spell.DamageType!.Value, spell.SecondaryDamageType, spell.SecondaryRatio, enemyDef)
+                : spell.DamageType.HasValue
+                    ? (int)Math.Max(1, rawDamage * GetTypeEffectiveness(spell.DamageType.Value, enemyDef).modifier)
+                    : rawDamage;
+
+            var (_, typeLog) = spell.DamageType.HasValue
+                ? GetTypeEffectiveness(spell.DamageType.Value, enemyDef)
+                : (1f, null);
+
+            target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
+            bool killed = target.CurrentHp == 0;
+            string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
+            string fell = killed ? $" The {target.Name} falls." : string.Empty;
+            string log = $"It strikes the {target.Name} for {damage} damage.{typeNote}{fell}";
+            session.Log.Add(log);
+
+            events.Add(new CombatEvent
+            {
+                Kind = CombatEventKind.ShakeEnemy,
+                EnemyInstanceId = target.InstanceId,
+                Log = log,
+                EnemyHp = target.CurrentHp,
+                DelayMs = 320,
+            });
+
+            if (killed)
+                events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+
+            if (!killed && spell.OnHit != null && _rng.NextDouble() < spell.OnHit.Chance)
+                ApplyOrRefreshStatus(session, spell.OnHit, events);
+        }
+    }
+
+    // ── Refocus ───────────────────────────────────────────────────────────────
+
+    private static void ExecuteRefocus(CombatSession session, List<CombatEvent> events)
+    {
+        int gained = Math.Min(3, session.PlayerMaxMana - session.PlayerMana);
+        session.PlayerMana += gained;
+        string msg = $"You take a steadying breath and focus your energy. +{gained} mana. ({session.PlayerMana}/{session.PlayerMaxMana})";
+        session.Log.Add(msg);
+        events.Add(new CombatEvent
+        {
+            Kind = CombatEventKind.PlayerManaUpdate,
+            Log = msg,
+            PlayerMana = session.PlayerMana,
+            DelayMs = 300,
+        });
     }
 
     // ── Enemy action ─────────────────────────────────────────────────────────

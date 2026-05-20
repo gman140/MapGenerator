@@ -1,7 +1,9 @@
 @using MapGenerator.Combat.Enums
+@using MapGenerator.Combat.Interfaces
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
 @inject MapGenerator.Domain.Interfaces.IResourceDefinitionProvider ResourceProvider
+@inject ISpellDefinitionProvider SpellProvider
 
 
 <div class="combat-view">
@@ -148,6 +150,13 @@
                 </div>
                 <span class="combat-stat-value">@Session.PlayerStamina / @Session.PlayerMaxStamina</span>
             </div>
+            <div class="combat-stat-row">
+                <span class="combat-stat-label">✦</span>
+                <div class="combat-mana-bar wide">
+                    <div class="combat-mana-fill" style="width: @(Session.PlayerMaxMana > 0 ? Session.PlayerMana * 100 / Session.PlayerMaxMana : 0)%;"></div>
+                </div>
+                <span class="combat-stat-value">@Session.PlayerMana / @Session.PlayerMaxMana</span>
+            </div>
         </div>
 
         @if (Session.Phase == CombatPhase.PlayerTurn)
@@ -169,10 +178,18 @@
                         @onclick="() => TakeTurn(CombatActionType.Defend)">
                     🛡 Defend <span class="cost">(+2⚡)</span>
                 </button>
+                <button class="combat-btn spell" disabled="@CannotTakeAction()"
+                        @onclick="() => { _showSpellPicker = !_showSpellPicker; _showItemPicker = false; }">
+                    ✦ Spells
+                </button>
+                <button class="combat-btn refocus" disabled="@(Session.PlayerMana >= Session.PlayerMaxMana || CannotTakeAction())"
+                        @onclick="() => TakeTurn(CombatActionType.Refocus)">
+                    🌀 Refocus <span class="cost">(+3✦)</span>
+                </button>
                 @if (HasCombatItems)
                 {
                     <button class="combat-btn item" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
-                            @onclick="() => _showItemPicker = !_showItemPicker">
+                            @onclick="() => { _showItemPicker = !_showItemPicker; _showSpellPicker = false; }">
                         🎒 Item <span class="cost">(1)</span>
                     </button>
                 }
@@ -181,6 +198,23 @@
                     🏃 Flee
                 </button>
             </div>
+
+            @if (_showSpellPicker)
+            {
+                <div class="combat-spell-picker">
+                    @foreach (var spell in SpellProvider.All)
+                    {
+                        bool canCast = Session.PlayerMana >= spell.ManaCost;
+                        <button class="combat-spell-btn @(!canCast ? "spell-insufficient" : "")"
+                                disabled="@(!canCast || CannotTakeAction())"
+                                @onclick="() => CastSpell(spell.Id)">
+                            <span class="spell-name">@spell.Name</span>
+                            <span class="spell-cost">✦@spell.ManaCost</span>
+                            <span class="spell-desc">@spell.Description</span>
+                        </button>
+                    }
+                </div>
+            }
 
             @if (_showItemPicker && HasCombatItems)
             {
@@ -223,6 +257,7 @@
 
     private string? _targetEnemyId;
     private bool _showItemPicker;
+    private bool _showSpellPicker;
     private bool _waitingForResult;
     private string? _shakingEnemyId;
     private bool _playerShaking;
@@ -257,6 +292,14 @@
         _showItemPicker   = false;
         _waitingForResult = true;
         await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.UseItem, ItemId = itemId });
+        _waitingForResult = false;
+    }
+
+    private async Task CastSpell(string spellId)
+    {
+        _showSpellPicker  = false;
+        _waitingForResult = true;
+        await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.Spell, SpellId = spellId, TargetEnemyId = GetTarget() });
         _waitingForResult = false;
     }
 

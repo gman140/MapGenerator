@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<DungeonService>();
         services.AddSingleton<IEnemyDefinitionProvider, InMemoryEnemyDefinitionProvider>();
         services.AddSingleton<IEnemyAffixProvider, InMemoryEnemyAffixProvider>();
+        services.AddSingleton<ISpellDefinitionProvider, InMemorySpellDefinitionProvider>();
         services.AddScoped<EnemySpawner>();
         services.AddScoped<ICombatEngine, CombatEngine>();
         return services;
