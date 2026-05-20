@@ -14,6 +14,9 @@ public class EnemyDefinition
     public float FleeHpThreshold { get; set; }
     public List<EnemyActionEntry> ActionTable { get; set; } = [];
 
+    // XP awarded when this enemy is defeated
+    public int BaseXp { get; init; }
+
     // Damage type for this enemy's attacks
     public DamageType AttackDamageType { get; init; } = DamageType.Bludgeoning;
 

@@ -286,12 +286,14 @@ public class CombatEngine : ICombatEngine
         var loot = new Dictionary<string, int>();
         var defeated = new Dictionary<string, int>();
 
-        foreach (var enemy in session.Enemies.Where(e => e.CurrentHp <= 0 || e.HasFled))
+        int totalXp = 0;
+        foreach (var enemy in session.Enemies.Where(e => e.CurrentHp <= 0))
         {
             defeated[enemy.DefinitionId] = defeated.GetValueOrDefault(enemy.DefinitionId) + 1;
 
             var def = _enemyProvider.GetById(enemy.DefinitionId);
             if (def == null) continue;
+            totalXp += def.BaseXp;
             foreach (var entry in def.LootTable)
             {
                 if (_rng.NextDouble() < entry.Chance)
@@ -299,6 +301,21 @@ public class CombatEngine : ICombatEngine
                     int qty = entry.MinQty == entry.MaxQty
                         ? entry.MinQty
                         : _rng.Next(entry.MinQty, entry.MaxQty + 1);
+                    loot[entry.ItemId] = loot.GetValueOrDefault(entry.ItemId) + qty;
+                }
+            }
+        }
+        // Fled enemies still drop loot but give no XP
+        foreach (var enemy in session.Enemies.Where(e => e.HasFled && e.CurrentHp > 0))
+        {
+            defeated[enemy.DefinitionId] = defeated.GetValueOrDefault(enemy.DefinitionId) + 1;
+            var def = _enemyProvider.GetById(enemy.DefinitionId);
+            if (def == null) continue;
+            foreach (var entry in def.LootTable)
+            {
+                if (_rng.NextDouble() < entry.Chance)
+                {
+                    int qty = entry.MinQty == entry.MaxQty ? entry.MinQty : _rng.Next(entry.MinQty, entry.MaxQty + 1);
                     loot[entry.ItemId] = loot.GetValueOrDefault(entry.ItemId) + qty;
                 }
             }
@@ -320,6 +337,7 @@ public class CombatEngine : ICombatEngine
             HpRemaining      = session.PlayerHp,
             StaminaRemaining = session.PlayerStamina,
             ManaRemaining    = session.PlayerMana,
+            XpGained         = playerDied ? 0 : totalXp,
             LootGained       = loot,
             EnemiesDefeated  = defeated,
             SummaryMessage   = summary,

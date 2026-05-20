@@ -57,6 +57,7 @@ else
                         LastKissedAt="Session.Player.LastKissedAt"
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnEditSprite="() => _showSpriteEditor = true"
+                        OnOpenStats="() => _showPlayerStats = true"
                         OnKissPlayer="HandleKissPlayerAsync" />
             <InventoryModal Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
@@ -199,6 +200,13 @@ OnDance="HandleDanceAsync"
                            OnCancel="() => _showSpriteEditor = false" />
     }
 
+    @if (_showPlayerStats && Session.Player != null)
+    {
+        <PlayerStatsModal Player="Session.Player"
+                          OnClose="() => _showPlayerStats = false"
+                          OnChanged="StateHasChanged" />
+    }
+
     @if (_moveError != null)
     {
         <div class="toast-error">@_moveError</div>
@@ -221,6 +229,7 @@ OnDance="HandleDanceAsync"
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;
+    private bool _showPlayerStats;
     private string _noteText = string.Empty;
     private string _signText = string.Empty;
 

@@ -1,0 +1,92 @@
+@using MapGenerator.Domain.Models
+@using MapGenerator.Web.Services
+@inject GameSessionService Session
+
+<div class="modal-overlay" @onclick="HandleClose">
+    <div class="pstab-modal" @onclick:stopPropagation>
+        <div class="modal-title">Character</div>
+
+        @if (Player != null)
+        {
+            int xpForNext = Player.Level < 20 ? Player.Level * 60 : 1;
+            double xpPct  = Player.Level < 20 ? Math.Min(100, Player.Experience * 100.0 / xpForNext) : 100;
+
+            <div class="pstab-level-row">
+                <span class="pstab-level">Level @Player.Level</span>
+                <div class="pstab-xp-bar">
+                    <div class="pstab-xp-fill" style="width: @xpPct.ToString("F1")%"></div>
+                </div>
+                @if (Player.Level < 20)
+                {
+                    <span class="pstab-xp-text">@Player.Experience / @xpForNext XP</span>
+                }
+                else
+                {
+                    <span class="pstab-xp-text">MAX</span>
+                }
+            </div>
+
+            <div class="pstab-points-row">
+                <span class="pstab-points-label">Unspent Points</span>
+                <span class="pstab-points-value @(Player.UnspentStatPoints > 0 ? "has-points" : "")">
+                    @Player.UnspentStatPoints
+                </span>
+            </div>
+
+            @if (_error != null)
+            {
+                <div class="pstab-error">@_error</div>
+            }
+
+            <div class="pstab-stats">
+                @StatRow("MaxHp", "Max HP", Player.MaxHp.ToString(), "1 pt = +2 HP")
+                @StatRow("BaseAttack", "Attack", Player.BaseAttack.ToString(), null)
+                @StatRow("BaseDefense", "Defense", Player.BaseDefense.ToString(), null)
+                @StatRow("BaseMagic", "Magic", Player.BaseMagic.ToString(), null)
+                @StatRow("BaseDodgeChance", "Dodge", $"{Player.BaseDodgeChance * 100:F0}%", null)
+            </div>
+
+            <div class="pstab-footnote">Tier costs: purchases 1–5 cost 1 pt · 6–10 cost 2 pts · 11+ cost 3 pts</div>
+        }
+
+        <div class="modal-actions">
+            <button @onclick="HandleClose">Close</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private string? _error;
+
+    private RenderFragment StatRow(string stat, string label, string value, string? hint) => __builder =>
+    {
+        int purchases = Player.StatPurchases.GetValueOrDefault(stat);
+        int cost = GameSessionService.GetStatPointCost(stat, purchases);
+        bool canAfford = Player.UnspentStatPoints >= cost;
+
+        <div class="pstab-stat-row">
+            <span class="pstab-stat-label">@label</span>
+            <span class="pstab-stat-value">@value</span>
+            @if (hint != null) { <span class="pstab-stat-hint">(@hint)</span> }
+            <button class="pstab-spend-btn @(canAfford ? "" : "disabled")"
+                    disabled="@(!canAfford)"
+                    @onclick="async () => await BuyStatAsync(stat)">
+                @cost pt
+            </button>
+        </div>
+    };
+
+    private async Task BuyStatAsync(string stat)
+    {
+        _error = null;
+        var err = await Session.AllocateStatPointAsync(stat);
+        if (err != null) { _error = err; return; }
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task HandleClose() => await OnClose.InvokeAsync();
+}

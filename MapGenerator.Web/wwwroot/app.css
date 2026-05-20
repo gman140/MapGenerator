@@ -192,6 +192,38 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .admin-link { font-size: .8rem; color: var(--admin); text-decoration: none; margin-top: auto; }
 .admin-link:hover { text-decoration: underline; }
 
+/* ── XP Bar (PlayerInfo) ──────────────────────────────────────────────────── */
+.xp-bar-row      { display: flex; align-items: center; gap: .35rem; }
+.xp-level-label  { font-size: .72rem; font-weight: 700; color: #a080e0; white-space: nowrap; }
+.xp-bar          { flex: 1; background: var(--border); border-radius: 4px; height: 10px; overflow: hidden; }
+.xp-fill         { height: 100%; background: linear-gradient(90deg, #6030b0, #a060e8); transition: width .4s ease; }
+.xp-text         { font-size: .68rem; color: var(--text-dim); white-space: nowrap; }
+.xp-points-badge { background: rgba(200,140,60,.25); color: #e0a840; font-size: .68rem; font-weight: 700; padding: .1rem .4rem; border-radius: 10px; white-space: nowrap; border: 1px solid rgba(200,140,60,.4); }
+.xp-stats-btn    { background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: .8rem; padding: 0 .1rem; line-height: 1; opacity: .7; }
+.xp-stats-btn:hover { color: var(--text); opacity: 1; }
+
+/* ── Player Stats Modal ───────────────────────────────────────────────────── */
+.pstab-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1.5rem; width: 340px; display: flex; flex-direction: column; gap: .75rem; max-height: 90svh; overflow-y: auto; }
+.pstab-level-row { display: flex; align-items: center; gap: .5rem; }
+.pstab-level     { font-size: .85rem; font-weight: 700; color: #a080e0; white-space: nowrap; }
+.pstab-xp-bar    { flex: 1; background: var(--border); border-radius: 4px; height: 10px; overflow: hidden; }
+.pstab-xp-fill   { height: 100%; background: linear-gradient(90deg, #6030b0, #a060e8); transition: width .4s ease; }
+.pstab-xp-text   { font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
+.pstab-points-row   { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; background: var(--bg); border-radius: 4px; padding: .3rem .6rem; }
+.pstab-points-label { color: var(--text-dim); }
+.pstab-points-value { font-weight: 700; color: var(--text); }
+.pstab-points-value.has-points { color: #e0a840; }
+.pstab-error  { font-size: .8rem; color: var(--danger); }
+.pstab-stats  { display: flex; flex-direction: column; gap: .35rem; }
+.pstab-stat-row   { display: flex; align-items: center; gap: .5rem; background: var(--bg); border-radius: 4px; padding: .3rem .6rem; }
+.pstab-stat-label { font-size: .82rem; color: var(--text-dim); width: 5rem; flex-shrink: 0; }
+.pstab-stat-value { font-size: .9rem; font-weight: 700; color: var(--text); min-width: 2.5rem; }
+.pstab-stat-hint  { font-size: .68rem; color: var(--text-dim); flex: 1; }
+.pstab-spend-btn  { margin-left: auto; background: rgba(110,181,160,.18); color: var(--accent); border: 1px solid rgba(110,181,160,.35); border-radius: 4px; font-size: .75rem; padding: .15rem .5rem; cursor: pointer; white-space: nowrap; }
+.pstab-spend-btn:hover:not(:disabled) { background: rgba(110,181,160,.35); }
+.pstab-spend-btn.disabled, .pstab-spend-btn:disabled { opacity: .38; cursor: default; }
+.pstab-footnote { font-size: .68rem; color: var(--text-dim); font-style: italic; }
+
 /* ── Chat Panel ───────────────────────────────────────────────────────────── */
 .chat-panel    { display: flex; flex-direction: column; height: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .chat-tabs     { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); }

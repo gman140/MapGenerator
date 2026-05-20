@@ -56,4 +56,10 @@ public class Player
     // Enemy kill tracking
     public Dictionary<string, int> EnemiesDefeated { get; set; } = new();
     public int DeathCount { get; set; }
+
+    // Progression
+    public int Level { get; set; } = 1;
+    public int Experience { get; set; } = 0;
+    public int UnspentStatPoints { get; set; } = 0;
+    public Dictionary<string, int> StatPurchases { get; set; } = new();
 }

@@ -65,6 +65,30 @@
         <span class="hunger-text">@hungerLabel</span>
     </div>
 
+    <div class="xp-bar-row">
+        @{
+            int xpForNext = Player.Level < 20 ? Player.Level * 60 : 1;
+            double xpPct  = Player.Level < 20 ? Math.Min(100, Player.Experience * 100.0 / xpForNext) : 100;
+        }
+        <span class="xp-level-label">Lv @Player.Level</span>
+        <div class="xp-bar">
+            <div class="xp-fill" style="width: @xpPct.ToString("F1")%"></div>
+        </div>
+        @if (Player.Level < 20)
+        {
+            <span class="xp-text">@Player.Experience / @xpForNext XP</span>
+        }
+        else
+        {
+            <span class="xp-text">MAX</span>
+        }
+        @if (Player.UnspentStatPoints > 0)
+        {
+            <span class="xp-points-badge">@Player.UnspentStatPoints pts</span>
+        }
+        <button class="xp-stats-btn" title="Character stats" @onclick="async () => await OnOpenStats.InvokeAsync()">⚔</button>
+    </div>
+
     @if (Player.ActiveBuffs.Count > 0)
     {
         <div class="active-buffs">
@@ -134,6 +158,7 @@
     [Parameter] public DateTime? LastKissedAt { get; set; }
     [Parameter] public List<(string Id, string Username, int EggsDestroyed)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback OnEditSprite { get; set; }
+    [Parameter] public EventCallback OnOpenStats { get; set; }
     [Parameter] public EventCallback<(string Id, string Username)> OnKissPlayer { get; set; }
 
     private long _cooldownRemaining;

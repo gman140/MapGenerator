@@ -691,11 +691,73 @@ public class GameSessionService : IAsyncDisposable
                 Player.Inventory[id] = Player.Inventory.GetValueOrDefault(id) + qty;
             foreach (var (defId, count) in result.EnemiesDefeated)
                 Player.EnemiesDefeated[defId] = Player.EnemiesDefeated.GetValueOrDefault(defId) + count;
+
+            // Apply XP and level-up
+            if (result.XpGained > 0)
+            {
+                Player.Experience += result.XpGained;
+                int levelUps = 0;
+                while (Player.Level < 20)
+                {
+                    int xpRequired = Player.Level * 60;
+                    if (Player.Experience < xpRequired) break;
+                    Player.Experience -= xpRequired;
+                    Player.Level++;
+                    levelUps++;
+                    Player.CurrentHp = Player.MaxHp;
+                    Player.CurrentMana = Player.MaxMana;
+                }
+                if (levelUps > 0)
+                {
+                    Player.UnspentStatPoints += levelUps * 3;
+                    result.LeveledUp      = true;
+                    result.NewLevel       = Player.Level;
+                    result.StatPointsGained = levelUps * 3;
+                }
+            }
+
             Player.ActiveCombatSessionId = null;
             await _playerRepo.UpdateAsync(Player);
         }
 
         await _combatRepo.DeleteAsync(session.Id);
+    }
+
+    // ── Stat Point Allocation ────────────────────────────────────────────────
+
+    private static readonly string[] TieredStats = ["BaseAttack", "BaseDefense", "BaseMagic", "BaseDodgeChance"];
+
+    public static int GetStatPointCost(string stat, int currentPurchases) => stat switch
+    {
+        "MaxHp" => 1,
+        _ when TieredStats.Contains(stat) => currentPurchases < 5 ? 1 : currentPurchases < 10 ? 2 : 3,
+        _ => 99,
+    };
+
+    public async Task<string?> AllocateStatPointAsync(string stat)
+    {
+        if (Player == null) return "Not logged in.";
+        if (Player.UnspentStatPoints <= 0) return "No unspent stat points.";
+
+        int purchases = Player.StatPurchases.GetValueOrDefault(stat);
+        int cost = GetStatPointCost(stat, purchases);
+        if (Player.UnspentStatPoints < cost) return $"Not enough points. {stat} costs {cost} at this level.";
+
+        Player.UnspentStatPoints -= cost;
+        Player.StatPurchases[stat] = purchases + 1;
+
+        switch (stat)
+        {
+            case "MaxHp":           Player.MaxHp += 2; break;
+            case "BaseAttack":      Player.BaseAttack++;     break;
+            case "BaseDefense":     Player.BaseDefense++;    break;
+            case "BaseMagic":       Player.BaseMagic++;      break;
+            case "BaseDodgeChance": Player.BaseDodgeChance += 0.02f; break;
+            default: return "Unknown stat.";
+        }
+
+        await _playerRepo.UpdateAsync(Player);
+        return null;
     }
 
     // ── Equipment ─────────────────────────────────────────────────────────────

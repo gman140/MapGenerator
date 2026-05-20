@@ -39,6 +39,21 @@
                 <p class="combat-end-msg">You slip away into the dark. Your belongings are safe.</p>
             }
 
+            @if (EndResult.XpGained > 0)
+            {
+                <div class="combat-end-xp">
+                    @if (EndResult.LeveledUp)
+                    {
+                        <span class="combat-end-levelup">Level Up! You are now level @EndResult.NewLevel</span>
+                        @if (EndResult.StatPointsGained > 0)
+                        {
+                            <span class="combat-end-statpoints">+@EndResult.StatPointsGained stat points available</span>
+                        }
+                    }
+                    <span class="combat-end-xpgain">+@EndResult.XpGained XP</span>
+                </div>
+            }
+
             @if (EndResult.LootGained.Count > 0)
             {
                 <div class="combat-end-loot">
