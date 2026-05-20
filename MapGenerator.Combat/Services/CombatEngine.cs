@@ -129,6 +129,7 @@ public class CombatEngine : ICombatEngine
                 session.PlayerDefending = true;
                 string defendMsg = "You plant your feet and raise your guard. Incoming damage will be halved this turn.";
                 session.Log.Add(defendMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.PlayerBounce });
                 events.Add(new CombatEvent
                 {
                     Kind = CombatEventKind.PlayerUpdate,
@@ -141,6 +142,7 @@ public class CombatEngine : ICombatEngine
                 session.PlayerDodging = true;
                 string dodgeMsg = "You shift into a ready stance, prepared to slip aside.";
                 session.Log.Add(dodgeMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.PlayerBounce });
                 events.Add(new CombatEvent
                 {
                     Kind = CombatEventKind.PlayerUpdate,
@@ -416,6 +418,7 @@ public class CombatEngine : ICombatEngine
         string log = $"You {verb} the {target.Name} for {damage} damage.{typeNote}{fell}";
         session.Log.Add(log);
 
+        events.Add(new CombatEvent { Kind = CombatEventKind.PlayerAttack });
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.ShakeEnemy,
@@ -595,6 +598,7 @@ public class CombatEngine : ICombatEngine
             int healed = session.PlayerHp - before;
             string msg = $"You cast {spell.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
             session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.PlayerBounce });
             events.Add(new CombatEvent
             {
                 Kind = CombatEventKind.PlayerUpdate,
@@ -624,6 +628,7 @@ public class CombatEngine : ICombatEngine
             : $"You cast {spell.Name}!";
         session.Log.Add(castMsg);
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = castMsg, DelayMs = 250 });
+        events.Add(new CombatEvent { Kind = CombatEventKind.PlayerAttack });
 
         foreach (var target in targets)
         {
@@ -673,6 +678,7 @@ public class CombatEngine : ICombatEngine
         session.PlayerMana += gained;
         string msg = $"You take a steadying breath and focus your energy. +{gained} mana. ({session.PlayerMana}/{session.PlayerMaxMana})";
         session.Log.Add(msg);
+        events.Add(new CombatEvent { Kind = CombatEventKind.PlayerBounce });
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.PlayerManaUpdate,
@@ -861,7 +867,8 @@ public class CombatEngine : ICombatEngine
             ? PickRandom(def.DefendTexts)
             : $"The {enemy.Name} braces for your next blow.";
         session.Log.Add(text);
-        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = text, DelayMs = 300 });
+        events.Add(new CombatEvent { Kind = CombatEventKind.EnemyBounce, EnemyInstanceId = enemy.InstanceId });
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = text, DelayMs = 450 });
     }
 
     private void ExecuteEnemyBuff(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
@@ -881,7 +888,8 @@ public class CombatEngine : ICombatEngine
             ? PickRandom(def.BuffTexts)
             : $"The {enemy.Name} strengthens itself.";
         session.Log.Add(text);
-        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = text, DelayMs = 300 });
+        events.Add(new CombatEvent { Kind = CombatEventKind.EnemyBounce, EnemyInstanceId = enemy.InstanceId });
+        events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = text, DelayMs = 450 });
     }
 
     private void ExecuteEnemyRegen(CombatSession session, Enemy enemy, EnemyDefinition? def, List<CombatEvent> events)
@@ -895,13 +903,14 @@ public class CombatEngine : ICombatEngine
             ? PickRandom(def.RegenerateTexts)
             : $"The {enemy.Name} regenerates {healed} HP.";
         session.Log.Add(text);
+        events.Add(new CombatEvent { Kind = CombatEventKind.EnemyBounce, EnemyInstanceId = enemy.InstanceId });
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.EnemyUpdate,
             EnemyInstanceId = enemy.InstanceId,
             Log = text,
             EnemyHp = enemy.CurrentHp,
-            DelayMs = 300,
+            DelayMs = 450,
         });
     }
 

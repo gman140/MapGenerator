@@ -57,7 +57,9 @@ else
                         LastKissedAt="Session.Player.LastKissedAt"
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnEditSprite="() => _showSpriteEditor = true"
-                        OnOpenStats="() => _showPlayerStats = true"
+                        Companion="Session.Companion"
+                        CompanionDefinition="Session.CompanionDefinition"
+                        OnOpenCompanion="() => _showCompanionDialog = true"
                         OnKissPlayer="HandleKissPlayerAsync" />
             <InventoryModal Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
@@ -110,13 +112,7 @@ OnDance="HandleDanceAsync"
                          CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)"
                          TileHasEgg="Session.TileHasEgg()"
                          HasCompanion="Session.Player.CompanionId != null"
-                         OnHatch="HandleHatchAsync"
-                         OnRelease="HandleReleaseAsync" />
-            @if (Session.Companion != null && Session.CompanionDefinition != null)
-            {
-                <CompanionPanel Companion="Session.Companion"
-                                Definition="Session.CompanionDefinition" />
-            }
+                         OnHatch="HandleHatchAsync" />
         </div>
         <div class="chat-area">
             <ChatPanel LocalMessages="_localMessages"
@@ -135,6 +131,8 @@ OnDance="HandleDanceAsync"
                         PlayerName="@Session.Player.Username"
                         PlayerInventory="Session.Player.Inventory"
                         PlayerCraftedItems="Session.Player.CraftedItems"
+                        CompanionSpritePixels="@Session.Companion?.SpritePixels"
+                        CompanionName="@Session.Companion?.Nickname"
                         OnAction="HandleCombatActionAsync"
                         EndResult="_combatResult"
                         OnConfirmEnd="HandleCombatConfirmAsync"
@@ -209,11 +207,14 @@ OnDance="HandleDanceAsync"
                            OnCancel="() => _showSpriteEditor = false" />
     }
 
-    @if (_showPlayerStats && Session.Player != null)
+    @if (_showCompanionDialog && Session.Companion != null && Session.CompanionDefinition != null)
     {
-        <PlayerStatsModal Player="Session.Player"
-                          OnClose="() => _showPlayerStats = false"
-                          OnChanged="StateHasChanged" />
+        <CompanionDialog Companion="Session.Companion"
+                         Definition="Session.CompanionDefinition"
+                         OnSaveSprite="HandleCompanionSpriteAsync"
+                         OnSaveNickname="HandleCompanionNicknameAsync"
+                         OnCancel="() => _showCompanionDialog = false"
+                         OnRelease="HandleReleaseAsync" />
     }
 
     @if (_moveError != null)
@@ -238,7 +239,7 @@ OnDance="HandleDanceAsync"
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;
-    private bool _showPlayerStats;
+    private bool _showCompanionDialog;
     private string _noteText = string.Empty;
     private string _signText = string.Empty;
 
@@ -696,6 +697,18 @@ OnDance="HandleDanceAsync"
             // Trigger animations
             switch (evt.Kind)
             {
+                case CombatEventKind.PlayerAttack:
+                    _combatView?.TriggerPlayerAttack();
+                    break;
+                case CombatEventKind.PlayerBounce:
+                    _combatView?.TriggerPlayerBounce();
+                    break;
+                case CombatEventKind.CompanionAction:
+                    _combatView?.TriggerCompanionAttack();
+                    break;
+                case CombatEventKind.EnemyBounce when evt.EnemyInstanceId != null:
+                    _combatView?.TriggerEnemyBounce(evt.EnemyInstanceId);
+                    break;
                 case CombatEventKind.ShakePlayer:
                     _combatView?.TriggerPlayerShake();
                     break;
@@ -797,11 +810,14 @@ OnDance="HandleDanceAsync"
             SenderName = "World", Content = message,
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
+        if (success)
+            _showCompanionDialog = true;
         StateHasChanged();
     }
 
     private async Task HandleReleaseAsync()
     {
+        _showCompanionDialog = false;
         var (_, message) = await Session.ReleaseCompanionAsync();
         _localMessages.Add(new ChatMessage
         {
@@ -919,6 +935,19 @@ OnDance="HandleDanceAsync"
     {
         _showSpriteEditor = false;
         await Session.UpdateSpriteAsync(pixels);
+        StateHasChanged();
+    }
+
+    private async Task HandleCompanionSpriteAsync(string[] pixels)
+    {
+        _showCompanionDialog = false;
+        await Session.UpdateCompanionSpriteAsync(pixels);
+        StateHasChanged();
+    }
+
+    private async Task HandleCompanionNicknameAsync(string nickname)
+    {
+        await Session.UpdateCompanionNicknameAsync(nickname);
         StateHasChanged();
     }
 

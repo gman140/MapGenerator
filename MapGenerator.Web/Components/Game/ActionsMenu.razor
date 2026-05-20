@@ -71,12 +71,6 @@
                 🐣 Hatch Companion
             </button>
         }
-        @if (!IsInDungeon && HasCompanion)
-        {
-            <button class="action-item companion-release-btn" @onclick="HandleRelease">
-                🐾 Release Companion
-            </button>
-        }
     }
 </div>
 
@@ -105,7 +99,6 @@
     [Parameter] public bool TileHasEgg { get; set; }
     [Parameter] public bool HasCompanion { get; set; }
     [Parameter] public EventCallback OnHatch { get; set; }
-    [Parameter] public EventCallback OnRelease { get; set; }
 
     private TimeSpan EffectiveEggCooldown
     {
@@ -183,7 +176,6 @@ private async Task HandleDance()        { await OnDance.InvokeAsync(); }
     private async Task HandleUseRope()       { await OnUseRope.InvokeAsync(); }
     private async Task HandleUseStaircase()  { await OnUseStaircase.InvokeAsync(); }
     private async Task HandleHatch()         { await OnHatch.InvokeAsync(); }
-    private async Task HandleRelease()       { await OnRelease.InvokeAsync(); }
 
     public void Dispose() => _timer?.Dispose();
 }

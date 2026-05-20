@@ -1,4 +1,5 @@
 @using MapGenerator.Application.Services
+@using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
@@ -12,22 +13,28 @@
 <div class="player-info">
     <div class="player-name">
         <button class="sprite-edit-btn" title="Edit your sprite" @onclick="async () => await OnEditSprite.InvokeAsync()">
-            <svg width="32" height="32" class="sprite-edit-preview">
-                @for (int i = 0; i < 256 && i < Player.SpritePixels.Length; i++)
-                {
-                    if (!string.IsNullOrEmpty(Player.SpritePixels[i]))
-                    {
-                        int px = i % 16, py = i / 16;
-                        <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@Player.SpritePixels[i]" />
-                    }
-                }
-            </svg>
+            <SpriteView Pixels="@Player.SpritePixels" Size="32" Class="sprite-edit-preview" />
         </button>
         <span>@Player.Username</span>
         @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
         @{ var selfTitle = GetTitle(Player.EggsDestroyed); }
         @if (selfTitle != null) { <span class="egg-title">@selfTitle</span> }
     </div>
+    @if (Companion != null && CompanionDefinition != null)
+    {
+        <div class="companion-inline" @onclick="async () => await OnOpenCompanion.InvokeAsync()">
+            @if (Companion.SpritePixels.Any(p => !string.IsNullOrEmpty(p)))
+            {
+                <SpriteView Pixels="@Companion.SpritePixels" Size="24" Class="companion-inline-sprite" />
+            }
+            else
+            {
+                <span class="companion-inline-emoji">@CompanionDefinition.Emoji</span>
+            }
+            <span class="companion-inline-name">@Companion.Nickname</span>
+        </div>
+    }
+
     <div class="tile-info">
         @{
             var tile = MapCache.GetCachedTile(Player.Q, Player.R);
@@ -63,30 +70,6 @@
         <div class="hunger-fill hunger-@hungerBand.ToString().ToLower()"
              style="width: @Player.Satiety.ToString("F0")%"></div>
         <span class="hunger-text">@hungerLabel</span>
-    </div>
-
-    <div class="xp-bar-row">
-        @{
-            int xpForNext = Player.Level < 20 ? Player.Level * 60 : 1;
-            double xpPct  = Player.Level < 20 ? Math.Min(100, Player.Experience * 100.0 / xpForNext) : 100;
-        }
-        <span class="xp-level-label">Lv @Player.Level</span>
-        <div class="xp-bar">
-            <div class="xp-fill" style="width: @xpPct.ToString("F1")%"></div>
-        </div>
-        @if (Player.Level < 20)
-        {
-            <span class="xp-text">@Player.Experience / @xpForNext XP</span>
-        }
-        else
-        {
-            <span class="xp-text">MAX</span>
-        }
-        @if (Player.UnspentStatPoints > 0)
-        {
-            <span class="xp-points-badge">@Player.UnspentStatPoints pts</span>
-        }
-        <button class="xp-stats-btn" title="Character stats" @onclick="async () => await OnOpenStats.InvokeAsync()">⚔</button>
     </div>
 
     @if (Player.ActiveBuffs.Count > 0)
@@ -158,7 +141,9 @@
     [Parameter] public DateTime? LastKissedAt { get; set; }
     [Parameter] public List<(string Id, string Username, int EggsDestroyed)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback OnEditSprite { get; set; }
-    [Parameter] public EventCallback OnOpenStats { get; set; }
+    [Parameter] public PlayerCompanion? Companion { get; set; }
+    [Parameter] public CompanionDefinition? CompanionDefinition { get; set; }
+    [Parameter] public EventCallback OnOpenCompanion { get; set; }
     [Parameter] public EventCallback<(string Id, string Username)> OnKissPlayer { get; set; }
 
     private long _cooldownRemaining;

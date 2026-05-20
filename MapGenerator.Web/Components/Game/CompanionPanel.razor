@@ -3,7 +3,26 @@
 
 <div class="companion-panel">
     <div class="companion-header">
-        <span class="companion-emoji">@Definition.Emoji</span>
+        <button class="sprite-edit-btn companion-sprite-btn" title="View stats / edit sprite"
+                @onclick="async () => await OnOpenDialog.InvokeAsync()">
+            @if (Companion.SpritePixels.Any(p => !string.IsNullOrEmpty(p)))
+            {
+                <svg width="32" height="32" class="sprite-edit-preview">
+                    @for (int i = 0; i < 256 && i < Companion.SpritePixels.Length; i++)
+                    {
+                        if (!string.IsNullOrEmpty(Companion.SpritePixels[i]))
+                        {
+                            int px = i % 16, py = i / 16;
+                            <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@Companion.SpritePixels[i]" />
+                        }
+                    }
+                </svg>
+            }
+            else
+            {
+                <span class="companion-emoji-placeholder">@Definition.Emoji</span>
+            }
+        </button>
         <span class="companion-name">@Companion.Nickname</span>
         <span class="companion-element companion-element-@Definition.ElementType.ToString().ToLower()">
             @Definition.ElementType
@@ -15,21 +34,10 @@
         <div class="companion-species">@Definition.Name</div>
     }
 
-    <div class="companion-moves">
-        @foreach (var moveId in Companion.MoveIds)
-        {
-            var move = Definition.Moves.FirstOrDefault(m => m.Id == moveId);
-            if (move != null)
-            {
-                <span class="companion-move-chip @(move.HitsAll ? "hits-all" : "")">
-                    @move.Name
-                </span>
-            }
-        }
-    </div>
 </div>
 
 @code {
     [Parameter, EditorRequired] public PlayerCompanion Companion { get; set; } = null!;
     [Parameter, EditorRequired] public CompanionDefinition Definition { get; set; } = null!;
+    [Parameter] public EventCallback OnOpenDialog { get; set; }
 }

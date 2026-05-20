@@ -1,12 +1,20 @@
+@using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Models
 @using MapGenerator.Web.Services
-@inject GameSessionService Session
 
 <div class="modal-overlay" @onclick="HandleCancel">
-    <div class="sprite-editor-modal" @onclick:stopPropagation
+    <div class="companion-dialog" @onclick:stopPropagation
          @onmouseup="() => _isPainting = false"
          @oncontextmenu:preventDefault>
-        <h3 class="modal-title">Character</h3>
+
+        <div class="companion-dialog-titlebar">
+            <span class="companion-emoji">@Definition.Emoji</span>
+            <span class="companion-dialog-name">@Companion.Nickname</span>
+            @if (Companion.Nickname != Definition.Name)
+            {
+                <span class="companion-dialog-species">(@Definition.Name)</span>
+            }
+        </div>
 
         <div class="sprite-editor-tabs">
             <button class="sprite-tab @(_tab == "stats" ? "active" : "")" @onclick='() => _tab = "stats"'>Stats</button>
@@ -15,47 +23,40 @@
 
         @if (_tab == "stats")
         {
-            int xpForNext = Player.Level < 20 ? Player.Level * 60 : 1;
-            double xpPct  = Player.Level < 20 ? Math.Min(100, Player.Experience * 100.0 / xpForNext) : 100;
+            <div class="companion-stats-body">
+                <p class="companion-desc">@Definition.Description</p>
 
-            <div class="pstab-level-row">
-                <span class="pstab-level">Level @Player.Level</span>
-                <div class="pstab-xp-bar">
-                    <div class="pstab-xp-fill" style="width: @xpPct.ToString("F1")%"></div>
+                <div class="companion-stat-row">
+                    <span class="companion-stat-label">Element</span>
+                    <span class="companion-element companion-element-@Definition.ElementType.ToString().ToLower()">
+                        @Definition.ElementType
+                    </span>
                 </div>
-                @if (Player.Level < 20)
-                {
-                    <span class="pstab-xp-text">@Player.Experience / @xpForNext XP</span>
-                }
-                else
-                {
-                    <span class="pstab-xp-text">MAX</span>
-                }
+                <div class="companion-stat-row">
+                    <span class="companion-stat-label">Base Attack</span>
+                    <strong>@Definition.BaseAttack</strong>
+                </div>
+
+                <div class="companion-moves-section">
+                    <div class="companion-moves-header">Moves</div>
+                    @foreach (var moveId in Companion.MoveIds)
+                    {
+                        var move = Definition.Moves.FirstOrDefault(m => m.Id == moveId);
+                        if (move != null)
+                        {
+                            <div class="companion-move-row">
+                                <span class="companion-move-name">@move.Name</span>
+                                <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
+                                <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
+                                @if (move.HitsAll) { <span class="companion-move-aoe">AOE</span> }
+                            </div>
+                        }
+                    }
+                </div>
             </div>
-
-            <div class="pstab-points-row">
-                <span class="pstab-points-label">Unspent Points</span>
-                <span class="pstab-points-value @(Player.UnspentStatPoints > 0 ? "has-points" : "")">
-                    @Player.UnspentStatPoints
-                </span>
-            </div>
-
-            @if (_statError != null)
-            {
-                <div class="pstab-error">@_statError</div>
-            }
-
-            <div class="pstab-stats">
-                @StatRow("MaxHp", "Max HP", Player.MaxHp.ToString(), "1 pt = +2 HP")
-                @StatRow("BaseAttack", "Attack", Player.BaseAttack.ToString(), null)
-                @StatRow("BaseDefense", "Defense", Player.BaseDefense.ToString(), null)
-                @StatRow("BaseMagic", "Magic", Player.BaseMagic.ToString(), null)
-                @StatRow("BaseDodgeChance", "Dodge", $"{Player.BaseDodgeChance * 100:F0}%", null)
-            </div>
-
-            <div class="pstab-footnote">Tier costs: purchases 1–5 cost 1 pt · 6–10 cost 2 pts · 11+ cost 3 pts</div>
 
             <div class="modal-actions">
+                <button class="companion-release-btn" @onclick="HandleRelease">Release Companion</button>
                 <button @onclick="HandleCancel">Close</button>
             </div>
         }
@@ -96,6 +97,11 @@
             </div>
 
             <div class="sprite-editor-tools">
+                <label class="sprite-tool-label companion-nickname-label">
+                    Name
+                    <input class="companion-nickname-input" maxlength="20"
+                           @bind="_nickname" @bind:event="oninput" />
+                </label>
                 <label class="sprite-tool-label">
                     Color
                     <input type="color" class="sprite-color-input" value="@_hexColor" @onchange="HandleColorChange" />
@@ -114,85 +120,55 @@
                 <button class="sprite-tool-btn" @onclick="ClearAll">Clear All</button>
             </div>
 
-            @if (_saveError != null)
-            {
-                <div class="sprite-save-error">@_saveError</div>
-            }
-
             <div class="modal-actions">
                 <button @onclick="HandleCancel">Cancel</button>
-                <button class="btn-primary" @onclick="HandleSave">Save</button>
+                <button class="btn-primary" @onclick="HandleSave">Save Sprite</button>
             </div>
         }
     </div>
 </div>
 
 @code {
-    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
-    [Parameter] public string InitialTab { get; set; } = "sprite";
-    [Parameter] public EventCallback<string[]> OnSave { get; set; }
+    [Parameter, EditorRequired] public PlayerCompanion Companion { get; set; } = null!;
+    [Parameter, EditorRequired] public CompanionDefinition Definition { get; set; } = null!;
+    [Parameter] public EventCallback<string[]> OnSaveSprite { get; set; }
+    [Parameter] public EventCallback<string> OnSaveNickname { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnRelease { get; set; }
 
-    private string _tab = "sprite";
+    private string _tab = "stats";
+    private string _nickname = "";
     private string[] _pixels = new string[256];
     private string _hexColor = "#ffffff";
     private double _alpha = 255;
     private bool _erasing;
     private bool _isPainting;
     private bool _paintingAsErase;
-    private string? _saveError;
-    private string? _statError;
-
-    protected override void OnParametersSet()
-    {
-        if (_pixels.All(p => p == null))
-        {
-            Reset();
-            _tab = InitialTab;
-        }
-    }
 
     protected override void OnInitialized()
     {
-        Reset();
-        _tab = InitialTab;
+        _nickname = Companion.Nickname;
+        ResetSprite();
     }
 
-    private void Reset()
+    private void ResetSprite()
     {
         _pixels = new string[256];
-        var src = Player.SpritePixels;
+        var src = Companion.SpritePixels;
         for (int i = 0; i < 256 && i < src.Length; i++)
             _pixels[i] = src[i] ?? "";
-        _hexColor = Player.Color.Length >= 7 ? Player.Color[..7] : Player.Color;
-        _alpha = 255;
+        _hexColor = ElementDefaultColor();
     }
 
-    private RenderFragment StatRow(string stat, string label, string value, string? hint) => __builder =>
+    private string ElementDefaultColor() => Definition.ElementType.ToString() switch
     {
-        int purchases = Player.StatPurchases.GetValueOrDefault(stat);
-        int cost = GameSessionService.GetStatPointCost(stat, purchases);
-        bool canAfford = Player.UnspentStatPoints >= cost;
-
-        <div class="pstab-stat-row">
-            <span class="pstab-stat-label">@label</span>
-            <span class="pstab-stat-value">@value</span>
-            @if (hint != null) { <span class="pstab-stat-hint">(@hint)</span> }
-            <button class="pstab-spend-btn @(canAfford ? "" : "disabled")"
-                    disabled="@(!canAfford)"
-                    @onclick="async () => await BuyStatAsync(stat)">
-                @cost pt
-            </button>
-        </div>
+        "Fire"    => "#e05020",
+        "Frost"   => "#4090e0",
+        "Storm"   => "#e0c020",
+        "Nature"  => "#40c040",
+        "Dark"    => "#8030c0",
+        _         => "#a0a0a0",
     };
-
-    private async Task BuyStatAsync(string stat)
-    {
-        _statError = null;
-        var err = await Session.AllocateStatPointAsync(stat);
-        if (err != null) { _statError = err; return; }
-        StateHasChanged();
-    }
 
     private void HandleMouseDown(int idx, MouseEventArgs e)
     {
@@ -213,6 +189,11 @@
         _pixels = GameSessionService.GenerateDefaultSprite(BuildColor());
     }
 
+    private void ClearAll()
+    {
+        for (int i = 0; i < 256; i++) _pixels[i] = "";
+    }
+
     private string BuildColor()
     {
         int a = (int)Math.Clamp(Math.Round(_alpha), 0, 255);
@@ -222,34 +203,24 @@
     private void HandleColorChange(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
-        if (!string.IsNullOrEmpty(val))
-            _hexColor = val;
+        if (!string.IsNullOrEmpty(val)) _hexColor = val;
         _erasing = false;
     }
 
     private void HandleAlphaChange(ChangeEventArgs e)
     {
-        if (double.TryParse(e.Value?.ToString(), out double v))
-            _alpha = v;
-    }
-
-    private void ClearAll()
-    {
-        for (int i = 0; i < 256; i++)
-            _pixels[i] = "";
+        if (double.TryParse(e.Value?.ToString(), out double v)) _alpha = v;
     }
 
     private async Task HandleSave()
     {
-        int filled = _pixels.Count(p => !string.IsNullOrEmpty(p));
-        if (filled < 50)
-        {
-            _saveError = $"At least 50 pixels must be painted ({filled} currently set).";
-            return;
-        }
-        _saveError = null;
-        await OnSave.InvokeAsync([.. _pixels]);
+        var trimmed = _nickname.Trim();
+        if (!string.IsNullOrEmpty(trimmed) && trimmed != Companion.Nickname)
+            await OnSaveNickname.InvokeAsync(trimmed);
+        await OnSaveSprite.InvokeAsync([.. _pixels]);
     }
 
     private async Task HandleCancel() => await OnCancel.InvokeAsync();
+
+    private async Task HandleRelease() => await OnRelease.InvokeAsync();
 }

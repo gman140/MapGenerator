@@ -224,10 +224,31 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .pstab-spend-btn.disabled, .pstab-spend-btn:disabled { opacity: .38; cursor: default; }
 .pstab-footnote { font-size: .68rem; color: var(--text-dim); font-style: italic; }
 
+/* ── Companion Dialog ─────────────────────────────────────────────────────── */
+.companion-dialog { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; width: min(90vw, 520px); box-shadow: 0 8px 32px rgba(0,0,0,.5); }
+.companion-dialog-titlebar { display: flex; align-items: center; gap: .5rem; font-size: 1rem; font-weight: 700; }
+.companion-dialog-name   { color: var(--text); }
+.companion-dialog-species { font-size: .8rem; color: var(--text-dim); font-style: italic; }
+.sprite-editor-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+.sprite-tab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; padding: .4rem; font-size: .82rem; color: var(--text-dim); cursor: pointer; }
+.sprite-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.companion-stats-body { display: flex; flex-direction: column; gap: .55rem; }
+.companion-desc { font-size: .82rem; color: var(--text-dim); font-style: italic; line-height: 1.5; }
+.companion-stat-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: 4px; padding: .3rem .6rem; font-size: .85rem; }
+.companion-stat-label { color: var(--text-dim); }
+.companion-moves-section { display: flex; flex-direction: column; gap: .25rem; }
+.companion-moves-header { font-size: .72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .1rem; }
+.companion-move-row { display: flex; align-items: center; gap: .5rem; background: var(--bg); border-radius: 4px; padding: .25rem .6rem; }
+.companion-move-name { font-size: .82rem; color: var(--text); flex: 1; }
+.companion-move-power { font-size: .75rem; color: var(--text-dim); white-space: nowrap; }
+.companion-move-aoe { font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 8px; background: rgba(120,60,200,.2); color: #b080f0; border: 1px solid rgba(120,60,200,.35); white-space: nowrap; }
+
 /* ── Companion Panel ──────────────────────────────────────────────────────── */
 .companion-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: .6rem .75rem; display: flex; flex-direction: column; gap: .35rem; }
 .companion-header { display: flex; align-items: center; gap: .4rem; }
 .companion-emoji  { font-size: 1.1rem; }
+.companion-sprite-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.companion-emoji-placeholder { font-size: 1.4rem; line-height: 1; }
 .companion-name   { font-size: .9rem; font-weight: 700; color: var(--text); }
 .companion-element { font-size: .68rem; font-weight: 600; padding: .1rem .4rem; border-radius: 10px; background: var(--border); color: var(--text-dim); }
 .companion-element.companion-element-fire    { background: rgba(200,80,20,.25);  color: #e08040; }
@@ -545,6 +566,49 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 }
 .combat-strike-enemy { animation: combat-strike-enemy 0.25s ease-out }
 
+/* ── Combat bounce animation ─────────────────────────────────────────────── */
+@keyframes combat-bounce {
+  0%   { transform: translateY(0)     scaleX(1)    scaleY(1);    }
+  20%  { transform: translateY(-14px) scaleX(1.04) scaleY(0.96); }
+  45%  { transform: translateY(0)     scaleX(0.96) scaleY(1.06); }
+  62%  { transform: translateY(-6px)  scaleX(1.02) scaleY(0.98); }
+  80%  { transform: translateY(0)     scaleX(0.99) scaleY(1.02); }
+  100% { transform: translateY(0)     scaleX(1)    scaleY(1);    }
+}
+.combat-bounce { animation: combat-bounce 0.45s ease-out; }
+
+/* ── Combat idle animations ──────────────────────────────────────────────── */
+@keyframes combat-idle-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-4px) rotate(2deg) scale(1.02,  0.98); }
+  60%      { transform: translateX(-2px) rotate(-4deg) scale(0.99,  1.01) skewX(-2deg); }
+  70%      { transform: translateX(2px) rotate(-3deg) scale(1,  1) skewX(1deg); }
+  80%      { transform: translateX(0px) rotate(0deg) scale(0.97,  1.02) skewX(0deg); }
+}
+@keyframes combat-player-idle {
+  0%   { transform: scale(1,     1)     skewX(0deg)    translateX(0);    }
+  7%   { transform: scale(1.02,  0.98)  skewX(0.5deg)  translateX(0);    }
+  15%  { transform: scale(0.99,  1.01)  skewX(-0.4deg) translateX(0);    }
+  23%  { transform: scale(1.01,  0.99)  skewX(0.3deg)  translateX(0);    }
+  30%  { transform: scale(1,     1)     skewX(0deg)    translateX(0);    }
+  /* anticipation squish before hop */
+  36%  { transform: scale(0.95,  1.05)  skewX(0deg)    translateX(0);    }
+  /* hop */
+  43%  { transform: scale(1.07,  0.93)  skewX(-1.5deg) translateX(6px); }
+  /* land and settle */
+  50%  { transform: scale(0.97,  1.02)  skewX(0.5deg)  translateX(-2px); }
+  57%  { transform: scale(1.01,  0.99)  skewX(-0.2deg) translateX(1px);  }
+  63%  { transform: scale(1,     1)     skewX(0deg)    translateX(0);    }
+  /* warp phase */
+  72%  { transform: scale(1.015, 0.99)  skewX(0.35deg) translateX(0);    }
+  81%  { transform: scale(0.99,  1.01)  skewX(-0.3deg) translateX(0);    }
+  91%  { transform: scale(1.01,  0.995) skewX(0.2deg)  translateX(0);    }
+  100% { transform: scale(1,     1)     skewX(0deg)    translateX(0);    }
+}
+.combat-player-svg:not(.combat-shake):not(.combat-strike):not(.combat-bounce) { animation: combat-player-idle 4s ease-in-out infinite; }
+.combat-companion-svg:not(.combat-strike):not(.combat-bounce)                 { animation: combat-player-idle 3.2s ease-in-out infinite -1.2s; }
+.combat-enemy-svg                                         { animation: combat-idle-bob 2.5s ease-in-out infinite; }
+
 /* ── Death overlay ───────────────────────────────────────────────────────── */
 .death-overlay {
     position: fixed;
@@ -627,15 +691,18 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-hud { display: flex; justify-content: center; }
 .combat-context { font-size: .8rem; color: var(--text-dim); letter-spacing: .04em; }
 .combat-battlefield { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 130px; }
-.combat-player-side { display: flex; flex-direction: column; align-items: center; gap: .3rem; min-width: 100px; }
+.combat-player-side { display: flex; flex-direction: column; align-items: center; gap: .3rem; min-width: 100px; position: relative; }
 .combat-player-svg { filter: drop-shadow(0 0 8px rgba(80,160,240,.4)); }
 .combat-player-label { font-size: .78rem; color: var(--text); }
+.combat-status-badge-container { display: flex; flex-direction: column; gap: 2px; position: absolute; top: 0; }
+.combat-player-side .combat-status-badge-container { left: 0; }
+.combat-enemy-side .combat-status-badge-container { right: 0; }
 .combat-status-badge { font-size: .7rem; padding: .1rem .4rem; border-radius: 3px; }
 .combat-status-badge.defend    { background: rgba(80,120,200,.2); border: 1px solid rgba(80,120,200,.4); color: #80a0e0; }
 .combat-status-badge.dodge     { background: rgba(140,80,200,.2); border: 1px solid rgba(140,80,200,.4); color: #b080e0; }
 .combat-status-badge.buff      { background: rgba(100,200,120,.15); border: 1px solid rgba(100,200,120,.35); color: #80d090; }
 .combat-status-badge.buff.enemy-buff { background: rgba(200,100,80,.15); border: 1px solid rgba(200,100,80,.35); color: #e08870; }
-.combat-enemy-side { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; flex: 1; }
+.combat-enemy-side { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; flex: 1; position: relative; }
 .combat-enemy { display: flex; flex-direction: column; align-items: center; gap: .2rem; cursor: pointer; padding: .3rem; border-radius: 6px; border: 2px solid transparent; transition: border-color .15s; }
 .combat-enemy:hover { border-color: rgba(255,224,102,.4); }
 .combat-enemy.targeted { border-color: #ffe066; background: rgba(255,224,102,.08); }
@@ -716,7 +783,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .sprite-edit-preview { display: block; image-rendering: pixelated; }
 
 /* ── Sprite editor modal ─────────────────────────────────────────────────── */
-.sprite-editor-modal { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; width: min(90vw, 520px); box-shadow: 0 8px 32px rgba(0,0,0,.5); }
+.sprite-editor-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; width: min(90vw, 520px); box-shadow: 0 8px 32px rgba(0,0,0,.5); }
 .sprite-editor-body { display: flex; gap: 1rem; align-items: flex-start; }
 .sprite-grid-wrap { flex: 0 0 auto; }
 .sprite-grid { display: grid; grid-template-columns: repeat(16, 24px); grid-template-rows: repeat(16, 24px); border: 1px solid var(--border); cursor: crosshair; user-select: none; }
@@ -758,3 +825,27 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-status-badge.status-burn        { background: rgba(220,100,20,.25); border-color: rgba(240,120,30,.5); color: #ff9040; }
 .combat-status-badge.status-venom       { background: rgba(60,180,60,.25); border-color: rgba(80,200,80,.5); color: #60e060; }
 .combat-status-badge.status-staminadrain { background: rgba(100,80,160,.25); border-color: rgba(120,90,180,.5); color: #a080e0; }
+
+/* ── SpriteView component ────────────────────────────────────────────────── */
+.sprite-view { display: block; image-rendering: pixelated; }
+
+/* ── Companion nickname editor ───────────────────────────────────────────── */
+.companion-nickname-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: .2rem .45rem; font-size: .82rem; outline: none; min-width: 0; }
+.companion-nickname-input:focus { border-color: var(--accent); }
+.companion-rename-btn { font-size: .72rem; padding: .2rem .55rem; border-radius: 4px; border: 1px solid rgba(110,181,160,.4); background: rgba(110,181,160,.12); color: var(--accent); cursor: pointer; white-space: nowrap; }
+.companion-rename-btn:hover:not(:disabled) { background: rgba(110,181,160,.25); }
+.companion-rename-btn:disabled { opacity: .35; cursor: default; }
+.companion-nickname-label { flex: 1; min-width: 6rem; }
+.companion-nickname-label .companion-nickname-input { width: 100%; }
+
+/* ── Companion inline in PlayerInfo ─────────────────────────────────────── */
+.companion-inline { display: flex; align-items: center; gap: .4rem; padding: .2rem .4rem; border-radius: 5px; background: rgba(120,60,200,.08); border: 1px solid rgba(120,60,200,.2); cursor: pointer; transition: background .15s; }
+.companion-inline:hover { background: rgba(120,60,200,.18); }
+.companion-inline-sprite { image-rendering: pixelated; flex-shrink: 0; }
+.companion-inline-emoji { font-size: 1rem; line-height: 1; flex-shrink: 0; }
+.companion-inline-name { font-size: .78rem; color: var(--text-dim); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Companion sprite in combat ──────────────────────────────────────────── */
+.combat-fighters-row { display: flex; align-items: flex-end; gap: .5rem; position: relative; }
+.combat-companion-mini { display: flex; flex-direction: column; align-items: center; position: absolute; right: 0; bottom: 0; }
+.combat-companion-svg { image-rendering: pixelated; filter: drop-shadow(0 0 8px rgba(80, 160, 240, .4)); }

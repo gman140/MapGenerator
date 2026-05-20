@@ -482,6 +482,20 @@ public class GameSessionService : IAsyncDisposable
         return (true, $"The egg stirs and cracks open. A {def.Name} emerges, blinks at you once, and decides to follow.");
     }
 
+    public async Task UpdateCompanionSpriteAsync(string[] pixels)
+    {
+        if (Companion == null) return;
+        Companion.SpritePixels = pixels;
+        await _companionRepo.SaveAsync(Companion);
+    }
+
+    public async Task UpdateCompanionNicknameAsync(string nickname)
+    {
+        if (Companion == null) return;
+        Companion.Nickname = nickname.Trim();
+        await _companionRepo.SaveAsync(Companion);
+    }
+
     public async Task<(bool success, string message)> ReleaseCompanionAsync()
     {
         if (Player == null) return (false, "Not logged in.");

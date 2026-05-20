@@ -1,0 +1,18 @@
+<svg width="@Size" height="@Size" viewBox="0 0 32 32"
+     class="sprite-view @Class"
+     style="image-rendering: pixelated;">
+    @for (int i = 0; i < 256 && i < Pixels.Length; i++)
+    {
+        if (!string.IsNullOrEmpty(Pixels[i]))
+        {
+            int px = i % 16, py = i / 16;
+            <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@Pixels[i]" />
+        }
+    }
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public string[] Pixels { get; set; } = [];
+    [Parameter] public int Size { get; set; } = 32;
+    [Parameter] public string Class { get; set; } = "";
+}

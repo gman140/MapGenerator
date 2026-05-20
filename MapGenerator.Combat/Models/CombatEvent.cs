@@ -4,6 +4,7 @@ public enum CombatEventKind
 {
     PlayerUpdate,      // HP, stamina, or flag changed on player
     EnemyUpdate,       // HP changed on a specific enemy
+    PlayerAttack,      // player is attacking — trigger player strike animation
     ShakePlayer,       // player was hit — trigger shake animation
     ShakeEnemy,        // enemy was hit — trigger shake animation
     EnemyDied,         // enemy HP reached 0 — trigger death animation
@@ -13,6 +14,8 @@ public enum CombatEventKind
     StatusTick,        // a status effect dealt damage/drained stamina this turn
     PlayerManaUpdate,  // mana changed
     CompanionAction,   // companion took an action this turn
+    PlayerBounce,      // player took a non-damage action — trigger bounce animation
+    EnemyBounce,       // enemy took a non-damage action — trigger bounce animation
 }
 
 public class CombatEvent
