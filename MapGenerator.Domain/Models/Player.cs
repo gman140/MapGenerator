@@ -33,8 +33,8 @@ public class Player
     public bool IsInDungeon => DungeonInstanceId != null;
 
     // Combat stats
-    public int MaxHp { get; set; } = 100;
-    public int CurrentHp { get; set; } = 100;
+    public int MaxHp { get; set; } = 30;
+    public int CurrentHp { get; set; } = 30;
     public int MaxStamina { get; set; } = 10;
     public int CurrentStamina { get; set; } = 10;
     public int BaseAttack { get; set; } = 10;

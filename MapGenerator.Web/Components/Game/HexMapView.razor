@@ -137,28 +137,50 @@
                         }
 
                         @{
-                            var others = OnlinePlayers.Where(p => p.Q == tq && p.R == tr && p.Id != Player.Id).ToList();
-                            bool sharing = isPlayerTile && others.Count > 0;
+                            var othersOnTile = OnlinePlayers
+                                .Where(p => p.Q == tq && p.R == tr && p.Id != Player.Id)
+                                .ToList();
+                            int totalOnTile = (isPlayerTile ? 1 : 0) + othersOnTile.Count;
 
-                            if (isPlayerTile)
+                            if (totalOnTile > 0)
                             {
-                                double spriteSize = sharing ? HexSize * 0.5 : HexSize;
-                                double spx = sharing ? cx - 6 : cx;
-                                double spy = sharing ? cy - 6 : cy;
-                                @RenderSprite(spx, spy, spriteSize, Player.SpritePixels)
-                            }
+                                double o = HexSize * 0.3;
+                                double spriteSize = totalOnTile switch
+                                {
+                                    1 => HexSize,
+                                    2 => HexSize,
+                                    3 => HexSize * 0.75,
+                                    4 => HexSize * 0.75,
+                                    _ => HexSize * 0.5,
+                                };
+                                (double, double)[] pos = totalOnTile switch
+                                {
+                                    1 => [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                                    2 => [(-o, 0), (o, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                                    3 => [(-o, -o * 0.5), (o, -o * 0.5), (0, o), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                                    4 => [(0, -o), (-o, 0), (o, 0), (0, o), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                                    5 => [(-o, -o * 0.5), (0, -o * 0.5), (o, -o * 0.5), (-o * 0.5, o * 0.5), (o * 0.5, o * 0.5), (0, 0), (0, 0), (0, 0), (0, 0)],
+                                    6 => [(-o, -o * 0.5), (0, -o * 0.5), (o, -o * 0.5), (-o, o * 0.5), (0, o * 0.5), (o, o * 0.5), (0, 0), (0, 0), (0, 0)],
+                                    7 => [(-o, -o), (0, -o), (o, -o), (-o, 0), (0, 0), (o, 0), (0, o), (0, 0), (0, 0)],
+                                    8 => [(-o, -o), (0, -o), (o, -o), (-o, 0), (0, 0), (o, 0), (-o, o), (o, o), (0, 0)],
+                                    _ => [(-o, -o), (0, -o), (o, -o), (-o, 0), (0, 0), (o, 0), (-o, o), (0, o), (o, o)],
+                                };
 
-                            int maxOthers = sharing ? 3 : 4;
-                            for (int i = 0; i < Math.Min(others.Count, maxOthers); i++)
-                            {
-                                int slot = sharing ? i + 1 : i;
-                                double ox = cx + (slot % 2 == 0 ? -6 : 6);
-                                double oy = cy + (slot < 2 ? -6 : 6);
-                                double oSize = HexSize * 0.5;
-                                <g @key="others[i].Id">
-                                    <title>@others[i].Username</title>
-                                    @RenderSprite(ox, oy, oSize, others[i].SpritePixels)
-                                </g>
+                                int slot = 0;
+                                if (isPlayerTile)
+                                {
+                                    @RenderSprite(cx + pos[slot].Item1, cy + pos[slot].Item2, spriteSize, Player.SpritePixels)
+                                    slot++;
+                                }
+
+                                int renderOthers = Math.Min(othersOnTile.Count, 9 - slot);
+                                for (int oi = 0; oi < renderOthers; oi++)
+                                {
+                                    <g @key="othersOnTile[oi].Id">
+                                        <title>@othersOnTile[oi].Username</title>
+                                        @RenderSprite(cx + pos[slot + oi].Item1, cy + pos[slot + oi].Item2, spriteSize, othersOnTile[oi].SpritePixels)
+                                    </g>
+                                }
                             }
                         }
                     </g>
