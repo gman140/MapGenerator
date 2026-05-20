@@ -140,8 +140,7 @@ public class GameSessionService : IAsyncDisposable
 
         if (result.PlayerDrowned)
         {
-            _broadcast.PlayerWentOffline(Player.Id);
-            Player = null;
+            await RespawnAsync(oldQ, oldR);
             return result;
         }
 
@@ -608,64 +607,93 @@ public class GameSessionService : IAsyncDisposable
         await ApplyCombatResultAsync(session);
     }
 
+    // Shared respawn logic — used by combat death and drowning.
+    // Drops all items at (dropQ, dropR), resets player to spawn, saves, and broadcasts move.
+    public async Task RespawnAsync(int dropQ, int dropR)
+    {
+        if (Player == null) return;
+
+        foreach (var (itemId, qty) in Player.Inventory)
+            await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, itemId, qty);
+        foreach (var (itemId, qty) in Player.CraftedItems)
+            await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, itemId, qty);
+
+        if (Player.EquippedWeaponId != null)
+        {
+            await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, Player.EquippedWeaponId, 1);
+            Player.EquippedWeaponId = null;
+        }
+        if (Player.EquippedArmorId != null)
+        {
+            await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, Player.EquippedArmorId, 1);
+            Player.EquippedArmorId = null;
+        }
+        if (Player.EquippedHatId != null)
+        {
+            await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, Player.EquippedHatId, 1);
+            Player.EquippedHatId = null;
+        }
+
+        int oldQ = Player.Q, oldR = Player.R;
+        var config  = _mapCache.GetCachedConfig();
+        Player.Q    = config?.SpawnQ ?? 0;
+        Player.R    = config?.SpawnR ?? 0;
+
+        Player.DungeonInstanceId = null;
+        Player.DungeonFloor      = 0;
+        Player.DungeonQ          = 0;
+        Player.DungeonR          = 0;
+        Player.Satiety           = 50;
+        Player.Inventory.Clear();
+        Player.CraftedItems.Clear();
+        Player.ActiveBuffs.Clear();
+        Player.CurrentHp         = Player.MaxHp;
+        Player.CurrentStamina    = Player.MaxStamina;
+        Player.DeathCount++;
+
+        await _playerRepo.UpdateAsync(Player);
+        await _broadcast.NotifyPlayerMovedAsync(Player.Id, Player.Username, oldQ, oldR, Player.Q, Player.R);
+    }
+
     private async Task ApplyCombatResultAsync(CombatSession session)
     {
         if (Player == null) return;
         var result = _combatEngine.Resolve(session);
 
-        Player.CurrentHp    = result.HpRemaining;
+        Player.CurrentHp      = result.HpRemaining;
         Player.CurrentStamina = result.StaminaRemaining;
 
         if (result.PlayerDied)
         {
             if (Player.IsAdmin)
             {
-                // Admins respawn on the world map without losing anything
                 Player.DungeonInstanceId = null;
                 Player.DungeonFloor      = 0;
                 Player.DungeonQ          = 0;
                 Player.DungeonR          = 0;
                 Player.CurrentHp         = Player.MaxHp;
                 Player.CurrentStamina    = Player.MaxStamina;
+                Player.ActiveCombatSessionId = null;
+                await _playerRepo.UpdateAsync(Player);
             }
             else
             {
-                // Drop inventory onto the tile before clearing
                 int dropQ = Player.DungeonInstanceId != null ? Player.DungeonQ : Player.Q;
                 int dropR = Player.DungeonInstanceId != null ? Player.DungeonR : Player.R;
-
-                foreach (var (itemId, qty) in Player.Inventory)
-                    await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, itemId, qty);
-                foreach (var (itemId, qty) in Player.CraftedItems)
-                    await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, itemId, qty);
-
-                // Same reset as drowning
-                Player.Q              = 0;
-                Player.R              = 0;
-                Player.DungeonInstanceId = null;
-                Player.DungeonFloor   = 0;
-                Player.DungeonQ       = 0;
-                Player.DungeonR       = 0;
-                Player.Satiety        = 50;
-                Player.Inventory.Clear();
-                Player.CraftedItems.Clear();
-                Player.CurrentHp      = Player.MaxHp;
-                Player.CurrentStamina = Player.MaxStamina;
+                Player.ActiveCombatSessionId = null;
+                await RespawnAsync(dropQ, dropR);
             }
         }
         else
         {
-            // Grant loot
             foreach (var (id, qty) in result.LootGained)
                 Player.Inventory[id] = Player.Inventory.GetValueOrDefault(id) + qty;
-
-            // Record enemies defeated
             foreach (var (defId, count) in result.EnemiesDefeated)
                 Player.EnemiesDefeated[defId] = Player.EnemiesDefeated.GetValueOrDefault(defId) + count;
+            Player.ActiveCombatSessionId = null;
+            await _playerRepo.UpdateAsync(Player);
         }
 
-        Player.ActiveCombatSessionId = null;
-        await _playerRepo.UpdateAsync(Player);
         await _combatRepo.DeleteAsync(session.Id);
     }
 

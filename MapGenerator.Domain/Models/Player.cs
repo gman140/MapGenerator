@@ -52,4 +52,5 @@ public class Player
 
     // Enemy kill tracking
     public Dictionary<string, int> EnemiesDefeated { get; set; } = new();
+    public int DeathCount { get; set; }
 }

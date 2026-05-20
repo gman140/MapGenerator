@@ -132,6 +132,17 @@ OnDance="HandleDanceAsync"
         </div>
     }
 
+    @if (_deathMessage != null)
+    {
+        <div class="death-overlay">
+            <div class="death-modal">
+                <div class="death-title">You Have Fallen</div>
+                <p class="death-message">@_deathMessage</p>
+                <button class="death-confirm-btn" @onclick="() => _deathMessage = null">I rise again...</button>
+            </div>
+        </div>
+    }
+
     @if (_oceanWarning)
     {
         <div class="modal-overlay">
@@ -146,16 +157,6 @@ OnDance="HandleDanceAsync"
         </div>
     }
 
-    @if (_drownedMessage)
-    {
-        <div class="modal-overlay">
-            <div class="modal-box danger">
-                <p>The waves swallowed you whole. Your journey ends here.</p>
-                <p>A new soul may yet walk this world.</p>
-                <button @onclick="HandleDrownedAsync">Begin Again</button>
-            </div>
-        </div>
-    }
 
     @if (_showNoteModal)
     {
@@ -210,7 +211,6 @@ OnDance="HandleDanceAsync"
     private long _cooldownUntil;
     private long _gatherCooldownUntil;
     private bool _oceanWarning;
-    private bool _drownedMessage;
     private string? _moveError;
     private (int q, int r)? _pendingOceanMove;
     private System.Threading.Timer? _toastTimer;
@@ -228,6 +228,30 @@ OnDance="HandleDanceAsync"
     private CombatSession? _combatSession;
     private CombatResult? _combatResult;
     private CombatView? _combatView;
+    private string? _deathMessage;
+    private static readonly Random _deathRng = new();
+
+    private static readonly string[] DeathMessages =
+    [
+        "The divine tribunal reviewed your life's ledger in meticulous detail and, after several celestial hours of deliberation, concluded that your earthly debts remain unsettled. You have been returned. Sort yourself out.",
+        "The ferryman took one look at you, calculated what you owed, realized you had nothing to offer, and pointed back upstream. The River Styx does not extend credit. You washed ashore, gasping, back where you began.",
+        "You arrived at the gates of eternity only to be informed, with profound regret, that the afterlife was at capacity. A waiting list has been started. You are number 4,719. Please return to the mortal realm and try again at a more convenient time.",
+        "A minor deity of middling importance took pity upon your pathetic form — or perhaps it was disgust; the two are remarkably difficult to distinguish — and breathed life back into your wretched body. You are unsure whether to be grateful.",
+        "The ancient spirits reviewed your case and determined, by a margin of three votes to two, that you are simply too annoying to admit into the afterlife. You have been sent back with a note that reads: 'Not yet. Please.'",
+        "Death herself approached, reviewed your file, checked it twice, and discovered that you had not completed Form 7-Gamma, the Declaration of Mortal Intent. Your signature was absent. She sent you back. Do not misplace the form again.",
+        "You were briefly welcomed into the celestial hall, where you promptly knocked over a very important urn, mispronounced the name of the eternal keeper three times, and broke an irreplaceable cosmic artifact. You were escorted out.",
+        "The great worm at the center of existence tasted your soul, found it profoundly unsatisfying, and spat you back into the living world. It has since refused to comment on the incident.",
+        "A prophet recorded, ages ago, that you would accomplish something of mild but notable significance before your end. The universe, bound by this prophecy, had no choice but to return you. The prophet has since issued a formal apology.",
+        "Your guardian angel, who had been on an extended sabbatical in a considerably warmer realm, returned to find you dead and filed a strongly-worded complaint with the celestial administration. After several hours of appeals, they agreed to make an exception. Just this once.",
+        "The lord of the underworld took one look at you, considered the paperwork involved, and said no. His exact words, as translated from the ancient tongue, amounted to something like: 'Absolutely not. Send it back.'",
+        "You wandered into the realm of the dead and found it surprisingly bureaucratic. You filled out twelve forms, waited in three queues, and were ultimately rejected on a technicality. Apparently you had checked the wrong box on your mortality waiver.",
+        "The shadows at the edge of death whispered to one another in hushed, horrified tones. Then they voted, unanimously, to send you back. Whatever they witnessed in your past deeds, they have refused to speak of it since.",
+        "A very small and thoroughly obscure deity — one governing the domain of misplaced keys and wrong turns — interceded on your behalf for reasons that remain entirely unclear. You are now, technically, their chosen one. Neither of you asked for this.",
+        "The cosmic ledger of fate was consulted. It said, in letters of ancient flame thirty feet high, that you were supposed to die next Tuesday. This was deemed close enough to warrant a temporary reinstatement.",
+        "You arrived in the great beyond to discover that absolutely nobody there knew who you were or what you were doing there. After much confusion and several cups of celestial tea, they returned you to avoid the inconvenience of filing a missing-soul report.",
+        "The afterlife's most senior official peered at you through spectacles older than mountains, murmured something about a 'loose end,' and had you escorted back to the living world. You are the loose end. What this implies remains, mercifully, unclear.",
+        "You were dead for a period that theologians would describe as 'significant' and biologists would describe as 'impossible.' Nevertheless, here you are. Some forces in the universe are simply too stubborn to stay gone.",
+    ];
 
     // Dungeon state
     private DungeonFloor? _dungeonFloor;
@@ -314,7 +338,7 @@ OnDance="HandleDanceAsync"
 
         if (result.PlayerDrowned)
         {
-            _drownedMessage = true;
+            _deathMessage = DeathMessages[_deathRng.Next(DeathMessages.Length)];
             StateHasChanged();
             return;
         }
@@ -423,7 +447,7 @@ OnDance="HandleDanceAsync"
         var result = await Session.MoveAsync(q, r, oceanConfirmed: true);
         if (result.PlayerDrowned)
         {
-            _drownedMessage = true;
+            _deathMessage = DeathMessages[_deathRng.Next(DeathMessages.Length)];
             StateHasChanged();
             return;
         }
@@ -433,12 +457,6 @@ OnDance="HandleDanceAsync"
             await JS.InvokeVoidAsync("gameJs.updateMinimapPlayer", Session.Player.Q, Session.Player.R);
         }
         StateHasChanged();
-    }
-
-    private async Task HandleDrownedAsync()
-    {
-        await JS.InvokeVoidAsync("gameJs.clearBrowserId");
-        Nav.NavigateTo("/", forceLoad: true);
     }
 
     private async Task HandleLayEggAsync()
@@ -698,11 +716,17 @@ OnDance="HandleDanceAsync"
 
     private async Task HandleCombatConfirmAsync()
     {
+        bool playerDied = _combatResult?.PlayerDied == true && !(Session.Player?.IsAdmin ?? false);
+        if (playerDied)
+            _deathMessage = DeathMessages[_deathRng.Next(DeathMessages.Length)];
+
         await Session.FinalizeCombatAsync();
         _combatSession = null;
         _combatResult  = null;
-        if (Session.Player.IsInDungeon)
+
+        if (!playerDied && Session.Player!.IsInDungeon)
             _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
+
         StateHasChanged();
     }
 
