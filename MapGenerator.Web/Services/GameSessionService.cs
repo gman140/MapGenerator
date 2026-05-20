@@ -459,8 +459,14 @@ public class GameSessionService : IAsyncDisposable
         if (allDefs.Count == 0) return (false, "No companion types available.");
         var def = allDefs[Random.Shared.Next(allDefs.Count)];
 
-        var allMoveIds = def.Moves.Select(m => m.Id).OrderBy(_ => Random.Shared.Next()).ToList();
-        var selectedMoves = allMoveIds.Take(4).ToList();
+        var rng = Random.Shared;
+        string? attackId = def.Moves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.Attack)
+                                    .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
+        string? buffId   = def.Moves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.PlayerBuff)
+                                    .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
+        string? debuffId = def.Moves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.EnemyDebuff)
+                                    .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
+        var selectedMoves = new[] { attackId, buffId, debuffId }.Where(id => id != null).Select(id => id!).ToList();
 
         var companion = new PlayerCompanion
         {

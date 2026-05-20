@@ -16,6 +16,7 @@ public enum CombatEventKind
     CompanionAction,   // companion took an action this turn
     PlayerBounce,      // player took a non-damage action — trigger bounce animation
     EnemyBounce,       // enemy took a non-damage action — trigger bounce animation
+    CompanionBounce,   // companion took a non-damage action — trigger bounce animation
 }
 
 public class CombatEvent

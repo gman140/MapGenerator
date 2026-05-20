@@ -700,6 +700,17 @@ public class CombatEngine : ICombatEngine
 
         string companionName = string.IsNullOrEmpty(session.CompanionName) ? "Your companion" : session.CompanionName;
 
+        switch (move.Kind)
+        {
+            case CompanionMoveKind.PlayerBuff:
+                ExecuteCompanionBuff(session, move, companionName, events);
+                return;
+            case CompanionMoveKind.EnemyDebuff:
+                ExecuteCompanionDebuff(session, move, companionName, events);
+                return;
+        }
+
+        // Attack
         string header = move.HitsAll
             ? $"{companionName} uses {move.Name} on all enemies!"
             : $"{companionName} uses {move.Name}!";
@@ -738,6 +749,76 @@ public class CombatEngine : ICombatEngine
             if (killed)
                 events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
         }
+    }
+
+    private void ExecuteCompanionBuff(CombatSession session, CompanionMove move, string companionName, List<CombatEvent> events)
+    {
+        events.Add(new CombatEvent { Kind = CombatEventKind.CompanionBounce });
+
+        if (move.EffectStat == null)
+        {
+            // Heal HP
+            int before = session.PlayerHp;
+            session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + (int)move.EffectValue);
+            int healed = session.PlayerHp - before;
+            string msg = $"{companionName} uses {move.Name}! You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.PlayerUpdate, Log = msg, PlayerHp = session.PlayerHp, DelayMs = 400 });
+        }
+        else
+        {
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id             = $"Companion:{move.Id}:{session.TurnNumber}",
+                Stat           = move.EffectStat.Value,
+                Value          = move.EffectValue,
+                TurnsRemaining = move.EffectTurns,
+                Source         = "Companion",
+            });
+            string statName = move.EffectStat.Value switch
+            {
+                ModifierStat.Attack      => "attack",
+                ModifierStat.Defense     => "defense",
+                ModifierStat.DodgeChance => "dodge",
+                _                        => move.EffectStat.Value.ToString().ToLower(),
+            };
+            string msg = $"{companionName} uses {move.Name}! Your {statName} increases for {move.EffectTurns} turns.";
+            session.Log.Add(msg);
+            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = msg, DelayMs = 400 });
+        }
+    }
+
+    private void ExecuteCompanionDebuff(CombatSession session, CompanionMove move, string companionName, List<CombatEvent> events)
+    {
+        var target = GetTargetEnemy(session, null);
+        if (target == null) return;
+
+        events.Add(new CombatEvent { Kind = CombatEventKind.CompanionBounce });
+
+        target.ActiveModifiers.Add(new CombatModifier
+        {
+            Id             = $"Companion:Debuff:{move.Id}:{session.TurnNumber}",
+            Stat           = move.EffectStat!.Value,
+            Value          = move.EffectValue,
+            TurnsRemaining = move.EffectTurns,
+            Source         = "Companion",
+        });
+        string statName = move.EffectStat.Value switch
+        {
+            ModifierStat.Attack  => "attack",
+            ModifierStat.Defense => "defense",
+            _                    => move.EffectStat.Value.ToString().ToLower(),
+        };
+        string msg = $"{companionName} uses {move.Name}! The {target.Name}'s {statName} is reduced for {move.EffectTurns} turns.";
+        session.Log.Add(msg);
+        events.Add(new CombatEvent
+        {
+            Kind            = CombatEventKind.EnemyUpdate,
+            EnemyInstanceId = target.InstanceId,
+            Log             = msg,
+            EnemyHp         = target.CurrentHp,
+            DelayMs         = 400,
+        });
     }
 
     // ── Enemy action ─────────────────────────────────────────────────────────

@@ -706,6 +706,9 @@ OnDance="HandleDanceAsync"
                 case CombatEventKind.CompanionAction:
                     _combatView?.TriggerCompanionAttack();
                     break;
+                case CombatEventKind.CompanionBounce:
+                    _combatView?.TriggerCompanionBounce();
+                    break;
                 case CombatEventKind.EnemyBounce when evt.EnemyInstanceId != null:
                     _combatView?.TriggerEnemyBounce(evt.EnemyInstanceId);
                     break;
