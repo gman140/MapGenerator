@@ -50,7 +50,7 @@ public class PlayerService
         {
             Username  = username,
             BrowserId = browserId,
-            IsAdmin   = username.EndsWith("admin", StringComparison.OrdinalIgnoreCase),
+            IsAdmin   = false,
             Q         = config.SpawnQ,
             R         = config.SpawnR,
             Satiety   = 80.0,
