@@ -62,6 +62,13 @@ public class CombatEngine : ICombatEngine
 
         ApplyEquipmentModifiers(session, player);
 
+        if (player.EquippedWeaponId != null)
+        {
+            var weaponDef = _resourceProvider.GetById(player.EquippedWeaponId);
+            if (weaponDef != null)
+                session.PlayerWeaponDamageType = weaponDef.WeaponDamageType;
+        }
+
         foreach (var enemy in enemies)
         {
             var def = _enemyProvider.GetById(enemy.DefinitionId);
@@ -337,14 +344,19 @@ public class CombatEngine : ICombatEngine
         int effDef = EffectiveEnemyDefense(target);
         double variance = 0.85 + _rng.NextDouble() * 0.30;
         double mult = isHeavy ? 1.5 : 1.0;
-        int damage = (int)Math.Max(1, (effAtk - effDef) * mult * variance);
+        int rawDamage = (int)Math.Max(1, (effAtk - effDef) * mult * variance);
+
+        var def = _enemyProvider.GetById(target.DefinitionId);
+        var (typeModifier, typeLog) = GetTypeEffectiveness(session.PlayerWeaponDamageType, def);
+        int damage = (int)Math.Max(1, rawDamage * typeModifier);
 
         target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
 
         string verb = isHeavy ? "drive a heavy blow into" : "strike";
         bool killed = target.CurrentHp == 0;
         string fell = killed ? $" The {target.Name} falls." : string.Empty;
-        string log = $"You {verb} the {target.Name} for {damage} damage.{fell}";
+        string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
+        string log = $"You {verb} the {target.Name} for {damage} damage.{typeNote}{fell}";
         session.Log.Add(log);
 
         events.Add(new CombatEvent
@@ -784,6 +796,46 @@ public class CombatEngine : ICombatEngine
             if (list[i].TurnsRemaining <= 0)
                 list.RemoveAt(i);
         }
+    }
+
+    // ── Type effectiveness ────────────────────────────────────────────────────
+
+    private static (float modifier, string? log) GetTypeEffectiveness(DamageType attackType, EnemyDefinition? def)
+    {
+        if (def == null) return (1f, null);
+
+        if (def.Weaknesses.Contains(attackType))
+        {
+            string text = def.WeaknessText.TryGetValue(attackType, out string? custom) && custom != null
+                ? custom
+                : "Super effective!";
+            return (1.5f, text);
+        }
+
+        if (def.Resistances.Contains(attackType))
+        {
+            string text = def.ResistanceText.TryGetValue(attackType, out string? custom) && custom != null
+                ? custom
+                : "Not very effective…";
+            return (0.5f, text);
+        }
+
+        return (1f, null);
+    }
+
+    // For split-damage attacks (primary + secondary type, each portion scaled separately)
+    private static int ApplySplitDamage(int total, DamageType primary, DamageType? secondary, float secondaryRatio, EnemyDefinition? def)
+    {
+        if (secondary == null || secondaryRatio <= 0f)
+        {
+            var (mod, _) = GetTypeEffectiveness(primary, def);
+            return (int)Math.Max(1, total * mod);
+        }
+
+        float primaryRatio  = 1f - secondaryRatio;
+        var (pMod, _) = GetTypeEffectiveness(primary, def);
+        var (sMod, _) = GetTypeEffectiveness(secondary.Value, def);
+        return (int)Math.Max(1, total * primaryRatio * pMod + total * secondaryRatio * sMod);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ public class ResourceDefinition
     public int AttackBonus { get; init; }
     public int DefenseBonus { get; init; }
     public float DodgeChanceBonus { get; init; }
+    public DamageType WeaponDamageType { get; init; } = DamageType.Bludgeoning;
 
     // Combat consumable fields (only relevant when Traits has CombatConsumable)
     public int CombatHpRestore { get; init; }

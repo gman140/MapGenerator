@@ -2,6 +2,7 @@ using MapGenerator.Combat.Enums;
 using MapGenerator.Combat.Interfaces;
 using MapGenerator.Combat.Models;
 using MapGenerator.Domain.Enums;
+using DT = MapGenerator.Domain.Enums.DamageType;
 
 namespace MapGenerator.Combat.Services;
 
@@ -19,6 +20,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Attack, Weight = 70 },
                 new() { Action = EnemyActionType.Defend, Weight = 30 },
             ],
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses   = [DT.Storm],
+            Resistances  = [DT.Bludgeoning, DT.Nature],
+            WeaknessText  = { [DT.Storm]       = "The slime conducts electricity perfectly!" },
+            ResistanceText = { [DT.Bludgeoning] = "Your blow sinks in and is simply absorbed.", [DT.Nature] = "It seems to relish the contact." },
             LootTable =
             [
                 new() { ItemId = "SlimeGel",  Chance = 0.50f },
@@ -70,6 +76,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Buff,   Weight = 30 },
                 new() { Action = EnemyActionType.Defend, Weight = 20 },
             ],
+            AttackDamageType = DT.Bludgeoning,
             BuffStat = ModifierStat.Attack, BuffValue = 4f, BuffTurns = 2,
             LootTable =
             [
@@ -128,6 +135,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Buff,   Weight = 20 },
                 new() { Action = EnemyActionType.Defend, Weight = 20 },
             ],
+            AttackDamageType = DT.Slashing,
+            Weaknesses   = [DT.Fire],
+            Resistances  = [DT.Frost],
+            WeaknessText  = { [DT.Fire]  = "The wolf recoils from the heat — fire is its oldest fear." },
+            ResistanceText = { [DT.Frost] = "Its thick pelt shrugs off the cold." },
             BuffStat = ModifierStat.Attack, BuffValue = 6f, BuffTurns = 2,
             LootTable =
             [
@@ -187,6 +199,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Defend,      Weight = 30 },
                 new() { Action = EnemyActionType.HeavyAttack, Weight = 20 },
             ],
+            AttackDamageType = DT.Slashing,
+            Weaknesses   = [DT.Storm],
+            Resistances  = [DT.Bludgeoning, DT.Piercing, DT.Slashing],
+            WeaknessText  = { [DT.Storm]       = "Lightning finds every nerve — the bear convulses." },
+            ResistanceText = { [DT.Bludgeoning] = "Its bulk absorbs the impact without complaint.", [DT.Piercing] = "The hide is too dense to penetrate cleanly.", [DT.Slashing] = "Its thick fur and fat deflect the edge." },
             LootTable =
             [
                 new() { ItemId = "BearHide",     Chance = 0.50f },
@@ -247,6 +264,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Regenerate,  Weight = 20 },
                 new() { Action = EnemyActionType.Defend,      Weight = 10 },
             ],
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses   = [DT.Fire, DT.Nature],
+            Resistances  = [DT.Bludgeoning],
+            WeaknessText  = { [DT.Fire]  = "The troll's hide chars and cracks — fire is an old enemy.", [DT.Nature] = "Vines and root find the joints between its stones." },
+            ResistanceText = { [DT.Bludgeoning] = "Stone against stone. The troll barely registers it." },
             LootTable =
             [
                 new() { ItemId = "TrollHide",    Chance = 0.50f },
@@ -313,6 +335,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Attack, Weight = 80 },
                 new() { Action = EnemyActionType.Defend, Weight = 20 },
             ],
+            AttackDamageType = DT.Bludgeoning,
             LootTable =
             [
                 new() { ItemId = "Fiber",    Chance = 0.50f },
@@ -363,6 +386,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.HeavyAttack, Weight = 15 },
                 new() { Action = EnemyActionType.Defend,      Weight = 30 },
             ],
+            AttackDamageType = DT.Piercing,
             LootTable =
             [
                 new() { ItemId = "Wood",  Chance = 0.60f },
@@ -418,6 +442,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Buff,       Weight = 35 },
                 new() { Action = EnemyActionType.Regenerate, Weight = 20 },
             ],
+            AttackDamageType = DT.Nature,
+            Weaknesses   = [DT.Fire],
+            Resistances  = [DT.Nature],
+            WeaknessText  = { [DT.Fire]   = "The cap catches immediately — mushrooms and fire never mix well." },
+            ResistanceText = { [DT.Nature] = "It absorbs the natural energy, almost gratefully." },
             BuffStat = ModifierStat.Attack, BuffValue = 3f, BuffTurns = 2,
             RegenerateAmount = 5,
             LootTable =
@@ -475,6 +504,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Attack, Weight = 65 },
                 new() { Action = EnemyActionType.Buff,   Weight = 35 },
             ],
+            AttackDamageType = DT.Dark,
+            Weaknesses   = [DT.Storm],
+            Resistances  = [DT.Dark],
+            WeaknessText  = { [DT.Storm] = "Lightning scatters the sand-form, disrupting whatever binds it." },
+            ResistanceText = { [DT.Dark]  = "Darkness does not harm darkness. The wraith is indifferent." },
             BuffStat = ModifierStat.DodgeChance, BuffValue = 0.15f, BuffTurns = 2,
             LootTable =
             [
@@ -526,6 +560,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Buff,   Weight = 30 },
                 new() { Action = EnemyActionType.Defend, Weight = 20 },
             ],
+            AttackDamageType = DT.Slashing,
+            Weaknesses   = [DT.Storm],
+            Resistances  = [DT.Frost],
+            WeaknessText  = { [DT.Storm] = "Lightning crackles through the heron's hollow bones — it screams without a throat." },
+            ResistanceText = { [DT.Frost] = "Death already took its warmth. Cold does nothing to what isn't alive." },
             BuffStat = ModifierStat.DodgeChance, BuffValue = 0.20f, BuffTurns = 2,
             LootTable =
             [
@@ -583,6 +622,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Defend,      Weight = 35 },
                 new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
             ],
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses   = [DT.Frost, DT.Storm],
+            Resistances  = [DT.Bludgeoning, DT.Piercing, DT.Slashing],
+            WeaknessText  = { [DT.Frost] = "Ice finds the hairline cracks in its stone and pries them open.", [DT.Storm] = "Lightning splits the rock — the shepherd staggers." },
+            ResistanceText = { [DT.Bludgeoning] = "Stone is not moved by stone.", [DT.Piercing] = "Nothing penetrates granite.", [DT.Slashing] = "Your edge scrapes uselessly across the surface." },
             LootTable =
             [
                 new() { ItemId = "Stone",       Chance = 0.60f },
@@ -641,6 +685,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Buff,   Weight = 40 },
                 new() { Action = EnemyActionType.Defend, Weight = 20 },
             ],
+            AttackDamageType = DT.Dark,
+            Weaknesses   = [DT.Fire],
+            Resistances  = [DT.Dark],
+            WeaknessText  = { [DT.Fire] = "The pages catch first. The librarian makes a sound like old paper igniting." },
+            ResistanceText = { [DT.Dark] = "It is already in the dark. This changes nothing for it." },
             BuffStat = ModifierStat.Attack, BuffValue = 10f, BuffTurns = 3,
             LootTable =
             [
@@ -699,6 +748,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Regenerate, Weight = 15 },
                 new() { Action = EnemyActionType.Defend,     Weight = 10 },
             ],
+            AttackDamageType = DT.Nature,
+            Weaknesses   = [DT.Fire],
+            Resistances  = [DT.Nature, DT.Dark],
+            WeaknessText  = { [DT.Fire]   = "The fermentation ignites with a deep, nauseating whump." },
+            ResistanceText = { [DT.Nature] = "It accepts the organic energy and incorporates it.", [DT.Dark] = "Something in it has already rotted past the point where darkness can find purchase." },
             BuffStat = ModifierStat.Attack, BuffValue = 10f, BuffTurns = 2,
             RegenerateAmount = 8,
             LootTable =
@@ -765,6 +819,11 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Buff,        Weight = 15 },
                 new() { Action = EnemyActionType.Defend,      Weight = 10 },
             ],
+            AttackDamageType = DT.Dark,
+            Weaknesses   = [DT.Fire],
+            Resistances  = [DT.Dark, DT.Slashing],
+            WeaknessText  = { [DT.Fire] = "The objects scatter from the heat — fire disrupts whatever binds them." },
+            ResistanceText = { [DT.Dark] = "The arrangement operates in the dark. It does not register the change.", [DT.Slashing] = "Blades pass through the gaps in the formation. Nothing there to cut." },
             BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.4f, BuffTurns = 2,
             LootTable =
             [
@@ -829,6 +888,9 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { Action = EnemyActionType.Regenerate, Weight = 20 },
                 new() { Action = EnemyActionType.Defend,     Weight = 15 },
             ],
+            AttackDamageType = DT.Piercing,
+            Weaknesses   = [DT.Fire, DT.Storm],
+            WeaknessText  = { [DT.Fire] = "The crown rats scatter in panic. Fire breaks the quorum.", [DT.Storm] = "Lightning disperses the crown — the vote cannot be held in this weather." },
             BuffStat = ModifierStat.Attack, BuffValue = 8f, BuffTurns = 2,
             RegenerateAmount = 10,
             LootTable =

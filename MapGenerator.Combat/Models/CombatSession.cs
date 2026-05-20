@@ -1,4 +1,5 @@
 using MapGenerator.Combat.Enums;
+using MapGenerator.Domain.Enums;
 
 namespace MapGenerator.Combat.Models;
 
@@ -19,6 +20,7 @@ public class CombatSession
     public int PlayerBaseAttack { get; set; }
     public int PlayerBaseDefense { get; set; }
     public float PlayerBaseDodgeChance { get; set; }
+    public DamageType PlayerWeaponDamageType { get; set; } = DamageType.Bludgeoning;
 
     // Turn flags (cleared at end of each turn)
     public bool PlayerDefending { get; set; }

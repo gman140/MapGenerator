@@ -97,8 +97,8 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "TarnishedRelic",Name = "Tarnished Relic",Description = "Something ceremonial, its purpose lost. The tarnish is its memory now." },
 
         // ── Equipment — Weapons ───────────────────────────────────────────────
-        new() { Id = "IronSword",   Name = "Iron Sword",   Description = "A dull but reliable iron blade. It has seen better years but none worse.", EquipmentSlot = "Weapon", AttackBonus = 8 },
-        new() { Id = "WoodClub",    Name = "Wood Club",    Description = "Heavy and unbalanced. Effective in the manner that blunt things are.", EquipmentSlot = "Weapon", AttackBonus = 5 },
+        new() { Id = "IronSword",   Name = "Iron Sword",   Description = "A dull but reliable iron blade. It has seen better years but none worse.", EquipmentSlot = "Weapon", AttackBonus = 8, WeaponDamageType = DamageType.Slashing },
+        new() { Id = "WoodClub",    Name = "Wood Club",    Description = "Heavy and unbalanced. Effective in the manner that blunt things are.", EquipmentSlot = "Weapon", AttackBonus = 5, WeaponDamageType = DamageType.Bludgeoning },
 
         // ── Equipment — Armor ─────────────────────────────────────────────────
         new() { Id = "LeatherArmor",  Name = "Leather Armor",  Description = "Stitched from scraps. Better than nothing, which it slightly exceeds.", EquipmentSlot = "Armor", DefenseBonus = 6 },

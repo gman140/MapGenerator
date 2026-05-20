@@ -14,6 +14,17 @@ public class EnemyDefinition
     public float FleeHpThreshold { get; set; }
     public List<EnemyActionEntry> ActionTable { get; set; } = [];
 
+    // Damage type for this enemy's attacks
+    public DamageType AttackDamageType { get; init; } = DamageType.Bludgeoning;
+
+    // Type effectiveness
+    public List<DamageType> Weaknesses { get; init; } = [];
+    public List<DamageType> Resistances { get; init; } = [];
+
+    // Per-type custom combat log text (falls back to generic if absent)
+    public Dictionary<DamageType, string> WeaknessText { get; init; } = new();
+    public Dictionary<DamageType, string> ResistanceText { get; init; } = new();
+
     // What the Buff action does (e.g., Wolf's Howl)
     public ModifierStat? BuffStat { get; set; }
     public float BuffValue { get; set; }
