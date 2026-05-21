@@ -42,16 +42,7 @@
                                 <div class="player-row-sprite">
                                     @if (p.SpritePixels.Length > 0)
                                     {
-                                        <svg width="32" height="32" class="player-row-svg">
-                                            @for (int i = 0; i < 256 && i < p.SpritePixels.Length; i++)
-                                            {
-                                                if (!string.IsNullOrEmpty(p.SpritePixels[i]))
-                                                {
-                                                    int px = i % 16, py = i / 16;
-                                                    <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@p.SpritePixels[i]" />
-                                                }
-                                            }
-                                        </svg>
+                                        <img src="@SpriteHelper.ToSvgDataUri(p.SpritePixels)" width="32" height="32" class="player-row-svg" style="image-rendering: pixelated;" />
                                     }
                                     else
                                     {

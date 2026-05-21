@@ -280,22 +280,17 @@ protected override void OnParametersSet()
     private RenderFragment RenderSprite(double cx, double cy, double size, string[] pixels) => builder =>
     {
         if (pixels.Length == 0) return;
-        double pxSize = size / 16.0;
         double startX = cx - size / 2.0;
         double startY = cy - size / 2.0;
         int seq = 0;
-        for (int i = 0; i < 256 && i < pixels.Length; i++)
-        {
-            if (string.IsNullOrEmpty(pixels[i])) continue;
-            int px = i % 16, py = i / 16;
-            builder.OpenElement(seq++, "rect");
-            builder.AddAttribute(seq++, "x", F(startX + px * pxSize));
-            builder.AddAttribute(seq++, "y", F(startY + py * pxSize));
-            builder.AddAttribute(seq++, "width", F(pxSize + 0.5));
-            builder.AddAttribute(seq++, "height", F(pxSize + 0.5));
-            builder.AddAttribute(seq++, "fill", pixels[i]);
-            builder.CloseElement();
-        }
+        builder.OpenElement(seq++, "image");
+        builder.AddAttribute(seq++, "href", SpriteHelper.ToSvgDataUri(pixels));
+        builder.AddAttribute(seq++, "x", F(startX));
+        builder.AddAttribute(seq++, "y", F(startY));
+        builder.AddAttribute(seq++, "width", F(size));
+        builder.AddAttribute(seq++, "height", F(size));
+        builder.AddAttribute(seq++, "image-rendering", "pixelated");
+        builder.CloseElement();
     };
 
     private static string HexPath(double cx, double cy, int q, int r)

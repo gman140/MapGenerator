@@ -7,16 +7,7 @@
                 @onclick="async () => await OnOpenDialog.InvokeAsync()">
             @if (Companion.SpritePixels.Any(p => !string.IsNullOrEmpty(p)))
             {
-                <svg width="32" height="32" class="sprite-edit-preview">
-                    @for (int i = 0; i < 256 && i < Companion.SpritePixels.Length; i++)
-                    {
-                        if (!string.IsNullOrEmpty(Companion.SpritePixels[i]))
-                        {
-                            int px = i % 16, py = i / 16;
-                            <rect x="@(px * 2)" y="@(py * 2)" width="2" height="2" fill="@Companion.SpritePixels[i]" />
-                        }
-                    }
-                </svg>
+                <img src="@SpriteHelper.ToSvgDataUri(Companion.SpritePixels)" width="32" height="32" class="sprite-edit-preview" style="image-rendering: pixelated;" />
             }
             else
             {

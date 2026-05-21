@@ -85,47 +85,16 @@
             <div class="combat-player-side">
                 <div class="combat-fighters-row">
                     <svg width="120" height="120" class="combat-player-svg @(_playerShaking ? "combat-shake" : _playerBouncing ? "combat-bounce" : "") @(_playerAttacking ? "combat-strike" : "")">
-                        @{
-                            const double CombatSpriteSize = 56.0;
-                            double cpxSz = CombatSpriteSize / 16.0;
-                            double cpsx  = 60.0 - CombatSpriteSize / 2.0;
-                            double cpsy  = 56.0 - CombatSpriteSize / 2.0;
-                        }
-                        @for (int _ci = 0; _ci < 256 && _ci < PlayerSprite.Length; _ci++)
+                        @if (PlayerSprite.Length > 0)
                         {
-                            if (!string.IsNullOrEmpty(PlayerSprite[_ci]))
-                            {
-                                int _cpx = _ci % 16, _cpy = _ci / 16;
-                                <rect x="@((cpsx + _cpx * cpxSz).ToString("F1"))"
-                                      y="@((cpsy + _cpy * cpxSz).ToString("F1"))"
-                                      width="@((cpxSz + 0.3).ToString("F1"))"
-                                      height="@((cpxSz + 0.3).ToString("F1"))"
-                                      fill="@PlayerSprite[_ci]" />
-                            }
+                            <image href="@SpriteHelper.ToSvgDataUri(PlayerSprite)" x="32" y="28" width="56" height="56" image-rendering="pixelated" />
                         }
                     </svg>
                     @if (Session.CompanionPresent && CompanionSpritePixels != null && CompanionSpritePixels.Any(p => !string.IsNullOrEmpty(p)))
                     {
                         <div class="combat-companion-mini">
-                            <svg width="72" height="72" class="combat-companion-svg @(_companionAttacking ? "combat-strike" : _companionBouncing ? "combat-bounce" : "")"  style="image-rendering: pixelated;">
-                                @{
-                                    const double CompanionSpriteSize = 40.0;
-                                    double ccSz = CompanionSpriteSize / 16.0;
-                                    double ccsx = 40.0 - CompanionSpriteSize / 2.0;
-                                    double ccsy = 36.0 - CompanionSpriteSize / 2.0;
-                                }
-                                @for (int _cci = 0; _cci < 256 && _cci < CompanionSpritePixels.Length; _cci++)
-                                {
-                                    if (!string.IsNullOrEmpty(CompanionSpritePixels[_cci]))
-                                    {
-                                        int _ccpx = _cci % 16, _ccpy = _cci / 16;
-                                        <rect x="@((ccsx + _ccpx * ccSz).ToString("F1"))"
-                                              y="@((ccsy + _ccpy * ccSz).ToString("F1"))"
-                                              width="@((ccSz + 0.3).ToString("F1"))"
-                                              height="@((ccSz + 0.3).ToString("F1"))"
-                                              fill="@CompanionSpritePixels[_cci]" />
-                                    }
-                                }
+                            <svg width="72" height="72" class="combat-companion-svg @(_companionAttacking ? "combat-strike" : _companionBouncing ? "combat-bounce" : "")">
+                                <image href="@SpriteHelper.ToSvgDataUri(CompanionSpritePixels)" x="20" y="16" width="40" height="40" image-rendering="pixelated" />
                             </svg>
                         </div>
                     }
