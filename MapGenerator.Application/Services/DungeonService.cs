@@ -192,7 +192,9 @@ public class DungeonService
         var result = new DungeonMoveResult { Success = true };
 
         // Apply room entry effects
-        result.RoomMessage = await ApplyRoomEntryEffects(player, dungeon, floor, targetRoom, permissions);
+        var (roomMsg, bossCombatStarted) = await ApplyRoomEntryEffects(player, dungeon, floor, targetRoom, permissions);
+        result.RoomMessage    = roomMsg;
+        result.CombatStarted  = bossCombatStarted;
 
         // Reveal neighbors if Lantern in inventory
         bool hasLantern = player.Inventory.GetValueOrDefault("Lantern") > 0
@@ -371,10 +373,11 @@ public class DungeonService
 
     // ── Room entry effects ────────────────────────────────────────────────────
 
-    private async Task<string?> ApplyRoomEntryEffects(
+    private async Task<(string? message, bool combatStarted)> ApplyRoomEntryEffects(
         Player player, DungeonInstance dungeon, DungeonFloor floor, DungeonRoom room, IReadOnlySet<Permission> permissions)
     {
         string? message = null;
+        bool combatStarted = false;
 
         switch (room.Type)
         {
@@ -417,11 +420,12 @@ public class DungeonService
                     player.ActiveCombatSessionId = bossSession.Id;
                     await _combatRepo.SaveAsync(bossSession);
                     message = "Something massive stirs in the chamber. It moves toward you.";
+                    combatStarted = true;
                 }
                 break;
         }
 
-        return message;
+        return (message, combatStarted);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
