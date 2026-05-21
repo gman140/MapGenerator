@@ -1,6 +1,10 @@
 @using MapGenerator.Domain.Models
 @using MapGenerator.Web.Services
+@using MapGenerator.Combat.Interfaces
+@using MapGenerator.Combat.Services
+@using MapGenerator.Domain.Enums
 @inject GameSessionService Session
+@inject IEnemyDefinitionProvider EnemyProvider
 
 <div class="modal-overlay" @onclick="HandleCancel">
     <div class="sprite-editor-modal" @onclick:stopPropagation
@@ -11,6 +15,7 @@
         <div class="sprite-editor-tabs">
             <button class="sprite-tab @(_tab == "stats" ? "active" : "")" @onclick='() => _tab = "stats"'>Stats</button>
             <button class="sprite-tab @(_tab == "sprite" ? "active" : "")" @onclick='() => _tab = "sprite"'>Sprite</button>
+            <button class="sprite-tab @(_tab == "bestiary" ? "active" : "")" @onclick='() => _tab = "bestiary"'>Bestiary</button>
         </div>
 
         @if (_tab == "stats")
@@ -55,6 +60,68 @@
 
             <div class="pstab-footnote">Tier costs: purchases 1–5 cost 1 pt · 6–10 cost 2 pts · 11+ cost 3 pts</div>
 
+            <div class="modal-actions">
+                <button @onclick="HandleCancel">Close</button>
+            </div>
+        }
+        else if (_tab == "bestiary")
+        {
+            var discovered = EnemyProvider.All
+                .Where(d => Player.EnemiesDefeated.ContainsKey(d.Id))
+                .OrderByDescending(d => Player.EnemiesDefeated[d.Id])
+                .ToList();
+            <div class="bestiary-list">
+                @if (discovered.Count == 0)
+                {
+                    <p class="bestiary-empty">No entries yet — defeat an enemy to unlock its bestiary entry.</p>
+                }
+                else
+                {
+                    @foreach (var def in discovered)
+                    {
+                        int kills = Player.EnemiesDefeated[def.Id];
+                        var locations = EnemySpawner.GetLocations(def.Id);
+                        <div class="bestiary-entry">
+                            <div class="bestiary-sprite">
+                                <EnemySprite DefinitionId="@def.Id" />
+                            </div>
+                            <div class="bestiary-info">
+                                <div class="bestiary-name">
+                                    @def.Name
+                                    <span class="bestiary-kills">× @kills defeated</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(def.Description))
+                                {
+                                    <p class="bestiary-desc">@def.Description</p>
+                                }
+                                @if (locations.Length > 0)
+                                {
+                                    <div class="bestiary-tags">
+                                        @foreach (var loc in locations)
+                                        {
+                                            bool isDungeon = loc.Contains("Dungeon");
+                                            <span class="bestiary-location @(isDungeon ? "dungeon" : "")">@loc</span>
+                                        }
+                                    </div>
+                                }
+                                @if (def.Weaknesses.Count > 0 || def.Resistances.Count > 0)
+                                {
+                                    <div class="bestiary-tags">
+                                        @foreach (var w in def.Weaknesses)
+                                        {
+                                            <span class="bestiary-weak">⚡ @w</span>
+                                        }
+                                        @foreach (var r in def.Resistances)
+                                        {
+                                            <span class="bestiary-resist">🛡 @r</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
             <div class="modal-actions">
                 <button @onclick="HandleCancel">Close</button>
             </div>

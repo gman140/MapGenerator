@@ -13,6 +13,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "Slime", Name = "Slime",
+            Description = "Amorphous masses of corrosive gel that form naturally in wet, low-light environments. Blunt force and plant matter only seem to feed them — bring lightning.",
             BaseHp = 20, BaseAttack = 8, BaseDefense = 2,
             FleeChance = 0.80f, FleeHpThreshold = 0.30f,
             ActionTable =
@@ -69,6 +70,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "SentientEgg", Name = "Sentient Egg",
+            Description = "An unhatched creature pulsing with restless, angry energy. Nobody knows what's inside, and those who've tried to find out usually regret it.",
             BaseHp = 35, BaseAttack = 10, BaseDefense = 5,
             FleeChance = 0.50f, FleeHpThreshold = 0.20f,
             ActionTable =
@@ -129,6 +131,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "Wolf", Name = "Wolf",
+            Description = "Cunning pack hunters that coordinate with howls and flanking charges. A lone wolf is dangerous; a howling one usually means more are close behind.",
             BaseHp = 50, BaseAttack = 18, BaseDefense = 8,
             FleeChance = 0.60f, FleeHpThreshold = 0.25f,
             ActionTable =
@@ -193,6 +196,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "Bear", Name = "Bear",
+            Description = "Massive and deceptively patient, bears rear up to channel their weight into devastating follow-up strikes. They absorb tremendous damage before conceding ground.",
             BaseHp = 80, BaseAttack = 22, BaseDefense = 14,
             FleeChance = 0.20f, FleeHpThreshold = 0.15f,
             DefendDamageBonus = 0.75f,
@@ -258,6 +262,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "CaveTroll", Name = "Cave Troll",
+            Description = "Massive dungeon denizens with stone-like hide and terrifying regeneration. Fire and nature find the gaps; blunt force simply bounces off.",
             BaseHp = 150, BaseAttack = 28, BaseDefense = 18,
             FleeChance = 0.10f, FleeHpThreshold = 0.10f,
             RegenerateAmount = 12,
@@ -333,6 +338,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "HexRabbit", Name = "Six-Legged Rabbit",
+            Description = "Small, deceptively fast creatures marked with arcane patterns. Their docile appearance belies sharp territorial instincts when cornered.",
             BaseHp = 12, BaseAttack = 4, BaseDefense = 1,
             FleeChance = 0.90f, FleeHpThreshold = 0.60f,
             ActionTable =
@@ -384,6 +390,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "BeaverSerpent", Name = "Snake-Headed Beaver",
+            Description = "A river-dwelling hybrid with the body of a beaver and the venomous strike of a serpent. Fiercely territorial near waterways and bogs.",
             BaseHp = 28, BaseAttack = 9, BaseDefense = 4,
             FleeChance = 0.55f, FleeHpThreshold = 0.30f,
             ActionTable =
@@ -441,6 +448,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "MushroomSprite", Name = "Mushroom Sprite",
+            Description = "Fungal entities that drift through damp forests releasing toxic spores. They are drawn to decomposing matter and seem to share a hive awareness.",
             BaseHp = 18, BaseAttack = 7, BaseDefense = 2,
             FleeChance = 0.65f, FleeHpThreshold = 0.35f,
             ActionTable =
@@ -505,6 +513,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "DustWraith", Name = "Dust Wraith",
+            Description = "Spectral remnants that drift on hot, dry winds, barely distinguishable from the desert haze. They are drawn to the living like moths to a flame.",
             BaseHp = 22, BaseAttack = 11, BaseDefense = 1,
             FleeChance = 0.70f, FleeHpThreshold = 0.40f,
             ActionTable =
@@ -561,6 +570,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "TwiceBornHeron", Name = "Twice-Born Heron",
+            Description = "A waterbird that died once and came back wrong — larger, colder, and far more aggressive. It haunts frozen shores and riverbanks with eerie patience.",
             BaseHp = 60, BaseAttack = 20, BaseDefense = 6,
             FleeChance = 0.65f, FleeHpThreshold = 0.30f,
             ActionTable =
@@ -623,6 +633,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "StoneShepherd", Name = "Stone Shepherd",
+            Description = "Ancient golems carved from mountain rock, tasked with guarding something long forgotten. They move with slow deliberation and hit like a falling cliff face.",
             BaseHp = 95, BaseAttack = 21, BaseDefense = 20,
             FleeChance = 0.08f, FleeHpThreshold = 0.08f,
             DefendDamageBonus = 0.80f,
@@ -688,6 +699,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "PaleLibrarian", Name = "Pale Librarian",
+            Description = "Undead scholars still cataloguing texts that crumbled to dust ages ago. They can invoke terrible words mid-fight to amplify their own deadliness.",
             BaseHp = 55, BaseAttack = 18, BaseDefense = 9,
             FleeChance = 0.35f, FleeHpThreshold = 0.20f,
             ActionTable =
@@ -751,6 +763,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "FermentedThing", Name = "Fermented Thing",
+            Description = "What happens when swamp rot crosses a threshold into something that moves on its own. Foul-smelling, surprisingly fast, and deeply hostile to everything.",
             BaseHp = 75, BaseAttack = 24, BaseDefense = 7,
             FleeChance = 0.25f, FleeHpThreshold = 0.15f,
             ActionTable =
@@ -823,6 +836,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "TheArrangement", Name = "The Arrangement",
+            Description = "Something that should not have a shape, wearing one anyway. Its origins and motives remain entirely opaque to all who have survived the encounter.",
             BaseHp = 200, BaseAttack = 30, BaseDefense = 16,
             FleeChance = 0.05f, FleeHpThreshold = 0.05f,
             ActionTable =
@@ -893,6 +907,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         new()
         {
             Id = "CoronatedRat", Name = "Coronated Rat",
+            Description = "A rat of unusual size and even more unusual ambition, wearing a crown of bent copper. It commands lesser vermin with imperious squeaks and surprising tactical cunning.",
             BaseHp = 175, BaseAttack = 26, BaseDefense = 12,
             FleeChance = 0.15f, FleeHpThreshold = 0.10f,
             ActionTable =

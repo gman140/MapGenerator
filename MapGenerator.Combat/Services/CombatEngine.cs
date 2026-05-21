@@ -905,6 +905,7 @@ public class CombatEngine : ICombatEngine
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.ShakePlayer,
+            EnemyInstanceId = enemy.InstanceId,
             PlayerHp = session.PlayerHp,
             DelayMs = 350,
         });

@@ -1,5 +1,5 @@
 <span class="@Class" style="display:inline-block;line-height:0">
-<svg width="100" height="100" class="combat-enemy-svg @AffixClass">
+<svg width="100" height="100" viewBox="0 0 100 100" class="@SvgClass @AffixClass">
     @if (DefinitionId == "Slime")
     {
         <ellipse cx="50" cy="58" rx="28" ry="20" fill="#3a8a3a" stroke="@Stroke" stroke-width="@Sw" />
@@ -121,6 +121,7 @@
     [Parameter, EditorRequired] public string DefinitionId { get; set; } = string.Empty;
     [Parameter] public bool Targeted { get; set; }
     [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string SvgClass { get; set; } = string.Empty;
     [Parameter] public string? Affix { get; set; }
 
     private string Stroke     => Targeted ? "#ffe066" : "#aaa";

@@ -128,10 +128,11 @@
                     bool shaking  = _shakingEnemyId == enemy.InstanceId;
                     bool bouncing = _bouncingEnemyId == enemy.InstanceId;
                     bool targeted = _targetEnemyId == enemy.InstanceId && !dying && !fleeing;
-                    string animationClass = dying ? "combat-enemy-dying" : fleeing ? "combat-enemy-fleeing" : shaking ? "combat-shake" : bouncing ? "combat-bounce" : _playerShaking ? "combat-strike-enemy" : "";
+                    bool striking = _strikingEnemyId == enemy.InstanceId;
+                    string animationClass = dying ? "combat-enemy-dying" : fleeing ? "combat-enemy-fleeing" : shaking ? "combat-shake" : bouncing ? "combat-bounce" : striking ? "combat-strike-enemy" : "";
                     <div class="combat-enemy @(targeted ? "targeted" : "")"
                          @onclick="() => SelectTarget(enemy.InstanceId)">
-                        <EnemySprite DefinitionId="@enemy.DefinitionId" Targeted="@targeted" Class="@animationClass" Affix="@enemy.AffixId" />
+                        <EnemySprite DefinitionId="@enemy.DefinitionId" Targeted="@targeted" Class="@animationClass" SvgClass="combat-enemy-svg" Affix="@enemy.AffixId" />
                         <div class="combat-enemy-name">@enemy.Name</div>
                         <div class="combat-enemy-hp">
                             <div class="combat-hp-bar">
@@ -278,6 +279,7 @@
     private bool _waitingForResult;
     private string? _shakingEnemyId;
     private string? _bouncingEnemyId;
+    private string? _strikingEnemyId;
     private bool _playerShaking;
     private bool _playerAttacking;
     private bool _playerBouncing;
@@ -339,10 +341,11 @@
         _ = ClearAfterAsync(380, () => _playerAttacking = false);
     }
 
-    internal void TriggerPlayerShake()
+    internal void TriggerPlayerShake(string? attackerInstanceId)
     {
         _playerShaking = true;
-        _ = ClearAfterAsync(380, () => _playerShaking = false);
+        _strikingEnemyId = attackerInstanceId;
+        _ = ClearAfterAsync(380, () => { _playerShaking = false; _strikingEnemyId = null; });
     }
 
     internal void TriggerCompanionAttack()

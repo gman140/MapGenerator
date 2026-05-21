@@ -98,6 +98,24 @@ public class EnemySpawner
     public float GetEncounterRate(string biomeType, bool inDungeon) =>
         inDungeon ? 0.15f : BiomeEncounterRates.GetValueOrDefault(biomeType, 0f);
 
+    public static string[] GetLocations(string enemyId)
+    {
+        if (BossPool.Contains(enemyId))
+            return ["Dungeon Boss"];
+
+        var locations = new List<string>();
+
+        foreach (var (biome, pool) in BiomeEnemies)
+            if (pool.Contains(enemyId))
+                locations.Add(biome);
+
+        foreach (var (theme, pool) in DungeonThemeEnemies)
+            if (pool.Contains(enemyId))
+                locations.Add($"{theme} (Dungeon)");
+
+        return [.. locations];
+    }
+
     public List<Enemy> SpawnEnemies(CombatStartContext context, Random rng)
     {
         var enemies = new List<Enemy>();

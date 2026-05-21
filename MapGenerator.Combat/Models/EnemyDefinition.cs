@@ -7,6 +7,7 @@ public class EnemyDefinition
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    public string Description { get; init; } = "";
     public int BaseHp { get; set; }
     public int BaseAttack { get; set; }
     public int BaseDefense { get; set; }

@@ -713,7 +713,7 @@ OnDance="HandleDanceAsync"
                     _combatView?.TriggerEnemyBounce(evt.EnemyInstanceId);
                     break;
                 case CombatEventKind.ShakePlayer:
-                    _combatView?.TriggerPlayerShake();
+                    _combatView?.TriggerPlayerShake(evt.EnemyInstanceId);
                     break;
                 case CombatEventKind.ShakeEnemy when evt.EnemyInstanceId != null:
                     _combatView?.TriggerEnemyShake(evt.EnemyInstanceId);
