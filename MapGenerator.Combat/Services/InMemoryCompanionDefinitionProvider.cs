@@ -24,113 +24,107 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
 
     // Slimeling — round green blob with dot eyes
     private static readonly string[] _slimelingSprite = Spr(
-        new() { ['B'] = "#44bb44ff", ['D'] = "#228833ff", ['H'] = "#88ee88ff",
-                ['W'] = "#eeeeeeff", ['K'] = "#333333ff" },
+        new() { ['A'] = "#78ae79ff", ['B'] = "#95cb84ff", ['C'] = "#5d9074ff", ['D'] = "#426d62ff", ['E'] = "#b9ba57ff", ['F'] = "#292b3aff", ['G'] = "#bcde94ff", ['H'] = "#f9ebd8ff", ['I'] = "#d6c5b8ff", ['J'] = "#924e64ff", ['K'] = "#f2a198ff", ['L'] = "#cf6e84ff", ['M'] = "#444f54ff" },
         "................" +
-        ".....HBBBBH....." +
-        "....HBBBBBBH...." +
-        "..BBBBBBBBBBBB.." +
-        "..BBBWBBBBWBBB.." +
-        "..BBBKBBBBKBBB.." +
-        "..BBBBBBBBBBBB.." +
-        "..BBBBBBBBBBBB.." +
-        "...BBBBBBBBBB..." +
-        "....BBBBBBBB...." +
-        ".....DBBBBBD...." +
-        "......DBBBD....." +
-        "................" +
-        "................" +
+        "........AB..CA.." +
+        "......BBBBACABB." +
+        ".BB..CDEBDBAADDD" +
+        ".ADAAAACDABBABD." +
+        ".ABBBBADAAFBBB.." +
+        "ACBBGBAAAAABHB.." +
+        "DAABGAAAAAACHHH." +
+        ".CAAAAACAAHHHHH." +
+        ".CAAAAACCAIHJJI." +
+        ".DCACCCCCCIIKL.." +
+        ".CCCDDCCCCCCII.." +
+        ".MCDDDDCCDDCD..." +
+        "..MM...MCM.DM..." +
         "................" +
         "................"
     );
 
     // Emberhatch — orange fire creature with yellow flame crest
     private static readonly string[] _emberHatchSprite = Spr(
-        new() { ['B'] = "#dd5522ff", ['D'] = "#882200ff", ['H'] = "#ffaa44ff",
-                ['F'] = "#ffee22ff", ['G'] = "#ff8800ff",
-                ['W'] = "#ffffffff", ['K'] = "#333333ff" },
-        ".......GG......." +
-        "......GFFG......" +
-        ".....GFFFFG....." +
-        "....HBBBBBBH...." +
-        "..HBBBBBBBBBBH.." +
-        "..BBBWBBBBWBBB.." +
-        "..BBBKBBBBKBBB.." +
-        "..BBBBBBBBBBBB.." +
-        "...BBBBBBBBBB..." +
-        "....BBBBBBBB...." +
-        ".....DBBBBBD...." +
-        "......DBBBD....." +
+        new() { ['A'] = "#673452ff", ['B'] = "#e64863ff", ['C'] = "#b0335eff", ['D'] = "#f2bc74ff", ['E'] = "#ce8b51ff", ['F'] = "#ac4a52ff", ['G'] = "#bf6c52ff", ['H'] = "#4f5474ff", ['I'] = "#f3ffe1ff" },
         "................" +
-        "................" +
-        "................" +
+        ".......AA......." +
+        "......ABBA......" +
+        "......CCBC......" +
+        ".....ACDBCA....." +
+        ".....ADDDEA....." +
+        "....ACDBBECA...." +
+        "....AACABCAA...." +
+        "...AFGGEAAGFA..." +
+        "..AFDDDEEEGEFA.." +
+        ".AFDAHDDDDHAEFA." +
+        ".AGDDIDDDDIDEGA." +
+        ".AGEDDDDDDDDEGA." +
+        "..AFGGGGGGGGFA.." +
+        "...AAAAAAAAAA..." +
         "................"
     );
 
     // Frostling — pale blue crystalline creature with icy crystal tip
     private static readonly string[] _frostlingSprite = Spr(
-        new() { ['B'] = "#6699ccff", ['D'] = "#334477ff", ['H'] = "#aaccffff",
-                ['C'] = "#ddeeffff", ['W'] = "#eeeeeeff", ['K'] = "#222244ff" },
-        "................" +
-        ".......CC......." +
-        "......HCCH......" +
-        ".....HBBBBH....." +
-        "....HBBBBBBH...." +
-        "..BBBBWBBWBBBB.." +
-        "..BBBBKBBKBBBB.." +
-        "..BBBBBBBBBBBB.." +
-        "...BBBBBBBBBB..." +
-        "....BBBBBBBB...." +
-        "....CBBBBBBC...." +
-        ".....CDDDDDC...." +
-        "......DDDDD....." +
+        new() { ['A'] = "#5abfca8c", ['B'] = "#3a4f2cff", ['C'] = "#5abfcaff", ['D'] = "#d4dcf2ff", ['E'] = "#92c7cdff", ['F'] = "#537e60ff" },
         "................" +
         "................" +
+        "................" +
+        "................" +
+        "................" +
+        ".....A.........." +
+        "...A......BCB..." +
+        "......A...DBDB.." +
+        ".........ECDBEBB" +
+        ".EBECEEECDCEDEF." +
+        "FCBBBBBBBBDE...." +
+        "EFFDDDDDDDBE...." +
+        "..ECDEEEECEF...." +
+        ".BFFFF..FECB...." +
+        ".BB.BB....BBB..." +
         "................"
     );
 
     // Sparkling — bright yellow crackling energy ball with electric sparks
     private static readonly string[] _sparklingSprite = Spr(
-        new() { ['B'] = "#eecc22ff", ['D'] = "#aa8800ff", ['H'] = "#ffee88ff",
-                ['S'] = "#ffaa00ff", ['W'] = "#ffffffff", ['K'] = "#333333ff" },
-        "......SSSSS....." +
-        "....SHBBBBBHS..." +
-        "...HBBBBBBBBH..." +
-        "..HBBBBBBBBBBH.." +
-        "..BBBWBBBWBBBB.." +
-        "..BBBKBBBKBBBB.." +
-        "..BBBBBBBBBBBB.." +
-        "..BBBBBBBBBBBB.." +
-        "...HBBBBBBBBH..." +
-        "....DBBBBBBBD..." +
-        ".....SSDDDDSS..." +
-        "......S....S...." +
-        "................" +
-        "................" +
-        "................" +
-        "................"
+        new() { ['A'] = "#ffe400be", ['B'] = "#ffe872ff", ['C'] = "#f3c73fff", ['D'] = "#dec6bfff", ['E'] = "#ffffffff", ['F'] = "#fff6b6ff", ['G'] = "#d18d0eff", ['H'] = "#a7744aff", ['I'] = "#2d2929ff", ['J'] = "#7c5c44ff" },
+        ".A..A.A..BBCCC.." +
+        "..A.A...CBCDEED." +
+        "A.A...BBCCEDEED." +
+        ".A.A.BFFBCEDDED." +
+        "....CFFBBCEEDED." +
+        ".A.BFCBBCGCCDDG." +
+        ".A.BFBBCCCGGGG.." +
+        "A.BFFBCGCG......" +
+        "..BFBBCCG......." +
+        "..BFBCCCG......." +
+        ".CCCBGGG........" +
+        ".BFBBCCG........" +
+        ".BFBBCCCGG......" +
+        "..BFBBCGCCG....." +
+        "HHHBBBBBCGGIIHH." +
+        "IHHJJJJIIHJIIIHH"
     );
 
     // Shadelurk — dark purple shadow creature with glowing eyes and wispy wings
     private static readonly string[] _shadelurkSprite = Spr(
-        new() { ['B'] = "#5522aaff", ['D'] = "#331166ff", ['H'] = "#8844ccff",
-                ['W'] = "#eeeeeeff", ['K'] = "#111122ff" },
-        "................" +
-        "...D.......D...." +
-        "..DDD.....DDD..." +
-        "..DDDBBBBBBDDD.." +
-        ".DDDHBBBBBBHDDD." +
-        "..DBBWBBBBWBBD.." +
-        "..DBBKBBBBKBBD.." +
-        "..DBBBBBBBBBBD.." +
-        "...DBBBBBBBBD..." +
-        "....DBBBBBBD...." +
-        ".....DDBBDDD...." +
-        "......D..D......" +
-        "................" +
-        "................" +
-        "................" +
-        "................"
+        new() { ['A'] = "#978ed9ee", ['B'] = "#beb0f3ee", ['C'] = "#815bd7ee", ['D'] = "#472cb3ee", ['E'] = "#c4c9d9ee", ['F'] = "#444444ee", ['G'] = "#7e4854ee", ['H'] = "#ffffffee", ['I'] = "#262626ee", ['J'] = "#d992a1ee", ['K'] = "#ac6d7aee", ['L'] = "#372680ee" },
+        "......ABBBBB...." +
+        "....AAAABBBBBB.." +
+        "...AAAAABBBBBBB." +
+        "...AAAACCCCCCCB." +
+        "..AAACDDDDDDDCCB" +
+        "..ACDDEEFGGGGFEC" +
+        ".DCDCEHHIJIFHHHE" +
+        ".DDCHHHHIKIIKGHE" +
+        ".DDDCBEHIKJKJGHE" +
+        ".DCCDDCCEIIFFEEC" +
+        "DDLCCDDDDDDDCCC." +
+        "DDLCCCCCCCCAAAB." +
+        ".DLLCCCCAAAAAB.." +
+        ".LL...CCCCCA...." +
+        ".LL............." +
+        ".L.............."
     );
 
     // ── Companion definitions ────────────────────────────────────────────────
@@ -226,7 +220,7 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
                 new() { Id = "rattle",       Name = "Rattle",       Kind = CompanionMoveKind.EnemyDebuff, EffectStat = ModifierStat.Attack,     EffectValue = -3f,   EffectTurns = 2 },
                 new() { Id = "peel_apart",   Name = "Peel Apart",   Kind = CompanionMoveKind.EnemyDebuff, EffectStat = ModifierStat.Defense,   EffectValue = -4f,   EffectTurns = 2 },
             ],
-        },
+        }
     ];
 
     private static readonly Dictionary<string, CompanionDefinition> _byId =

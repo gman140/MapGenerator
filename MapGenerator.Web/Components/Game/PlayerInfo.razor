@@ -25,7 +25,7 @@
         <div class="companion-inline" @onclick="async () => await OnOpenCompanion.InvokeAsync()">
             @if (Companion.SpritePixels.Any(p => !string.IsNullOrEmpty(p)))
             {
-                <SpriteView Pixels="@Companion.SpritePixels" Size="24" Class="companion-inline-sprite" />
+                <SpriteView Pixels="@Companion.SpritePixels" Size="32" Class="companion-inline-sprite" />
             }
             else
             {
