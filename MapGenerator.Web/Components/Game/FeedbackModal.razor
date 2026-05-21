@@ -5,6 +5,7 @@
 @using static MapGenerator.Application.Services.DanceService
 @inject IFeedbackRepository FeedbackRepo
 @inject IPlayerRepository PlayerRepo
+@inject ICompanionRepository CompanionRepo
 @inject GameBroadcastService Broadcast
 
 <button class="crafting-toggle" @onclick="OpenAsync">
@@ -47,6 +48,10 @@
                                     else
                                     {
                                         <div class="player-row-dot" style="background:@p.Color"></div>
+                                    }
+                                    @if (_companionSprites.TryGetValue(p.Id, out var cSprite) && cSprite.Any(px => !string.IsNullOrEmpty(px)))
+                                    {
+                                        <img src="@SpriteHelper.ToSvgDataUri(cSprite)" width="20" height="20" class="player-row-companion" style="image-rendering: pixelated;" />
                                     }
                                 </div>
                                 <div class="player-row-info">
@@ -131,6 +136,7 @@
     private bool _loadingPlayers;
     private List<Player> _players = [];
     private HashSet<string> _onlineIds = [];
+    private Dictionary<string, string[]> _companionSprites = new();
 
     // Feedback tab
     private bool _loadingFeedback;
@@ -168,6 +174,15 @@
             .OrderByDescending(p => _onlineIds.Contains(p.Id))
             .ThenByDescending(p => p.LastSeen)
             .ToList();
+
+        var companionIds = _players
+            .Where(p => p.CompanionId != null)
+            .Select(p => p.CompanionId!)
+            .Distinct();
+        var companions = await CompanionRepo.GetManyByIdsAsync(companionIds);
+        _companionSprites = companions
+            .GroupBy(c => c.PlayerId)
+            .ToDictionary(g => g.Key, g => g.First().SpritePixels);
 
         _loadingPlayers = false;
     }

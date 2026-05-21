@@ -16,6 +16,13 @@ public class CompanionRepository : ICompanionRepository
     public Task<PlayerCompanion?> GetByPlayerIdAsync(string playerId) =>
         _ctx.Companions.Find(c => c.PlayerId == playerId).FirstOrDefaultAsync()!;
 
+    public async Task<List<PlayerCompanion>> GetManyByIdsAsync(IEnumerable<string> ids)
+    {
+        var idList = ids.ToList();
+        if (idList.Count == 0) return [];
+        return await _ctx.Companions.Find(c => idList.Contains(c.Id)).ToListAsync();
+    }
+
     public Task SaveAsync(PlayerCompanion companion) =>
         _ctx.Companions.ReplaceOneAsync(
             c => c.Id == companion.Id,
