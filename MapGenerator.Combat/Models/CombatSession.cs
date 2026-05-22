@@ -19,6 +19,7 @@ public class CombatSession
     // Snapshotted base stats (at combat start)
     public int PlayerBaseAttack { get; set; }
     public int PlayerBaseDefense { get; set; }
+    public int PlayerBaseResistance { get; set; }
     public float PlayerBaseDodgeChance { get; set; }
     public DamageType PlayerWeaponDamageType { get; set; } = DamageType.Bludgeoning;
 

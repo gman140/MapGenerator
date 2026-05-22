@@ -3,8 +3,10 @@
 @using MapGenerator.Combat.Interfaces
 @using MapGenerator.Combat.Services
 @using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Interfaces
 @inject GameSessionService Session
 @inject IEnemyDefinitionProvider EnemyProvider
+@inject IResourceDefinitionProvider ResourceProvider
 
 <div class="modal-overlay" @onclick="HandleCancel">
     <div class="sprite-editor-modal" @onclick:stopPropagation
@@ -54,9 +56,20 @@
                 @StatRow("MaxHp", "Max HP", Player.MaxHp.ToString(), "1 pt = +2 HP")
                 @StatRow("BaseAttack", "Attack", Player.BaseAttack.ToString(), null)
                 @StatRow("BaseDefense", "Defense", Player.BaseDefense.ToString(), null)
+                @StatRow("BaseResistance", "Resistance", Player.BaseResistance.ToString(), "vs energy attacks")
                 @StatRow("BaseMagic", "Magic", Player.BaseMagic.ToString(), null)
                 @StatRow("BaseDodgeChance", "Dodge", $"{Player.BaseDodgeChance * 100:F0}%", null)
             </div>
+
+            @if (Player.EquippedWeaponId != null || Player.EquippedArmorId != null || Player.EquippedHatId != null)
+            {
+                <div class="pstab-equip-section">
+                    <span class="pstab-equip-title">Equipment</span>
+                    @EquipRow("⚔️", Player.EquippedWeaponId)
+                    @EquipRow("🛡️", Player.EquippedArmorId)
+                    @EquipRow("🎩", Player.EquippedHatId)
+                </div>
+            }
 
             <div class="pstab-footnote">Tier costs: purchases 1–5 cost 1 pt · 6–10 cost 2 pts · 11+ cost 3 pts</div>
 
@@ -317,6 +330,52 @@
         _saveError = null;
         await OnSave.InvokeAsync([.. _pixels]);
     }
+
+    private RenderFragment EquipRow(string icon, string? itemId) => __builder =>
+    {
+        if (itemId == null) return;
+        var def = ResourceProvider.GetById(itemId);
+        if (def == null) return;
+        string stats = FormatEquipStats(def);
+        <div class="pstab-equip-row">
+            <span>@icon</span>
+            <span class="pstab-equip-name">@def.Name</span>
+            @if (!string.IsNullOrEmpty(stats))
+            {
+                <span class="pstab-equip-stats">@stats</span>
+            }
+        </div>
+    };
+
+    private static string FormatEquipStats(ResourceDefinition def)
+    {
+        var parts = new List<string>();
+        if (def.AttackBonus != 0)       parts.Add($"+{def.AttackBonus} Atk");
+        if (def.MagicBonus != 0)        parts.Add($"+{def.MagicBonus} Mag");
+        if (def.DefenseBonus != 0)      parts.Add($"+{def.DefenseBonus} Def");
+        if (def.ResistanceBonus != 0)   parts.Add($"+{def.ResistanceBonus} Res");
+        if (def.DodgeChanceBonus != 0)  parts.Add($"+{def.DodgeChanceBonus * 100:F0}% Dodge");
+        if (def.StaminaRegenBonus != 0) parts.Add($"+{def.StaminaRegenBonus} Stam/turn");
+        if (def.ManaRegenBonus != 0)    parts.Add($"+{def.ManaRegenBonus} Mana/turn");
+        if (def.HpRegenBonus != 0)      parts.Add($"+{def.HpRegenBonus} HP/turn");
+        if (def.HealBonus != 0)         parts.Add($"+{def.HealBonus * 100:F0}% Heal");
+        if (def.EquipmentSlot == "Weapon")
+            parts.Add(FormatDamageType(def.WeaponDamageType));
+        return string.Join(" · ", parts);
+    }
+
+    private static string FormatDamageType(DamageType dt) => dt switch
+    {
+        DamageType.Bludgeoning => "🔨 Bludgeoning",
+        DamageType.Piercing    => "🏹 Piercing",
+        DamageType.Slashing    => "⚔️ Slashing",
+        DamageType.Fire        => "🔥 Fire",
+        DamageType.Frost       => "❄️ Frost",
+        DamageType.Storm       => "⚡ Storm",
+        DamageType.Nature      => "🌿 Nature",
+        DamageType.Dark        => "🌑 Dark",
+        _                      => dt.ToString(),
+    };
 
     private async Task HandleCancel() => await OnCancel.InvokeAsync();
 }

@@ -96,17 +96,30 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "TangledRoot",   Name = "Tangled Root",   Description = "Root matter from the labyrinth above. It found its way down here. So did you." },
         new() { Id = "TarnishedRelic",Name = "Tarnished Relic",Description = "Something ceremonial, its purpose lost. The tarnish is its memory now." },
 
-        // ── Equipment — Weapons ───────────────────────────────────────────────
-        new() { Id = "IronSword",   Name = "Iron Sword",   Description = "A dull but reliable iron blade. It has seen better years but none worse.", EquipmentSlot = "Weapon", AttackBonus = 8, WeaponDamageType = DamageType.Slashing },
-        new() { Id = "WoodClub",    Name = "Wood Club",    Description = "Heavy and unbalanced. Effective in the manner that blunt things are.", EquipmentSlot = "Weapon", AttackBonus = 5, WeaponDamageType = DamageType.Bludgeoning },
+        // ── Equipment — Weapons (physical) ───────────────────────────────────
+        new() { Id = "FlintKnife", Name = "Flint Knife",  Description = "Flint knapped to a point and wrapped in fiber. Sharp enough to matter.", EquipmentSlot = "Weapon", AttackBonus = 1, WeaponDamageType = DamageType.Piercing },
+        new() { Id = "WoodClub",   Name = "Wood Club",    Description = "Heavy and unbalanced. Effective in the manner that blunt things are.", EquipmentSlot = "Weapon", AttackBonus = 2, WeaponDamageType = DamageType.Bludgeoning },
+        new() { Id = "IronDagger", Name = "Iron Dagger",  Description = "Short, direct, and faster than it looks.", EquipmentSlot = "Weapon", AttackBonus = 2, WeaponDamageType = DamageType.Piercing },
+        new() { Id = "IronSword",  Name = "Iron Sword",   Description = "A dull but reliable iron blade. It has seen better years but none worse.", EquipmentSlot = "Weapon", AttackBonus = 3, WeaponDamageType = DamageType.Slashing },
+        new() { Id = "IronMace",   Name = "Iron Mace",    Description = "A flanged iron head on a wrapped grip. It does not negotiate.", EquipmentSlot = "Weapon", AttackBonus = 3, WeaponDamageType = DamageType.Bludgeoning },
+
+        // ── Equipment — Weapons (staves) ─────────────────────────────────────
+        new() { Id = "EmberStaff", Name = "Ember Staff",  Description = "Char-blackened wood with a coal core. Warm to the touch. Your spells carry more heat.", EquipmentSlot = "Weapon", AttackBonus = 1, MagicBonus = 1, WeaponDamageType = DamageType.Fire },
+        new() { Id = "FrostStaff", Name = "Frost Staff",  Description = "A branch that never thawed. The air around it is still. Your spells cut colder.", EquipmentSlot = "Weapon", AttackBonus = 1, MagicBonus = 1, WeaponDamageType = DamageType.Frost },
+        new() { Id = "StormStaff", Name = "Storm Staff",  Description = "Quartz-tipped and faintly humming. It remembers the lightning that made it.", EquipmentSlot = "Weapon", AttackBonus = 1, MagicBonus = 1, WeaponDamageType = DamageType.Storm },
+        new() { Id = "VineStaff",  Name = "Vine Staff",   Description = "Still growing, faintly. The bark is warm and the wood is alive. Your spells carry that.", EquipmentSlot = "Weapon", AttackBonus = 1, MagicBonus = 1, WeaponDamageType = DamageType.Nature },
+        new() { Id = "ShadowStaff",Name = "Shadow Staff", Description = "Wood that absorbed something it shouldn't have. Dark to the core. Your spells follow.", EquipmentSlot = "Weapon", AttackBonus = 1, MagicBonus = 1, WeaponDamageType = DamageType.Dark },
 
         // ── Equipment — Armor ─────────────────────────────────────────────────
-        new() { Id = "LeatherArmor",  Name = "Leather Armor",  Description = "Stitched from scraps. Better than nothing, which it slightly exceeds.", EquipmentSlot = "Armor", DefenseBonus = 6 },
+        new() { Id = "LeatherArmor",  Name = "Leather Armor",   Description = "Stitched from scraps. Better than nothing, which it slightly exceeds.", EquipmentSlot = "Armor", DefenseBonus = 6 },
         new() { Id = "BearHideCloak", Name = "Bear Hide Cloak", Description = "Heavy and warm and smells of the bear it used to be. Excellent protection.", EquipmentSlot = "Armor", DefenseBonus = 10 },
+        new() { Id = "EchoMantle",    Name = "Echo Mantle",     Description = "Woven with quartz dust and something older. Physical blows still land. Other things don't.", EquipmentSlot = "Armor", ResistanceBonus = 6 },
 
         // ── Equipment — Hats ──────────────────────────────────────────────────
-        new() { Id = "TravelHat",   Name = "Travel Hat",   Description = "A well-worn hat. It has learned to move with you.", EquipmentSlot = "Hat", DodgeChanceBonus = 0.05f },
-        new() { Id = "HoodedCowl",  Name = "Hooded Cowl",  Description = "Darkness inside. It helps you slip away from things that would rather you didn't.", EquipmentSlot = "Hat", DodgeChanceBonus = 0.10f },
+        new() { Id = "TrailCap",     Name = "Trail Cap",      Description = "Light and close-fitting. Worn by people who intend to hit things many times.", EquipmentSlot = "Hat", StaminaRegenBonus = 2 },
+        new() { Id = "MeditationCowl", Name = "Meditation Cowl", Description = "Deep-hooded and very quiet inside. The wearer finds their focus faster.", EquipmentSlot = "Hat", ManaRegenBonus = 2 },
+        new() { Id = "MossHood",     Name = "Moss Hood",      Description = "Still damp. Still growing. Something about wearing living things helps the body remember what it's doing.", EquipmentSlot = "Hat", HpRegenBonus = 1 },
+        new() { Id = "HealersWrap",  Name = "Healer's Wrap",  Description = "Herb-soaked linen wound tight around the head. Every remedy you apply works better than it should.", EquipmentSlot = "Hat", HealBonus = 0.20f },
 
         // ── Enemy loot drops ──────────────────────────────────────────────────
         new() { Id = "SlimeGel", Name = "Slime Gel", Description = "A viscous, quivering substance left behind by the slime. Warm.",

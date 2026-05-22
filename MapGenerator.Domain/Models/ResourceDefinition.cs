@@ -15,7 +15,13 @@ public class ResourceDefinition
     public string? EquipmentSlot { get; init; }  // "Weapon", "Armor", "Hat"
     public int AttackBonus { get; init; }
     public int DefenseBonus { get; init; }
+    public int ResistanceBonus { get; init; }
     public float DodgeChanceBonus { get; init; }
+    public int MagicBonus { get; init; }
+    public int HpRegenBonus { get; init; }
+    public int ManaRegenBonus { get; init; }
+    public int StaminaRegenBonus { get; init; }
+    public float HealBonus { get; init; }
     public DamageType WeaponDamageType { get; init; } = DamageType.Bludgeoning;
 
     // Combat consumable fields (only relevant when Traits has CombatConsumable)

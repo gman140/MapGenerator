@@ -62,6 +62,7 @@ public class CombatEngine : ICombatEngine
             PlayerMaxStamina      = player.MaxStamina,
             PlayerBaseAttack      = player.BaseAttack,
             PlayerBaseDefense     = player.BaseDefense,
+            PlayerBaseResistance  = player.BaseResistance,
             PlayerBaseDodgeChance = player.BaseDodgeChance,
             PlayerMana            = 2,
             PlayerMaxMana         = player.MaxMana,
@@ -245,18 +246,26 @@ public class CombatEngine : ICombatEngine
             return new CombatTurnResult { Session = session, Events = events };
         }
 
-        // Recover stamina
-        int gain = 2 + (defendedThisTurn ? 2 : 0);
+        // Recover stamina (base 2, +2 if defended, plus any StaminaRegen modifiers)
+        int staminaRegenBonus = (int)session.ActiveModifiers.Where(m => m.Stat == ModifierStat.StaminaRegen).Sum(m => m.Value);
+        int gain = 2 + (defendedThisTurn ? 2 : 0) + staminaRegenBonus;
         session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + gain);
 
-        // Recover mana (+1/turn)
-        session.PlayerMana = Math.Min(session.PlayerMaxMana, session.PlayerMana + 1);
+        // Recover mana (+1/turn, plus any ManaRegen modifiers)
+        int manaRegenBonus = (int)session.ActiveModifiers.Where(m => m.Stat == ModifierStat.ManaRegen).Sum(m => m.Value);
+        session.PlayerMana = Math.Min(session.PlayerMaxMana, session.PlayerMana + 1 + manaRegenBonus);
+
+        // Passive HP regen from hat/equipment
+        int hpRegen = (int)session.ActiveModifiers.Where(m => m.Stat == ModifierStat.HpRegen).Sum(m => m.Value);
+        if (hpRegen > 0 && session.PlayerHp > 0 && session.PlayerHp < session.PlayerMaxHp)
+            session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + hpRegen);
 
         events.Add(new CombatEvent
         {
             Kind = CombatEventKind.PlayerUpdate,
             PlayerStamina = session.PlayerStamina,
             PlayerMana = session.PlayerMana,
+            PlayerHp = session.PlayerHp,
             DelayMs = 150,
         });
 
@@ -467,8 +476,10 @@ public class CombatEngine : ICombatEngine
 
             if (resDef.CombatHpRestore > 0)
             {
+                float healMult = 1f + session.ActiveModifiers.Where(m => m.Stat == ModifierStat.HealBonus).Sum(m => m.Value);
+                int rawHeal = (int)(resDef.CombatHpRestore * healMult);
                 int before = session.PlayerHp;
-                session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + resDef.CombatHpRestore);
+                session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + rawHeal);
                 int healed = session.PlayerHp - before;
                 evt.PlayerHp = session.PlayerHp;
                 parts.Add($"restored {healed} HP");
@@ -592,7 +603,8 @@ public class CombatEngine : ICombatEngine
         // Self-heal spell
         if (spell.TargetType == TargetType.Self)
         {
-            int heal = spell.HealAmount + session.PlayerBaseMagic / 2;
+            float healMult = 1f + session.ActiveModifiers.Where(m => m.Stat == ModifierStat.HealBonus).Sum(m => m.Value);
+            int heal = (int)((spell.HealAmount + EffectivePlayerMagic(session) / 2) * healMult);
             int before = session.PlayerHp;
             session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + heal);
             int healed = session.PlayerHp - before;
@@ -634,7 +646,7 @@ public class CombatEngine : ICombatEngine
         {
             var enemyDef = _enemyProvider.GetById(target.DefinitionId);
             double variance = 0.85 + _rng.NextDouble() * 0.30;
-            int rawDamage = (int)Math.Max(1, session.PlayerBaseMagic * spell.Power * variance);
+            int rawDamage = (int)Math.Max(1, EffectivePlayerMagic(session) * spell.Power * variance);
 
             int damage = spell.SecondaryDamageType.HasValue
                 ? ApplySplitDamage(rawDamage, spell.DamageType!.Value, spell.SecondaryDamageType, spell.SecondaryRatio, enemyDef)
@@ -853,7 +865,10 @@ public class CombatEngine : ICombatEngine
     private void ExecuteEnemyAttack(CombatSession session, Enemy enemy, EnemyDefinition? def, bool isHeavy, List<CombatEvent> events, double extraMult = 1.0)
     {
         int effAtk = EffectiveEnemyAttack(enemy);
-        int effDef = EffectivePlayerDefense(session);
+        DamageType atkType = def?.AttackDamageType ?? DamageType.Bludgeoning;
+        int effDef = EnergyDamageTypes.Contains(atkType)
+            ? EffectivePlayerResistance(session)
+            : EffectivePlayerDefense(session);
         double variance = 0.85 + _rng.NextDouble() * 0.30;
         double mult = isHeavy ? 1.5 : 1.0;
 
@@ -1085,15 +1100,56 @@ public class CombatEngine : ICombatEngine
                 Id = $"Equip:Def:{itemId}", Stat = ModifierStat.Defense,
                 Value = def.DefenseBonus, Source = $"Equipment:{itemId}",
             });
+        if (def.ResistanceBonus != 0)
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id = $"Equip:Res:{itemId}", Stat = ModifierStat.Resistance,
+                Value = def.ResistanceBonus, Source = $"Equipment:{itemId}",
+            });
         if (def.DodgeChanceBonus != 0)
             session.ActiveModifiers.Add(new CombatModifier
             {
                 Id = $"Equip:Dodge:{itemId}", Stat = ModifierStat.DodgeChance,
                 Value = def.DodgeChanceBonus, Source = $"Equipment:{itemId}",
             });
+        if (def.MagicBonus != 0)
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id = $"Equip:Mag:{itemId}", Stat = ModifierStat.Magic,
+                Value = def.MagicBonus, Source = $"Equipment:{itemId}",
+            });
+        if (def.HpRegenBonus != 0)
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id = $"Equip:HpRegen:{itemId}", Stat = ModifierStat.HpRegen,
+                Value = def.HpRegenBonus, Source = $"Equipment:{itemId}",
+            });
+        if (def.ManaRegenBonus != 0)
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id = $"Equip:ManaRegen:{itemId}", Stat = ModifierStat.ManaRegen,
+                Value = def.ManaRegenBonus, Source = $"Equipment:{itemId}",
+            });
+        if (def.StaminaRegenBonus != 0)
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id = $"Equip:StamRegen:{itemId}", Stat = ModifierStat.StaminaRegen,
+                Value = def.StaminaRegenBonus, Source = $"Equipment:{itemId}",
+            });
+        if (def.HealBonus != 0)
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id = $"Equip:Heal:{itemId}", Stat = ModifierStat.HealBonus,
+                Value = def.HealBonus, Source = $"Equipment:{itemId}",
+            });
     }
 
     // ── Effective stat helpers ────────────────────────────────────────────────
+
+    private static readonly HashSet<DamageType> EnergyDamageTypes =
+    [
+        DamageType.Fire, DamageType.Frost, DamageType.Storm, DamageType.Nature, DamageType.Dark,
+    ];
 
     private static int EffectivePlayerAttack(CombatSession s) =>
         (int)(s.PlayerBaseAttack + s.ActiveModifiers
@@ -1103,9 +1159,17 @@ public class CombatEngine : ICombatEngine
         (int)(s.PlayerBaseDefense + s.ActiveModifiers
             .Where(m => m.Stat == ModifierStat.Defense).Sum(m => m.Value));
 
+    private static int EffectivePlayerResistance(CombatSession s) =>
+        (int)(s.PlayerBaseResistance + s.ActiveModifiers
+            .Where(m => m.Stat == ModifierStat.Resistance).Sum(m => m.Value));
+
     private static float EffectivePlayerDodgeChance(CombatSession s) =>
         s.PlayerBaseDodgeChance + s.ActiveModifiers
             .Where(m => m.Stat == ModifierStat.DodgeChance).Sum(m => m.Value);
+
+    private static int EffectivePlayerMagic(CombatSession s) =>
+        (int)(s.PlayerBaseMagic + s.ActiveModifiers
+            .Where(m => m.Stat == ModifierStat.Magic).Sum(m => m.Value));
 
     private static int EffectiveEnemyAttack(Enemy e) =>
         (int)(e.Attack + e.ActiveModifiers

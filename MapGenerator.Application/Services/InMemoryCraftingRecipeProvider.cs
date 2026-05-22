@@ -313,7 +313,19 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             Effects = [ItemEffect.ImproveAllGather],
         },
 
-        // ── Equipment — Weapons ───────────────────────────────────────────────
+        // ── Equipment — Weapons (physical) ────────────────────────────────────
+        new()
+        {
+            Id          = "FlintKnife",
+            Name        = "Flint Knife",
+            Description = "Two flint shards knapped together and wrapped tight with fiber. Not elegant. Point is sharp.",
+            Ingredients =
+            [
+                new() { ResourceId = "Flint", Quantity = 2 },
+                new() { ResourceId = "Fiber", Quantity = 2 },
+            ],
+            Effects = [],
+        },
         new()
         {
             Id               = "WoodClub",
@@ -329,6 +341,19 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
+            Id               = "IronDagger",
+            Name             = "Iron Dagger",
+            Description      = "Two ore smelted narrow and short. Fits in a hand. Useful in tight spaces and tighter situations.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Ore",   Quantity = 2 },
+                new() { ResourceId = "Fiber", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
             Id               = "IronSword",
             Name             = "Iron Sword",
             Description      = "Three ore smelted with coal, shaped on a wood haft. Dull in sunlight. Reliable in the dark. You made it yourself, which means something.",
@@ -338,6 +363,93 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
                 new() { ResourceId = "Ore",   Quantity = 3 },
                 new() { ResourceId = "Coal",  Quantity = 2 },
                 new() { ResourceId = "Wood",  Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "IronMace",
+            Name             = "Iron Mace",
+            Description      = "Three ore shaped into something that makes a point through volume and weight. Fiber wrapped grip. Honest weapon.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Ore",   Quantity = 3 },
+                new() { ResourceId = "Stone", Quantity = 1 },
+                new() { ResourceId = "Fiber", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+
+        // ── Equipment — Weapons (staves) ──────────────────────────────────────
+        new()
+        {
+            Id               = "EmberStaff",
+            Name             = "Ember Staff",
+            Description      = "Wood hollowed and packed with coal and amber. Warm to the touch before you even try. Fire responds to it.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",  Quantity = 2 },
+                new() { ResourceId = "Coal",  Quantity = 2 },
+                new() { ResourceId = "Amber", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "FrostStaff",
+            Name             = "Frost Staff",
+            Description      = "A branch from somewhere cold, wrapped with ice held in place by quartz. It has never been warm. Frost obeys it.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",   Quantity = 2 },
+                new() { ResourceId = "Ice",    Quantity = 2 },
+                new() { ResourceId = "Quartz", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "StormStaff",
+            Name             = "Storm Staff",
+            Description      = "Quartz-tipped and wrapped with feathers stripped from birds that flew too high. There's a low hum. Storm listens.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",     Quantity = 2 },
+                new() { ResourceId = "Quartz",   Quantity = 2 },
+                new() { ResourceId = "Feathers", Quantity = 2 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "VineStaff",
+            Name             = "Vine Staff",
+            Description      = "Living wood, still rooted in habit. Moss grows where you hold it. Nature hasn't decided you're separate from it yet.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",  Quantity = 2 },
+                new() { ResourceId = "Moss",  Quantity = 2 },
+                new() { ResourceId = "Herbs", Quantity = 2 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "ShadowStaff",
+            Name             = "Shadow Staff",
+            Description      = "Wood that absorbed something it shouldn't have, wrapped with crow feather and hollow stone. Dark. Willing.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Wood",       Quantity = 2 },
+                new() { ResourceId = "Coal",       Quantity = 1 },
+                new() { ResourceId = "CrowFeather",Quantity = 1 },
+                new() { ResourceId = "HollowStone",Quantity = 1 },
             ],
             Effects = [],
         },
@@ -370,13 +482,27 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
             ],
             Effects = [],
         },
+        new()
+        {
+            Id               = "EchoMantle",
+            Name             = "Echo Mantle",
+            Description      = "Fiber woven with quartz dust and a cracked orb at the chest. Physical blows still land. Other things bounce.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Fiber",     Quantity = 3 },
+                new() { ResourceId = "Quartz",    Quantity = 1 },
+                new() { ResourceId = "CrackedOrb",Quantity = 1 },
+            ],
+            Effects = [],
+        },
 
         // ── Equipment — Hats ──────────────────────────────────────────────────
         new()
         {
-            Id               = "TravelHat",
-            Name             = "Travel Hat",
-            Description      = "Three fiber, two feathers, shaped into something that moves when you do. A well-worn hat learns your habits.",
+            Id               = "TrailCap",
+            Name             = "Trail Cap",
+            Description      = "Fiber and feathers stitched flat and close. Light enough to forget about. Your body remembers it anyway — keeps moving.",
             RequiresWorkshop = true,
             Ingredients      =
             [
@@ -387,14 +513,43 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
-            Id               = "HoodedCowl",
-            Name             = "Hooded Cowl",
-            Description      = "Four fiber and one wolf pelt, stitched into something that keeps the darkness where it belongs — outside.",
+            Id               = "MeditationCowl",
+            Name             = "Meditation Cowl",
+            Description      = "Deep-hooded, quartz-lined, and very quiet inside. Focus comes faster. Mana follows.",
             RequiresWorkshop = true,
             Ingredients      =
             [
-                new() { ResourceId = "Fiber",    Quantity = 4 },
-                new() { ResourceId = "WolfPelt", Quantity = 1 },
+                new() { ResourceId = "Fiber",  Quantity = 2 },
+                new() { ResourceId = "Quartz", Quantity = 1 },
+                new() { ResourceId = "Amber",  Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "MossHood",
+            Name             = "Moss Hood",
+            Description      = "Moss over reed over fiber, and still damp. Wearing something alive does something to the body. You stop bleeding as fast.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Moss",  Quantity = 3 },
+                new() { ResourceId = "Reed",  Quantity = 2 },
+                new() { ResourceId = "Herbs", Quantity = 1 },
+            ],
+            Effects = [],
+        },
+        new()
+        {
+            Id               = "HealersWrap",
+            Name             = "Healer's Wrap",
+            Description      = "Herb-soaked linen wound around the head and knotted at the back. Remedies applied while wearing it go further than they should.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "Herbs", Quantity = 3 },
+                new() { ResourceId = "Fiber", Quantity = 2 },
+                new() { ResourceId = "Salt",  Quantity = 1 },
             ],
             Effects = [],
         },

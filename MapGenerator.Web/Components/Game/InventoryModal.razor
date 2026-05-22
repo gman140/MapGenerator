@@ -199,7 +199,7 @@
                 __builder.AddAttribute(seq++, "class", "inv-modal-name");
                 __builder.AddContent(seq++, name);
                 __builder.CloseElement();
-                if (def != null && (def.AttackBonus != 0 || def.DefenseBonus != 0 || def.DodgeChanceBonus != 0))
+                if (def != null && HasEquipStats(def))
                 {
                     __builder.OpenElement(seq++, "span");
                     __builder.AddAttribute(seq++, "class", "equip-stat-hint");
@@ -220,14 +220,41 @@
         __builder.CloseElement(); // equip-slot
     };
 
+    private static bool HasEquipStats(ResourceDefinition def) =>
+        def.AttackBonus != 0 || def.DefenseBonus != 0 || def.ResistanceBonus != 0 ||
+        def.DodgeChanceBonus != 0 || def.MagicBonus != 0 || def.HpRegenBonus != 0 ||
+        def.ManaRegenBonus != 0 || def.StaminaRegenBonus != 0 || def.HealBonus != 0 ||
+        def.EquipmentSlot == "Weapon";
+
     private static string FormatEquipStats(ResourceDefinition def)
     {
         var parts = new List<string>();
-        if (def.AttackBonus != 0) parts.Add($"+{def.AttackBonus} Atk");
-        if (def.DefenseBonus != 0) parts.Add($"+{def.DefenseBonus} Def");
-        if (def.DodgeChanceBonus != 0) parts.Add($"+{def.DodgeChanceBonus * 100:F0}% Dodge");
-        return string.Join(", ", parts);
+        if (def.AttackBonus != 0)        parts.Add($"+{def.AttackBonus} Atk");
+        if (def.MagicBonus != 0)         parts.Add($"+{def.MagicBonus} Mag");
+        if (def.DefenseBonus != 0)       parts.Add($"+{def.DefenseBonus} Def");
+        if (def.ResistanceBonus != 0)    parts.Add($"+{def.ResistanceBonus} Res");
+        if (def.DodgeChanceBonus != 0)   parts.Add($"+{def.DodgeChanceBonus * 100:F0}% Dodge");
+        if (def.StaminaRegenBonus != 0)  parts.Add($"+{def.StaminaRegenBonus} Stam/turn");
+        if (def.ManaRegenBonus != 0)     parts.Add($"+{def.ManaRegenBonus} Mana/turn");
+        if (def.HpRegenBonus != 0)       parts.Add($"+{def.HpRegenBonus} HP/turn");
+        if (def.HealBonus != 0)          parts.Add($"+{def.HealBonus * 100:F0}% Heal");
+        if (def.EquipmentSlot == "Weapon")
+            parts.Add(FormatDamageType(def.WeaponDamageType));
+        return string.Join(" · ", parts);
     }
+
+    private static string FormatDamageType(DamageType dt) => dt switch
+    {
+        DamageType.Bludgeoning => "🔨 Bludgeoning",
+        DamageType.Piercing    => "🏹 Piercing",
+        DamageType.Slashing    => "⚔️ Slashing",
+        DamageType.Fire        => "🔥 Fire",
+        DamageType.Frost       => "❄️ Frost",
+        DamageType.Storm       => "⚡ Storm",
+        DamageType.Nature      => "🌿 Nature",
+        DamageType.Dark        => "🌑 Dark",
+        _                      => dt.ToString(),
+    };
 
     private static string FormatBuff(BuffDefinition buff) => buff.Type switch
     {

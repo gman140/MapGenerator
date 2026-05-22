@@ -11,4 +11,9 @@ public enum ModifierStat
     Burn,
     Venom,
     StaminaDrain,
+    Magic,
+    Resistance,
+    ManaRegen,
+    HpRegen,
+    HealBonus,
 }

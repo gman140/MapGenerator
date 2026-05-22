@@ -848,7 +848,7 @@ public class GameSessionService : IAsyncDisposable
 
     // ── Stat Point Allocation ────────────────────────────────────────────────
 
-    private static readonly string[] TieredStats = ["BaseAttack", "BaseDefense", "BaseMagic", "BaseDodgeChance"];
+    private static readonly string[] TieredStats = ["BaseAttack", "BaseDefense", "BaseResistance", "BaseMagic", "BaseDodgeChance"];
 
     public static int GetStatPointCost(string stat, int currentPurchases) => stat switch
     {
@@ -871,11 +871,12 @@ public class GameSessionService : IAsyncDisposable
 
         switch (stat)
         {
-            case "MaxHp":           Player.MaxHp += 2; break;
-            case "BaseAttack":      Player.BaseAttack++;     break;
-            case "BaseDefense":     Player.BaseDefense++;    break;
-            case "BaseMagic":       Player.BaseMagic++;      break;
-            case "BaseDodgeChance": Player.BaseDodgeChance += 0.02f; break;
+            case "MaxHp":             Player.MaxHp += 2; break;
+            case "BaseAttack":        Player.BaseAttack++;        break;
+            case "BaseDefense":       Player.BaseDefense++;       break;
+            case "BaseResistance":    Player.BaseResistance++;    break;
+            case "BaseMagic":         Player.BaseMagic++;         break;
+            case "BaseDodgeChance":   Player.BaseDodgeChance += 0.02f; break;
             default: return "Unknown stat.";
         }
 
