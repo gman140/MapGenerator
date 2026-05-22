@@ -1,6 +1,7 @@
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Models
 @using MapGenerator.Combat.Enums
+@using MapGenerator.Domain.Enums
 @using MapGenerator.Web.Services
 
 <div class="modal-overlay" @onclick="HandleCancel">
@@ -45,13 +46,30 @@
                         var move = Definition.Moves.FirstOrDefault(m => m.Id == moveId);
                         if (move != null)
                         {
-                            <div class="companion-move-row">
-                                <span class="companion-move-name">@move.Name</span>
-                                @if (move.Kind == CompanionMoveKind.Attack) {
-                                    <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
-                                    <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
+                            <div class="companion-move-card">
+                                <div class="companion-move-header">
+                                    <span class="companion-move-name">@move.Name</span>
+                                    @if (move.Kind == CompanionMoveKind.Attack)
+                                    {
+                                        <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
+                                        <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
+                                    }
+                                    else if (move.Kind == CompanionMoveKind.PlayerBuff)
+                                    {
+                                        <span class="companion-move-kind buff">Buff</span>
+                                        <span class="companion-move-power">@FormatEffect(move)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="companion-move-kind debuff">Debuff</span>
+                                        <span class="companion-move-power">@FormatEffect(move)</span>
+                                    }
+                                    @if (move.HitsAll) { <span class="companion-move-aoe">AOE</span> }
+                                </div>
+                                @if (!string.IsNullOrEmpty(move.Description))
+                                {
+                                    <span class="companion-move-desc">@move.Description</span>
                                 }
-                                @if (move.HitsAll) { <span class="companion-move-aoe">AOE</span> }
                             </div>
                         }
                     }
@@ -224,6 +242,26 @@
         if (!string.IsNullOrEmpty(trimmed) && trimmed != Companion.Nickname)
             await OnSaveNickname.InvokeAsync(trimmed);
         await OnSaveSprite.InvokeAsync([.. _pixels]);
+    }
+
+    private static string FormatEffect(CompanionMove move)
+    {
+        if (move.Kind == CompanionMoveKind.PlayerBuff)
+        {
+            if (move.EffectStat == null)
+                return $"Heal +{(int)move.EffectValue} HP";
+            string statLabel = move.EffectStat == ModifierStat.DodgeChance
+                ? $"Dodge +{move.EffectValue * 100:F0}%"
+                : $"{move.EffectStat} +{(int)move.EffectValue}";
+            return $"{statLabel} · {move.EffectTurns}t";
+        }
+        else // EnemyDebuff
+        {
+            string statLabel = move.EffectStat == ModifierStat.DodgeChance
+                ? $"Dodge {move.EffectValue * 100:F0}%"
+                : $"{move.EffectStat} {(int)move.EffectValue}";
+            return $"{statLabel} · {move.EffectTurns}t";
+        }
     }
 
     private async Task HandleCancel() => await OnCancel.InvokeAsync();

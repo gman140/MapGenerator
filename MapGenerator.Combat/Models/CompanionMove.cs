@@ -7,6 +7,7 @@ public class CompanionMove
 {
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
     public CompanionMoveKind Kind { get; init; } = CompanionMoveKind.Attack;
 
     // Attack fields

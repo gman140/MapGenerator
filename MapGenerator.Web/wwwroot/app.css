@@ -258,11 +258,16 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .companion-desc { font-size: .82rem; color: var(--text-dim); font-style: italic; line-height: 1.5; }
 .companion-stat-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: 4px; padding: .3rem .6rem; font-size: .85rem; }
 .companion-stat-label { color: var(--text-dim); }
-.companion-moves-section { display: flex; flex-direction: column; gap: .25rem; }
+.companion-moves-section { display: flex; flex-direction: column; gap: .1rem; }
 .companion-moves-header { font-size: .72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .1rem; }
-.companion-move-row { display: flex; align-items: center; gap: .5rem; background: var(--bg); border-radius: 4px; padding: .25rem .6rem; }
-.companion-move-name { font-size: .82rem; color: var(--text); flex: 1; }
+.companion-move-card { display: flex; flex-direction: column; gap: .15rem; background: var(--bg); border-radius: 4px; padding: .3rem .6rem; }
+.companion-move-header { display: flex; align-items: center; gap: .5rem; }
+.companion-move-name { font-size: .82rem; font-weight: 600; color: var(--text); flex: 1; }
+.companion-move-desc { font-size: .72rem; color: var(--text-dim); font-style: italic; }
 .companion-move-power { font-size: .75rem; color: var(--text-dim); white-space: nowrap; }
+.companion-move-kind { font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 8px; white-space: nowrap; }
+.companion-move-kind.buff   { background: rgba(40,180,80,.2);  color: #4cda70; border: 1px solid rgba(40,180,80,.35); }
+.companion-move-kind.debuff { background: rgba(200,140,20,.2); color: #e6a820; border: 1px solid rgba(200,140,20,.35); }
 .companion-move-aoe { font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 8px; background: rgba(120,60,200,.2); color: #b080f0; border: 1px solid rgba(120,60,200,.35); white-space: nowrap; }
 
 /* ── Companion Panel ──────────────────────────────────────────────────────── */
