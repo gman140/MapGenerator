@@ -5,6 +5,7 @@ public enum DungeonRoomType
     Entrance,
     Empty,
     Treasure,
+    Vault,
     Shrine,
     Trap,
     Rest,

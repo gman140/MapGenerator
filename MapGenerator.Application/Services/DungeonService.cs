@@ -266,7 +266,7 @@ public class DungeonService
         var room = floor.Rooms.FirstOrDefault(r => r.Q == player.DungeonQ && r.R == player.DungeonR);
         if (room == null) return GatherResult.Fail("Room not found.");
 
-        if (room.Type is not DungeonRoomType.Treasure and not DungeonRoomType.Boss)
+        if (room.Type is not DungeonRoomType.Treasure and not DungeonRoomType.Vault and not DungeonRoomType.Boss)
             return GatherResult.Fail("There is nothing to gather here.");
 
         if (room.IsCleared)
@@ -358,7 +358,11 @@ public class DungeonService
             DungeonRoomType.Treasure when room.IsCleared =>
                 "Someone has already been through here. What was here is gone.",
             DungeonRoomType.Treasure =>
-                "The room holds something. You can feel it before you see it. There are items here waiting to be taken.",
+                "A small cache left by someone who passed through. There are items here waiting to be taken.",
+            DungeonRoomType.Vault when room.IsCleared =>
+                "The vault has been emptied. Whatever was sealed here is gone now.",
+            DungeonRoomType.Vault =>
+                "A sealed chamber, heavier than the others. Something of real value was kept here deliberately.",
             DungeonRoomType.Boss when room.IsCleared =>
                 "This chamber has been stripped of everything it held. The weight of it lingers.",
             DungeonRoomType.Boss =>

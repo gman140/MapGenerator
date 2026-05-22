@@ -57,15 +57,15 @@ public class DungeonGenerationService
         "Rope", "Lantern", "Compass", "Amber", "Quartz", "HollowStone", "CrackedOrb",
     ];
 
-    // Weighted room types for cluster centers. Floor-indexed weights: [floor1, floor2, floor3].
+    // Weighted room types for cluster centers only. No traps at centers — those come from the scatter pass.
+    // Floor-indexed weights: [floor1, floor2, floor3].
     private static readonly (DungeonRoomType Type, int[] Weights)[] RoomTypeTable =
     [
-        (DungeonRoomType.Empty,   [30, 25, 20]),
-        (DungeonRoomType.Treasure,[25, 22, 18]),
-        (DungeonRoomType.Trap,    [10, 18, 28]),
-        (DungeonRoomType.Dark,    [10, 12, 12]),
-        (DungeonRoomType.Rest,    [15,  8,  4]),
-        (DungeonRoomType.Shrine,  [10, 15, 18]),
+        (DungeonRoomType.Empty,  [25, 20, 15]),
+        (DungeonRoomType.Vault,  [30, 28, 25]),
+        (DungeonRoomType.Dark,   [15, 15, 15]),
+        (DungeonRoomType.Rest,   [18, 12,  5]),
+        (DungeonRoomType.Shrine, [12, 25, 40]),
     ];
 
     public Task<DungeonInstance> GenerateAsync(int entranceQ, int entranceR, string featureId)
@@ -125,15 +125,19 @@ public class DungeonGenerationService
                 tiles.TryAdd(hex, MakeRoom(hex));
 
         // ── Step 4: Assign room types to cluster centers ──────────────────────
+        var centerSet = new HashSet<(int q, int r)>(centers);
         AssignRoomTypes(rng, tiles, centers, floorNumber, isDeepest);
 
-        // ── Step 5: Place locked door tiles in corridor bottlenecks ──────────
+        // ── Step 5: Scatter treasure and traps across non-center tiles ────────
+        ScatterTilesPass(rng, tiles, centerSet);
+
+        // ── Step 6: Place locked door tiles in corridor bottlenecks ──────────
         PlaceLockedDoors(rng, tiles, clusterHexes, floorNumber, keyId);
 
-        // ── Step 6: Populate loot ─────────────────────────────────────────────
+        // ── Step 7: Populate loot ─────────────────────────────────────────────
         foreach (var room in tiles.Values)
-            if (room.Type is DungeonRoomType.Treasure or DungeonRoomType.Boss)
-                PopulateLoot(rng, room, theme, floorNumber, room.Type == DungeonRoomType.Boss, keyId);
+            if (room.Type is DungeonRoomType.Treasure or DungeonRoomType.Vault or DungeonRoomType.Boss)
+                PopulateLoot(rng, room, theme, floorNumber, keyId);
 
         var floor = new DungeonFloor { FloorNumber = floorNumber };
         floor.Rooms.AddRange(tiles.Values);
@@ -282,13 +286,38 @@ public class DungeonGenerationService
         }
     }
 
+    // ── Scatter pass ──────────────────────────────────────────────────────────
+
+    private static void ScatterTilesPass(Random rng, Dictionary<(int q, int r), DungeonRoom> tiles,
+        HashSet<(int q, int r)> centerSet)
+    {
+        const double TreasureChance = 0.20;
+        const double TrapChance     = 0.15;
+
+        foreach (var room in tiles.Values)
+        {
+            if (room.Type != DungeonRoomType.Empty) continue;
+            if (centerSet.Contains((room.Q, room.R))) continue;
+
+            double roll = rng.NextDouble();
+            if (roll < TreasureChance)
+                room.Type = DungeonRoomType.Treasure;
+            else if (roll < TreasureChance + TrapChance)
+                room.Type = DungeonRoomType.Trap;
+        }
+    }
+
     // ── Loot population ───────────────────────────────────────────────────────
 
-    private static void PopulateLoot(Random rng, DungeonRoom room, string theme, int floorNumber, bool isBoss, string keyId)
+    private static void PopulateLoot(Random rng, DungeonRoom room, string theme, int floorNumber, string keyId)
     {
         if (!LootPools.TryGetValue(theme, out var pools)) return;
 
-        int picks = isBoss ? floorNumber + 2 : rng.Next(1, 3);
+        bool isBoss  = room.Type == DungeonRoomType.Boss;
+        bool isVault = room.Type == DungeonRoomType.Vault;
+
+        // Boss gets the most, vault gets a solid handful, scattered treasure gets one to 3 picks
+        int picks = isBoss ? floorNumber + 2 : isVault ? rng.Next(2, 5) : rng.Next(1, 3);
         for (int i = 0; i < picks; i++)
         {
             int tier = rng.Next(0, Math.Min(floorNumber, 3));
@@ -297,13 +326,17 @@ public class DungeonGenerationService
             room.Loot[item] = room.Loot.GetValueOrDefault(item) + 1;
         }
 
-        if (rng.NextDouble() < 0.35)
+        double bonusChance = isBoss || isVault ? 0.55 : 0.20;
+        if (rng.NextDouble() < bonusChance)
         {
             string bonus = BonusLoot[rng.Next(BonusLoot.Length)];
             room.Loot[bonus] = room.Loot.GetValueOrDefault(bonus) + 1;
         }
 
-        if (isBoss) room.Loot[keyId] = 1;
+        if (isBoss)
+            room.Loot[keyId] = 1;
+        else if (isVault && rng.NextDouble() < 0.22)
+            room.Loot[keyId] = 1;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
