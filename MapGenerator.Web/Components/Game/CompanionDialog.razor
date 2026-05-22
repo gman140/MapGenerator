@@ -1,8 +1,10 @@
 @using MapGenerator.Combat.Models
+@using MapGenerator.Combat.Interfaces
 @using MapGenerator.Domain.Models
 @using MapGenerator.Combat.Enums
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Web.Services
+@inject ICompanionMoveProvider MoveProvider
 
 <div class="modal-overlay" @onclick="HandleCancel">
     <div class="companion-dialog" @onclick:stopPropagation
@@ -20,6 +22,7 @@
 
         <div class="sprite-editor-tabs">
             <button class="sprite-tab @(_tab == "stats" ? "active" : "")" @onclick='() => _tab = "stats"'>Stats</button>
+            <button class="sprite-tab @(_tab == "moves" ? "active" : "")" @onclick='() => { _tab = "moves"; _pickerSlot = -1; }'>Moves</button>
             <button class="sprite-tab @(_tab == "sprite" ? "active" : "")" @onclick='() => _tab = "sprite"'>Sprite</button>
         </div>
 
@@ -30,8 +33,11 @@
 
                 <div class="companion-stat-row">
                     <span class="companion-stat-label">Element</span>
-                    <span class="companion-element companion-element-@Definition.ElementType.ToString().ToLower()">
-                        @Definition.ElementType
+                    <span class="companion-element-row">
+                        @foreach (var et in Definition.ElementTypes)
+                        {
+                            <span class="companion-element companion-element-@et.ToString().ToLower()">@et</span>
+                        }
                     </span>
                 </div>
                 <div class="companion-stat-row">
@@ -39,36 +45,113 @@
                     <strong>@Definition.BaseAttack</strong>
                 </div>
 
-                <div class="companion-moves-section">
-                    <div class="companion-moves-header">Moves</div>
-                    @foreach (var moveId in Companion.MoveIds)
+            </div>
+
+            <div class="modal-actions">
+                <button class="companion-release-btn" @onclick="HandleRelease">Release Companion</button>
+                <button @onclick="HandleCancel">Close</button>
+            </div>
+        }
+        else if (_tab == "moves")
+        {
+            var eligibleMoves = MoveProvider.GetEligibleFor(Definition.ElementTypes);
+
+            <div class="companion-moves-body">
+                <p class="companion-moves-hint">Select up to 4 moves. Click a slot to change it.</p>
+
+                @if (_moveError != null)
+                {
+                    <div class="companion-moves-error">@_moveError</div>
+                }
+
+                <div class="companion-move-slots">
+                    @for (int slot = 0; slot < 4; slot++)
                     {
-                        var move = Definition.Moves.FirstOrDefault(m => m.Id == moveId);
-                        if (move != null)
-                        {
-                            <div class="companion-move-card">
-                                <div class="companion-move-header">
-                                    <span class="companion-move-name">@move.Name</span>
-                                    @if (move.Kind == CompanionMoveKind.Attack)
+                        int s = slot;
+                        bool hasMove = s < _editMoveIds.Count;
+                        bool isOpen = _pickerSlot == s;
+                        var slotMove = hasMove ? MoveProvider.GetById(_editMoveIds[s]) : null;
+
+                        <div class="companion-move-slot @(isOpen ? "open" : "") @(!hasMove ? "empty" : "")"
+                             @onclick="() => TogglePicker(s)">
+                            @if (slotMove != null)
+                            {
+                                <div class="companion-move-slot-header">
+                                    <span class="companion-move-name">@slotMove.Name</span>
+                                    @if (slotMove.Kind == CompanionMoveKind.Attack)
                                     {
-                                        <span class="companion-element companion-element-@move.DamageType.ToString().ToLower()">@move.DamageType</span>
-                                        <span class="companion-move-power">~@((int)(Definition.BaseAttack * move.Power)) dmg</span>
+                                        <span class="companion-element companion-element-@slotMove.DamageType.ToString().ToLower()">@slotMove.DamageType</span>
+                                        <span class="companion-move-power">~@((int)(Definition.BaseAttack * slotMove.Power)) dmg</span>
+                                        @if (slotMove.HitsAll) { <span class="companion-move-aoe">AOE</span> }
                                     }
-                                    else if (move.Kind == CompanionMoveKind.PlayerBuff)
+                                    else if (slotMove.Kind == CompanionMoveKind.PlayerBuff)
                                     {
                                         <span class="companion-move-kind buff">Buff</span>
-                                        <span class="companion-move-power">@FormatEffect(move)</span>
+                                        <span class="companion-move-power">@FormatEffect(slotMove)</span>
                                     }
                                     else
                                     {
                                         <span class="companion-move-kind debuff">Debuff</span>
-                                        <span class="companion-move-power">@FormatEffect(move)</span>
+                                        <span class="companion-move-power">@FormatEffect(slotMove)</span>
                                     }
-                                    @if (move.HitsAll) { <span class="companion-move-aoe">AOE</span> }
+                                    <button class="companion-move-remove" @onclick:stopPropagation
+                                            @onclick="() => RemoveMove(s)">×</button>
                                 </div>
-                                @if (!string.IsNullOrEmpty(move.Description))
+                                @if (!string.IsNullOrEmpty(slotMove.Description))
                                 {
-                                    <span class="companion-move-desc">@move.Description</span>
+                                    <span class="companion-move-desc">@slotMove.Description</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="companion-move-slot-empty">+ Add move</span>
+                            }
+                        </div>
+
+                        @if (isOpen)
+                        {
+                            <div class="companion-move-picker">
+                                @foreach (var group in eligibleMoves.GroupBy(m => m.Kind).OrderBy(g => g.Key))
+                                {
+                                    string kindLabel = group.Key switch
+                                    {
+                                        CompanionMoveKind.Attack     => "Attacks",
+                                        CompanionMoveKind.PlayerBuff => "Buffs",
+                                        _                            => "Debuffs",
+                                    };
+                                    <div class="companion-picker-group">
+                                        <div class="companion-picker-group-label">@kindLabel</div>
+                                        @foreach (var m in group)
+                                        {
+                                            bool inUse = _editMoveIds.Contains(m.Id);
+                                            <div class="companion-picker-option @(inUse ? "in-use" : "")"
+                                                 @onclick="() => { if (!inUse) AssignMove(s, m.Id); }">
+                                                <div class="companion-picker-option-header">
+                                                    <span class="companion-move-name">@m.Name</span>
+                                                    @if (m.Kind == CompanionMoveKind.Attack)
+                                                    {
+                                                        <span class="companion-element companion-element-@m.DamageType.ToString().ToLower()">@m.DamageType</span>
+                                                        <span class="companion-move-power">~@((int)(Definition.BaseAttack * m.Power)) dmg</span>
+                                                    }
+                                                    else if (m.Kind == CompanionMoveKind.PlayerBuff)
+                                                    {
+                                                        <span class="companion-move-kind buff">Buff</span>
+                                                        <span class="companion-move-power">@FormatEffect(m)</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="companion-move-kind debuff">Debuff</span>
+                                                        <span class="companion-move-power">@FormatEffect(m)</span>
+                                                    }
+                                                    @if (m.HitsAll) { <span class="companion-move-aoe">AOE</span> }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(m.Description))
+                                                {
+                                                    <span class="companion-move-desc">@m.Description</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
                                 }
                             </div>
                         }
@@ -77,8 +160,8 @@
             </div>
 
             <div class="modal-actions">
-                <button class="companion-release-btn" @onclick="HandleRelease">Release Companion</button>
-                <button @onclick="HandleCancel">Close</button>
+                <button @onclick="HandleCancel">Cancel</button>
+                <button class="btn-primary" @onclick="HandleSaveMoves">Save Moves</button>
             </div>
         }
         else
@@ -154,6 +237,7 @@
     [Parameter, EditorRequired] public CompanionDefinition Definition { get; set; } = null!;
     [Parameter] public EventCallback<string[]> OnSaveSprite { get; set; }
     [Parameter] public EventCallback<string> OnSaveNickname { get; set; }
+    [Parameter] public EventCallback<List<string>> OnSaveMoves { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public EventCallback OnRelease { get; set; }
 
@@ -165,10 +249,16 @@
     private bool _erasing;
     private bool _isPainting;
     private bool _paintingAsErase;
+    private string? _moveError;
+
+    // Moves tab state
+    private List<string> _editMoveIds = [];
+    private int _pickerSlot = -1;
 
     protected override void OnInitialized()
     {
         _nickname = Companion.Nickname;
+        _editMoveIds = [.. Companion.MoveIds];
         ResetSprite();
     }
 
@@ -181,15 +271,42 @@
         _hexColor = ElementDefaultColor();
     }
 
-    private string ElementDefaultColor() => Definition.ElementType.ToString() switch
+    private string ElementDefaultColor() => Definition.ElementTypes.FirstOrDefault() switch
     {
-        "Fire"    => "#e05020",
-        "Frost"   => "#4090e0",
-        "Storm"   => "#e0c020",
-        "Nature"  => "#40c040",
-        "Dark"    => "#8030c0",
-        _         => "#a0a0a0",
+        DamageType.Fire    => "#e05020",
+        DamageType.Frost   => "#4090e0",
+        DamageType.Storm   => "#e0c020",
+        DamageType.Nature  => "#40c040",
+        DamageType.Dark    => "#8030c0",
+        _                  => "#a0a0a0",
     };
+
+    private void TogglePicker(int slot)
+    {
+        _pickerSlot = _pickerSlot == slot ? -1 : slot;
+    }
+
+    private void AssignMove(int slot, string moveId)
+    {
+        while (_editMoveIds.Count <= slot)
+            _editMoveIds.Add("");
+        _editMoveIds[slot] = moveId;
+        _pickerSlot = -1;
+    }
+
+    private void RemoveMove(int slot)
+    {
+        if (slot < _editMoveIds.Count)
+            _editMoveIds.RemoveAt(slot);
+        _pickerSlot = -1;
+    }
+
+    private async Task HandleSaveMoves()
+    {
+        _moveError = null;
+        var cleanIds = _editMoveIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
+        await OnSaveMoves.InvokeAsync(cleanIds);
+    }
 
     private void HandleMouseDown(int idx, MouseEventArgs e)
     {

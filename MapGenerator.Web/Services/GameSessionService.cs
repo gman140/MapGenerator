@@ -39,6 +39,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly ITileInventoryRepository _tileInventoryRepo;
     private readonly ICompanionRepository _companionRepo;
     private readonly ICompanionDefinitionProvider _companionDefProvider;
+    private readonly ICompanionMoveProvider _companionMoveProvider;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -75,7 +76,8 @@ public class GameSessionService : IAsyncDisposable
         ICombatRepository combatRepo,
         ITileInventoryRepository tileInventoryRepo,
         ICompanionRepository companionRepo,
-        ICompanionDefinitionProvider companionDefProvider)
+        ICompanionDefinitionProvider companionDefProvider,
+        ICompanionMoveProvider companionMoveProvider)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -106,6 +108,7 @@ public class GameSessionService : IAsyncDisposable
         _tileInventoryRepo = tileInventoryRepo;
         _companionRepo        = companionRepo;
         _companionDefProvider = companionDefProvider;
+        _companionMoveProvider = companionMoveProvider;
     }
 
     public async Task InitAsync(string browserId)
@@ -460,12 +463,13 @@ public class GameSessionService : IAsyncDisposable
         var def = allDefs[Random.Shared.Next(allDefs.Count)];
 
         var rng = Random.Shared;
-        string? attackId = def.Moves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.Attack)
-                                    .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
-        string? buffId   = def.Moves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.PlayerBuff)
-                                    .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
-        string? debuffId = def.Moves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.EnemyDebuff)
-                                    .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
+        var eligibleMoves = _companionMoveProvider.GetEligibleFor(def.ElementTypes);
+        string? attackId = eligibleMoves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.Attack)
+                                        .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
+        string? buffId   = eligibleMoves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.PlayerBuff)
+                                        .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
+        string? debuffId = eligibleMoves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.EnemyDebuff)
+                                        .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
         var selectedMoves = new[] { attackId, buffId, debuffId }.Where(id => id != null).Select(id => id!).ToList();
 
         var companion = new PlayerCompanion
@@ -504,6 +508,20 @@ public class GameSessionService : IAsyncDisposable
         if (Companion == null) return;
         Companion.Nickname = nickname.Trim();
         await _companionRepo.SaveAsync(Companion);
+    }
+
+    public async Task<string?> UpdateCompanionMovesAsync(List<string> moveIds)
+    {
+        if (Companion == null || CompanionDefinition == null) return "No companion.";
+        if (moveIds.Count > 4) return "A companion can have at most 4 moves.";
+        var eligible = _companionMoveProvider.GetEligibleFor(CompanionDefinition.ElementTypes).Select(m => m.Id).ToHashSet();
+        foreach (var id in moveIds)
+        {
+            if (!eligible.Contains(id)) return $"Move '{id}' is not eligible for this companion.";
+        }
+        Companion.MoveIds = moveIds;
+        await _companionRepo.SaveAsync(Companion);
+        return null;
     }
 
     public async Task<(bool success, string message)> ReleaseCompanionAsync()

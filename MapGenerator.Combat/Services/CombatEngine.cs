@@ -14,6 +14,7 @@ public class CombatEngine : ICombatEngine
     private readonly IConsumableDefinitionProvider _consumableProvider;
     private readonly ISpellDefinitionProvider _spellProvider;
     private readonly ICompanionDefinitionProvider _companionProvider;
+    private readonly ICompanionMoveProvider _companionMoveProvider;
     private readonly EnemySpawner _spawner;
     private readonly Random _rng = new();
 
@@ -35,6 +36,7 @@ public class CombatEngine : ICombatEngine
         IConsumableDefinitionProvider consumableProvider,
         ISpellDefinitionProvider spellProvider,
         ICompanionDefinitionProvider companionProvider,
+        ICompanionMoveProvider companionMoveProvider,
         EnemySpawner spawner)
     {
         _enemyProvider      = enemyProvider;
@@ -42,6 +44,7 @@ public class CombatEngine : ICombatEngine
         _consumableProvider = consumableProvider;
         _spellProvider      = spellProvider;
         _companionProvider  = companionProvider;
+        _companionMoveProvider = companionMoveProvider;
         _spawner            = spawner;
     }
 
@@ -706,7 +709,7 @@ public class CombatEngine : ICombatEngine
         if (session.CompanionDefinitionId == null || session.CompanionMoveIds.Count == 0) return;
 
         string moveId = session.CompanionMoveIds[_rng.Next(session.CompanionMoveIds.Count)];
-        var move = _companionProvider.GetMove(session.CompanionDefinitionId, moveId);
+        var move = _companionMoveProvider.GetById(moveId);
         if (move == null) return;
 
         string companionName = string.IsNullOrEmpty(session.CompanionName) ? "Your companion" : session.CompanionName;

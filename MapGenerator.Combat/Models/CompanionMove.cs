@@ -9,6 +9,8 @@ public class CompanionMove
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public CompanionMoveKind Kind { get; init; } = CompanionMoveKind.Attack;
+    // Empty = usable by all element types
+    public IReadOnlyList<DamageType> EligibleTypes { get; init; } = [];
 
     // Attack fields
     public DamageType DamageType { get; init; }

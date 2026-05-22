@@ -37,11 +37,12 @@ internal static class Program
         var equipmentProvider  = new InMemoryEquipmentDefinitionProvider();
         var consumableProvider = new InMemoryConsumableDefinitionProvider();
         var spellProvider      = new InMemorySpellDefinitionProvider();
-        var companionProvider  = new InMemoryCompanionDefinitionProvider();
-        var spawner            = new EnemySpawner(enemyProvider, affixProvider);
-        var engine             = new CombatEngine(
+        var companionProvider     = new InMemoryCompanionDefinitionProvider();
+        var companionMoveProvider = new InMemoryCompanionMoveProvider();
+        var spawner               = new EnemySpawner(enemyProvider, affixProvider);
+        var engine                = new CombatEngine(
             enemyProvider, equipmentProvider, consumableProvider,
-            spellProvider, companionProvider, spawner);
+            spellProvider, companionProvider, companionMoveProvider, spawner);
 
         var allEnemies = enemyProvider.All;
         var players    = GeneratePlayers(new Random(seed));

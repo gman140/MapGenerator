@@ -15,9 +15,10 @@
             }
         </button>
         <span class="companion-name">@Companion.Nickname</span>
-        <span class="companion-element companion-element-@Definition.ElementType.ToString().ToLower()">
-            @Definition.ElementType
-        </span>
+        @foreach (var et in Definition.ElementTypes)
+        {
+            <span class="companion-element companion-element-@et.ToString().ToLower()">@et</span>
+        }
     </div>
 
     @if (Companion.Nickname != Definition.Name)

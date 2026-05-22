@@ -213,6 +213,7 @@ OnDance="HandleDanceAsync"
                          Definition="Session.CompanionDefinition"
                          OnSaveSprite="HandleCompanionSpriteAsync"
                          OnSaveNickname="HandleCompanionNicknameAsync"
+                         OnSaveMoves="HandleCompanionMovesAsync"
                          OnCancel="() => _showCompanionDialog = false"
                          OnRelease="HandleReleaseAsync" />
     }
@@ -951,6 +952,14 @@ OnDance="HandleDanceAsync"
     private async Task HandleCompanionNicknameAsync(string nickname)
     {
         await Session.UpdateCompanionNicknameAsync(nickname);
+        StateHasChanged();
+    }
+
+    private async Task HandleCompanionMovesAsync(List<string> moveIds)
+    {
+        var err = await Session.UpdateCompanionMovesAsync(moveIds);
+        if (err != null) { _moveError = err; StateHasChanged(); return; }
+        _showCompanionDialog = false;
         StateHasChanged();
     }
 

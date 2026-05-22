@@ -287,6 +287,28 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .companion-moves   { display: flex; flex-wrap: wrap; gap: .25rem; }
 .companion-move-chip { font-size: .65rem; padding: .12rem .4rem; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
 .companion-move-chip.hits-all { border-color: #6040a0; color: #b090e0; }
+.companion-element-row { display: flex; gap: .3rem; flex-wrap: wrap; }
+
+/* ── Companion Moves Tab ──────────────────────────────────────────────────── */
+.companion-moves-body { display: flex; flex-direction: column; gap: .5rem; padding: .25rem 0; }
+.companion-moves-hint { font-size: .75rem; color: var(--text-dim); margin: 0; }
+.companion-moves-error { font-size: .78rem; color: #e05050; background: rgba(200,50,50,.1); border-radius: 4px; padding: .3rem .6rem; }
+.companion-move-slots { display: flex; flex-direction: column; gap: .4rem; }
+.companion-move-slot { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: .4rem .6rem; cursor: pointer; transition: border-color .15s; }
+.companion-move-slot:hover { border-color: var(--accent); }
+.companion-move-slot.open { border-color: var(--accent); }
+.companion-move-slot.empty { border-style: dashed; opacity: .7; }
+.companion-move-slot-header { display: flex; align-items: center; gap: .5rem; }
+.companion-move-slot-empty { font-size: .8rem; color: var(--text-dim); }
+.companion-move-remove { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: .9rem; padding: 0 .2rem; line-height: 1; }
+.companion-move-remove:hover { color: #e05050; }
+.companion-move-picker { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: .5rem; margin-top: .25rem; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: .5rem; }
+.companion-picker-group { display: flex; flex-direction: column; gap: .2rem; }
+.companion-picker-group-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); margin-bottom: .1rem; }
+.companion-picker-option { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: .3rem .5rem; cursor: pointer; transition: border-color .12s; }
+.companion-picker-option:hover:not(.in-use) { border-color: var(--accent); }
+.companion-picker-option.in-use { opacity: .45; cursor: default; }
+.companion-picker-option-header { display: flex; align-items: center; gap: .4rem; }
 
 /* ── Companion action buttons ─────────────────────────────────────────────── */
 .companion-hatch-btn   { background: rgba(180,140,60,.18); color: #d4a840; border: 1px solid rgba(180,140,60,.4) !important; }
