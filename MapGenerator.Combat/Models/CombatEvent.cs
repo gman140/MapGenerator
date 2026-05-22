@@ -17,6 +17,9 @@ public enum CombatEventKind
     PlayerBounce,      // player took a non-damage action — trigger bounce animation
     EnemyBounce,       // enemy took a non-damage action — trigger bounce animation
     CompanionBounce,   // companion took a non-damage action — trigger bounce animation
+    PlayerMagicCast,   // player cast a damage spell — trigger arcane glow on player
+    PlayerMagicHeal,   // player cast a heal/buff spell — trigger white light glow on player
+    ShakeMagicEnemy,   // enemy was hit by a spell — trigger magical shake + sparkle effect
 }
 
 public class CombatEvent

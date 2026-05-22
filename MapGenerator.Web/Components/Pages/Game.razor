@@ -719,6 +719,15 @@ OnDance="HandleDanceAsync"
                 case CombatEventKind.ShakeEnemy when evt.EnemyInstanceId != null:
                     _combatView?.TriggerEnemyShake(evt.EnemyInstanceId);
                     break;
+                case CombatEventKind.PlayerMagicCast:
+                    _combatView?.TriggerPlayerMagicCast();
+                    break;
+                case CombatEventKind.PlayerMagicHeal:
+                    _combatView?.TriggerPlayerMagicHeal();
+                    break;
+                case CombatEventKind.ShakeMagicEnemy when evt.EnemyInstanceId != null:
+                    _combatView?.TriggerMagicEnemyShake(evt.EnemyInstanceId);
+                    break;
                 case CombatEventKind.EnemyDied when evt.EnemyInstanceId != null && _combatView != null:
                     StateHasChanged();
                     await _combatView.TriggerEnemyDieAsync(evt.EnemyInstanceId);

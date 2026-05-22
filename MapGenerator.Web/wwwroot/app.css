@@ -676,9 +676,131 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
   91%  { transform: scale(1.01,  0.995) skewX(0.2deg)  translateX(0);    }
   100% { transform: scale(1,     1)     skewX(0deg)    translateX(0);    }
 }
-.combat-player-svg:not(.combat-shake):not(.combat-strike):not(.combat-bounce) { animation: combat-player-idle 4s ease-in-out infinite; }
+.combat-player-svg:not(.combat-shake):not(.combat-strike):not(.combat-bounce):not(.combat-magic-cast):not(.combat-magic-heal) { animation: combat-player-idle 4s ease-in-out infinite; }
 .combat-companion-svg:not(.combat-strike):not(.combat-bounce)                 { animation: combat-player-idle 3.2s ease-in-out infinite -1.2s; }
 .combat-enemy-svg                                         { animation: combat-idle-bob 2.5s ease-in-out infinite; }
+
+/* ── Magic animations ────────────────────────────────────────────────────── */
+
+@keyframes combat-magic-cast-pulse {
+    0%   { transform: translateX(0)    scale(1);    filter: none; }
+    22%  { transform: translateX(-8px)  scale(0.94); filter: drop-shadow(0 0 6px #c084fc); }
+    40%  { transform: translateX(-14px) scale(0.88); filter: drop-shadow(0 0 14px #c084fc) drop-shadow(0 0 28px #a855f7); }
+    54%  { transform: translateX(10px)  scale(1.07); filter: drop-shadow(0 0 22px #ffffff) drop-shadow(0 0 34px #c084fc); }
+    70%  { transform: translateX(3px)   scale(1.02); filter: drop-shadow(0 0 8px #a855f7); }
+    100% { transform: translateX(0)    scale(1);    filter: none; }
+}
+.combat-magic-cast {
+    animation: combat-magic-cast-pulse 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Magic bolt projectile ───────────────────────────────────────────────── */
+.combat-magic-bolt {
+    position: absolute;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, transparent 0%, #c084fc 25%, #ffffff 75%, #f0e6ff 100%);
+    box-shadow: 0 0 10px 4px #a855f7, 0 0 22px 6px #c084fc55;
+    pointer-events: none;
+    opacity: 0;
+    animation: magic-bolt-fly 0.5s ease-in forwards;
+}
+@keyframes magic-bolt-fly {
+    0%   { opacity: 0;   width: 4px;  transform: translateX(0); }
+    20%  { opacity: 0.7; width: 8px;  transform: translateX(0); }
+    40%  { opacity: 1;   width: 12px; transform: translateX(0); }
+    52%  { opacity: 1;   width: 44px; transform: translateX(16px); }
+    85%  { opacity: 0.9; width: 58px; transform: translateX(270px); }
+    100% { opacity: 0;   width: 30px; transform: translateX(320px); }
+}
+.combat-magic-bolt.b1 { top: 52px; left: 88px; animation-delay: 0s;    }
+.combat-magic-bolt.b2 { top: 43px; left: 86px; animation-delay: 0.05s; }
+.combat-magic-bolt.b3 { top: 61px; left: 90px; animation-delay: 0.10s; }
+
+@keyframes combat-magic-heal-pulse {
+    0%   { transform: scale(1);                   filter: none; }
+    20%  { transform: scaleX(0.93) scaleY(1.08);  filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 16px #86efac); }
+    45%  { transform: scaleX(0.88) scaleY(1.18);  filter: drop-shadow(0 0 18px #ffffff) drop-shadow(0 0 36px #4ade80); }
+    65%  { transform: scaleX(1.07) scaleY(0.96);  filter: drop-shadow(0 0 12px #ffffff) drop-shadow(0 0 24px #86efac); }
+    82%  { transform: scaleX(0.98) scaleY(1.03);  filter: drop-shadow(0 0 5px #86efac); }
+    100% { transform: scale(1);                   filter: none; }
+}
+.combat-magic-heal {
+    animation: combat-magic-heal-pulse 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes combat-magic-shake {
+    0%   { transform: scale(1.18) translateX(0);   filter: brightness(2.2) drop-shadow(0 0 12px #c084fc) drop-shadow(0 0 24px #a855f7); }
+    10%  { transform: scale(0.92) translateX(-12px); filter: brightness(1.4) drop-shadow(0 0 8px #a855f7); }
+    22%  { transform: scale(1.04) translateX(14px);  filter: brightness(1.6) drop-shadow(0 0 10px #c084fc); }
+    34%  { transform: scale(0.96) translateX(-11px); filter: brightness(1.3) drop-shadow(0 0 6px #a855f7); }
+    46%  { transform: scale(1.02) translateX(9px);   filter: brightness(1.2) drop-shadow(0 0 4px #c084fc); }
+    58%  { transform: scale(0.99) translateX(-6px);  filter: brightness(1.1); }
+    72%  { transform: scale(1.01) translateX(4px);   filter: brightness(1); }
+    86%  { transform: scale(1)    translateX(-2px);  filter: none; }
+    100% { transform: scale(1)    translateX(0);     filter: none; }
+}
+.combat-magic-shake {
+    animation: combat-magic-shake 0.55s cubic-bezier(0.3, 0, 0.7, 1);
+}
+
+/* ── Heal particle orbs ──────────────────────────────────────────────────── */
+.combat-heal-particles {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    pointer-events: none;
+}
+.heal-orb {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #86efac 60%, transparent 100%);
+    box-shadow: 0 0 6px 2px #86efac, 0 0 12px 4px #ffffff66;
+    animation: heal-orb-rise 0.65s ease-out forwards;
+    opacity: 0;
+}
+@keyframes heal-orb-rise {
+    0%   { opacity: 0;   transform: translate(var(--ox), var(--oy)) scale(0.3); }
+    20%  { opacity: 1; }
+    80%  { opacity: 0.7; }
+    100% { opacity: 0;   transform: translate(var(--dx), var(--dy)) scale(1.2); }
+}
+.heal-orb.o1 { --ox: -24px; --oy:  0px; --dx: -36px; --dy: -50px; animation-delay: 0s;    }
+.heal-orb.o2 { --ox:  24px; --oy:  0px; --dx:  38px; --dy: -45px; animation-delay: 0.07s; }
+.heal-orb.o3 { --ox:  0px;  --oy: 10px; --dx:  -8px; --dy: -58px; animation-delay: 0.14s; }
+.heal-orb.o4 { --ox:  12px; --oy: -5px; --dx:  30px; --dy: -52px; animation-delay: 0.06s; }
+
+/* ── Magic spark particles ───────────────────────────────────────────────── */
+.combat-magic-sparks {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    pointer-events: none;
+}
+.combat-magic-sparks.enemy-sparks {
+    top: 30%; left: 50%;
+}
+.magic-spark {
+    position: absolute;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 0%, #c084fc 40%, #7c3aed 80%, transparent 100%);
+    box-shadow: 0 0 8px 3px #a855f7, 0 0 16px 5px #c084fc88;
+    animation: magic-spark-fly 0.42s ease-out forwards;
+    opacity: 0;
+}
+@keyframes magic-spark-fly {
+    0%   { opacity: 0;   transform: translate(0, 0) scale(0.2); }
+    8%   { opacity: 1;   transform: translate(calc(var(--tx) * 0.1), calc(var(--ty) * 0.1)) scale(1.4); }
+    70%  { opacity: 0.8; }
+    100% { opacity: 0;   transform: translate(var(--tx), var(--ty)) scale(0.5); }
+}
+.magic-spark.s1 { --tx: -52px; --ty: -38px; animation-delay: 0s;    }
+.magic-spark.s2 { --tx:  50px; --ty: -34px; animation-delay: 0.03s; }
+.magic-spark.s3 { --tx: -18px; --ty: -60px; animation-delay: 0.06s; }
+.magic-spark.s4 { --tx:  42px; --ty: -56px; animation-delay: 0.02s; }
+.magic-spark.s5 { --tx:  -6px; --ty: -46px; animation-delay: 0.09s; }
 
 /* ── Death overlay ───────────────────────────────────────────────────────── */
 .death-overlay {
@@ -758,11 +880,11 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 }
 
 /* ── Combat view ─────────────────────────────────────────────────────────── */
-.combat-view { display: flex; flex-direction: column; gap: .6rem; padding: 1rem 1.25rem; height: 100svh; max-height: 100svh; box-sizing: border-box; width: min(560px, 100vw); overflow-y: auto; }
+.combat-view { display: flex; flex-direction: column; gap: .6rem; padding: 1rem 1.25rem; height: 100svh; max-height: 100svh; box-sizing: border-box; width: min(560px, 100vw); }
 .combat-hud { display: flex; justify-content: center; }
 .combat-context { font-size: .8rem; color: var(--text-dim); letter-spacing: .04em; }
 .combat-battlefield { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 130px; }
-.combat-player-side { display: flex; flex-direction: column; align-items: center; gap: .3rem; min-width: 100px; position: relative; }
+.combat-player-side { display: flex; flex-direction: column; align-items: center; gap: .3rem; min-width: 100px; position: relative; overflow: visible; }
 .combat-player-svg { filter: drop-shadow(0 0 8px rgba(80,160,240,.4)); }
 .combat-player-label { font-size: .78rem; color: var(--text); }
 .combat-status-badge-container { display: flex; flex-direction: column; gap: 2px; position: absolute; top: 0; }
@@ -917,6 +1039,6 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .companion-inline-name { font-size: .78rem; color: var(--text-dim); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── Companion sprite in combat ──────────────────────────────────────────── */
-.combat-fighters-row { display: flex; align-items: flex-end; gap: .5rem; position: relative; }
+.combat-fighters-row { display: flex; align-items: flex-end; gap: .5rem; position: relative; overflow: visible; }
 .combat-companion-mini { display: flex; flex-direction: column; align-items: center; position: absolute; right: 0; bottom: 0; }
 .combat-companion-svg { image-rendering: pixelated; filter: drop-shadow(0 0 8px rgba(80, 160, 240, .4)); }

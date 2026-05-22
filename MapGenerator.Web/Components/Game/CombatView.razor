@@ -84,12 +84,27 @@
         <div class="combat-battlefield">
             <div class="combat-player-side">
                 <div class="combat-fighters-row">
-                    <svg width="120" height="120" class="combat-player-svg @(_playerShaking ? "combat-shake" : _playerBouncing ? "combat-bounce" : "") @(_playerAttacking ? "combat-strike" : "")">
+                    <svg width="120" height="120" class="combat-player-svg @(_playerShaking ? "combat-shake" : _playerBouncing ? "combat-bounce" : _playerMagicHealing ? "combat-magic-heal" : _playerMagicCasting ? "combat-magic-cast" : "") @(_playerAttacking ? "combat-strike" : "")">
                         @if (PlayerSprite.Length > 0)
                         {
                             <image href="@SpriteHelper.ToSvgDataUri(PlayerSprite)" x="32" y="28" width="56" height="56" image-rendering="pixelated" />
                         }
                     </svg>
+                    @if (_playerMagicHealing)
+                    {
+                        <span class="combat-heal-particles">
+                            <span class="heal-orb o1"></span>
+                            <span class="heal-orb o2"></span>
+                            <span class="heal-orb o3"></span>
+                            <span class="heal-orb o4"></span>
+                        </span>
+                    }
+                    @if (_playerMagicCasting)
+                    {
+                        <span class="combat-magic-bolt b1"></span>
+                        <span class="combat-magic-bolt b2"></span>
+                        <span class="combat-magic-bolt b3"></span>
+                    }
                     @if (Session.CompanionPresent && CompanionSpritePixels != null && CompanionSpritePixels.Any(p => !string.IsNullOrEmpty(p)))
                     {
                         <div class="combat-companion-mini">
@@ -125,14 +140,25 @@
                 {
                     bool dying    = _dyingEnemyIds.Contains(enemy.InstanceId);
                     bool fleeing  = _fleeingEnemyIds.Contains(enemy.InstanceId);
-                    bool shaking  = _shakingEnemyId == enemy.InstanceId;
+                    bool shaking      = _shakingEnemyId == enemy.InstanceId;
+                    bool magicShaking = _magicShakingEnemyId == enemy.InstanceId;
                     bool bouncing = _bouncingEnemyId == enemy.InstanceId;
                     bool targeted = _targetEnemyId == enemy.InstanceId && !dying && !fleeing;
                     bool striking = _strikingEnemyId == enemy.InstanceId;
-                    string animationClass = dying ? "combat-enemy-dying" : fleeing ? "combat-enemy-fleeing" : shaking ? "combat-shake" : bouncing ? "combat-bounce" : striking ? "combat-strike-enemy" : "";
+                    string animationClass = dying ? "combat-enemy-dying" : fleeing ? "combat-enemy-fleeing" : shaking ? "combat-shake" : magicShaking ? "combat-magic-shake" : bouncing ? "combat-bounce" : striking ? "combat-strike-enemy" : "";
                     <div class="combat-enemy @(targeted ? "targeted" : "")"
                          @onclick="() => SelectTarget(enemy.InstanceId)">
                         <EnemySprite DefinitionId="@enemy.DefinitionId" Targeted="@targeted" Class="@animationClass" SvgClass="combat-enemy-svg" Affix="@enemy.AffixId" />
+                        @if (magicShaking)
+                        {
+                            <span class="combat-magic-sparks enemy-sparks">
+                                <span class="magic-spark s1"></span>
+                                <span class="magic-spark s2"></span>
+                                <span class="magic-spark s3"></span>
+                                <span class="magic-spark s4"></span>
+                                <span class="magic-spark s5"></span>
+                            </span>
+                        }
                         <div class="combat-enemy-name">@enemy.Name</div>
                         <div class="combat-enemy-hp">
                             <div class="combat-hp-bar">
@@ -285,6 +311,9 @@
     private bool _playerBouncing;
     private bool _companionAttacking;
     private bool _companionBouncing;
+    private bool _playerMagicCasting;
+    private bool _playerMagicHealing;
+    private string? _magicShakingEnemyId;
     private HashSet<string> _dyingEnemyIds     = [];
     private HashSet<string> _fleeingEnemyIds   = [];
     private HashSet<string> _completedDeathIds = [];
@@ -368,6 +397,24 @@
     {
         _bouncingEnemyId = instanceId;
         _ = ClearAfterAsync(450, () => _bouncingEnemyId = null);
+    }
+
+    internal void TriggerPlayerMagicCast()
+    {
+        _playerMagicCasting = true;
+        _ = ClearAfterAsync(500, () => _playerMagicCasting = false);
+    }
+
+    internal void TriggerPlayerMagicHeal()
+    {
+        _playerMagicHealing = true;
+        _ = ClearAfterAsync(600, () => _playerMagicHealing = false);
+    }
+
+    internal void TriggerMagicEnemyShake(string instanceId)
+    {
+        _magicShakingEnemyId = instanceId;
+        _ = ClearAfterAsync(500, () => _magicShakingEnemyId = null);
     }
 
     internal async Task TriggerEnemyDieAsync(string instanceId)

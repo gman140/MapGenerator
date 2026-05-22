@@ -612,7 +612,7 @@ public class CombatEngine : ICombatEngine
             int healed = session.PlayerHp - before;
             string msg = $"You cast {spell.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
             session.Log.Add(msg);
-            events.Add(new CombatEvent { Kind = CombatEventKind.PlayerBounce });
+            events.Add(new CombatEvent { Kind = CombatEventKind.PlayerMagicHeal });
             events.Add(new CombatEvent
             {
                 Kind = CombatEventKind.PlayerUpdate,
@@ -642,7 +642,7 @@ public class CombatEngine : ICombatEngine
             : $"You cast {spell.Name}!";
         session.Log.Add(castMsg);
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = castMsg, DelayMs = 250 });
-        events.Add(new CombatEvent { Kind = CombatEventKind.PlayerAttack });
+        events.Add(new CombatEvent { Kind = CombatEventKind.PlayerMagicCast, DelayMs = 380 });
 
         foreach (var target in targets)
         {
@@ -669,7 +669,7 @@ public class CombatEngine : ICombatEngine
 
             events.Add(new CombatEvent
             {
-                Kind = CombatEventKind.ShakeEnemy,
+                Kind = CombatEventKind.ShakeMagicEnemy,
                 EnemyInstanceId = target.InstanceId,
                 Log = log,
                 EnemyHp = target.CurrentHp,
