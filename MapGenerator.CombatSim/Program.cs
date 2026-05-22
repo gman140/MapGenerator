@@ -9,23 +9,11 @@ namespace MapGenerator.CombatSim;
 
 internal static class Program
 {
-    private const int    FightsPerEnemy  = 10;
+    private const int    FightsPerEnemy  = 20;   // more fights since armor/hat are random per fight
     private const int    MaxTurns        = 150;
     private const int    Seed            = 42;
     private const string PrimarySpell    = "firebolt";
     private const int    PrimarySpellCost = 3;
-
-    // Low tier:  WoodClub (Atk+5, Bludgeoning)  + LeatherArmor (Def+6)  + TravelHat (Dodge+5%)
-    private static readonly EquipmentSet LowGear = new(
-        AtkBonus: 5, WeaponDmgType: DamageType.Bludgeoning,
-        DefBonus: 6, DodgeBonus: 0.05f);
-
-    // High tier: IronSword (Atk+8, Slashing) + BearHideCloak (Def+10) + HoodedCowl (Dodge+10%)
-    private static readonly EquipmentSet HighGear = new(
-        AtkBonus: 8, WeaponDmgType: DamageType.Slashing,
-        DefBonus: 10, DodgeBonus: 0.10f);
-
-    // ── Entry ─────────────────────────────────────────────────────────────────
 
     public static void Main(string[] args)
     {
@@ -45,22 +33,37 @@ internal static class Program
             spellProvider, companionProvider, companionMoveProvider, spawner);
 
         var allEnemies = enemyProvider.All;
+        var allEquip   = equipmentProvider.All;
+        var weapons    = allEquip.Where(e => e.EquipmentSlot == "Weapon").ToList();
+        var armors     = allEquip.Where(e => e.EquipmentSlot == "Armor").ToList();
+        var hats       = allEquip.Where(e => e.EquipmentSlot == "Hat").ToList();
         var players    = GeneratePlayers(new Random(seed));
 
-        // ── Run 9 simulations (3 strategies × 3 equipment tiers) ──────────────
+        int totalBattles = weapons.Count * Enum.GetValues<Strategy>().Length
+                           * players.Count * allEnemies.Count * FightsPerEnemy;
 
-        var sims = new Dictionary<(Strategy, EquipmentTier), FightStats[][]>();
+        Console.WriteLine($"Running {weapons.Count} weapons × {Enum.GetValues<Strategy>().Length} strategies × " +
+                          $"{players.Count} players × {allEnemies.Count} enemies × {FightsPerEnemy} fights = {totalBattles:N0} battles");
+        Console.WriteLine();
 
-        foreach (var strat in Enum.GetValues<Strategy>())
-        foreach (var equip in Enum.GetValues<EquipmentTier>())
+        // sims[weaponId][strategy] = FightStats[playerIndex][enemyIndex]
+        var sims = new Dictionary<string, Dictionary<Strategy, FightStats[][]>>();
+
+        foreach (var weapon in weapons)
         {
-            Console.Write($"  {StratLabel(strat) + " | " + TierLabel(equip),-36}");
-            sims[(strat, equip)] = RunSim(engine, players, allEnemies, new Random(seed), strat, equip);
-            Console.WriteLine();
+            sims[weapon.Id] = [];
+            foreach (var strat in Enum.GetValues<Strategy>())
+            {
+                Console.Write($"  {WeaponAbbr(weapon),-5}  {weapon.Name,-20}  {StratLabel(strat),-30}");
+                sims[weapon.Id][strat] = RunSim(
+                    engine, players, allEnemies, armors, hats,
+                    new Random(seed), strat, weapon);
+                Console.WriteLine();
+            }
         }
         Console.WriteLine();
 
-        PrintReport(players, allEnemies, sims, seed);
+        PrintReport(players, allEnemies, weapons, armors, hats, sims, seed);
     }
 
     // ── Simulation ────────────────────────────────────────────────────────────
@@ -68,7 +71,9 @@ internal static class Program
     private static FightStats[][] RunSim(
         CombatEngine engine, List<Player> players,
         IReadOnlyList<EnemyDefinition> enemies,
-        Random rng, Strategy strategy, EquipmentTier equip)
+        List<EquipmentDefinition> armors,
+        List<EquipmentDefinition> hats,
+        Random rng, Strategy strategy, EquipmentDefinition weapon)
     {
         int W = players.Count, E = enemies.Count;
         var results = new FightStats[W][];
@@ -82,7 +87,9 @@ internal static class Program
                 double totalHpFrac = 0;
                 for (int f = 0; f < FightsPerEnemy; f++)
                 {
-                    var (won, turns, hpFrac) = RunFight(engine, players[pi], enemies[ei], rng, strategy, equip);
+                    var armor = armors[rng.Next(armors.Count)];
+                    var hat   = hats[rng.Next(hats.Count)];
+                    var (won, turns, hpFrac) = RunFight(engine, players[pi], enemies[ei], rng, strategy, weapon, armor, hat);
                     if (won) { wins++; totalHpFrac += hpFrac; }
                     totalTurns += turns;
                 }
@@ -97,9 +104,10 @@ internal static class Program
 
     private static (bool won, int turns, double hpFrac) RunFight(
         CombatEngine engine, Player player, EnemyDefinition def,
-        Random rng, Strategy strategy, EquipmentTier equip)
+        Random rng, Strategy strategy,
+        EquipmentDefinition weapon, EquipmentDefinition armor, EquipmentDefinition hat)
     {
-        var session = BuildSession(player, def, rng, equip);
+        var session = BuildSession(player, def, rng, weapon, armor, hat);
         int turns   = 0;
         while (!engine.IsFinished(session) && turns < MaxTurns)
         {
@@ -119,10 +127,10 @@ internal static class Program
         string? tid = target?.InstanceId;
         return strategy switch
         {
-            Strategy.AlwaysAttack => new CombatAction { Type = CombatActionType.Attack,      TargetEnemyId = tid },
+            Strategy.AlwaysAttack => new CombatAction { Type = CombatActionType.Attack,     TargetEnemyId = tid },
             Strategy.AttackHeavy  => PickAttackHeavy(session, tid),
             Strategy.MagicHeavy   => PickMagicHeavy(session, tid),
-            _                     => new CombatAction { Type = CombatActionType.Attack,      TargetEnemyId = tid },
+            _                     => new CombatAction { Type = CombatActionType.Attack,     TargetEnemyId = tid },
         };
     }
 
@@ -165,7 +173,8 @@ internal static class Program
     }
 
     private static CombatSession BuildSession(
-        Player player, EnemyDefinition def, Random rng, EquipmentTier equip)
+        Player player, EnemyDefinition def, Random rng,
+        EquipmentDefinition weapon, EquipmentDefinition armor, EquipmentDefinition hat)
     {
         int hp    = (int)(def.BaseHp * (0.90 + rng.NextDouble() * 0.20));
         var enemy = new Enemy
@@ -188,19 +197,19 @@ internal static class Program
             Enemies = [enemy], Phase = CombatPhase.PlayerTurn, ContextLabel = "Sim",
         };
 
-        // Apply equipment as session modifiers (mirrors CombatEngine.ApplyEquipmentModifiers)
-        var gear = equip switch
+        session.PlayerWeaponDamageType = weapon.WeaponDamageType;
+
+        // Apply all affixes from weapon, armor, and hat as session modifiers
+        foreach (var piece in new[] { weapon, armor, hat })
+        foreach (var affix in piece.Affixes)
         {
-            EquipmentTier.Low  => LowGear,
-            EquipmentTier.High => HighGear,
-            _                  => null,
-        };
-        if (gear != null)
-        {
-            session.PlayerWeaponDamageType = gear.WeaponDmgType;
-            session.ActiveModifiers.Add(new CombatModifier { Id = "Equip:Atk",   Stat = ModifierStat.Attack,      Value = gear.AtkBonus,   Source = "Equipment" });
-            session.ActiveModifiers.Add(new CombatModifier { Id = "Equip:Def",   Stat = ModifierStat.Defense,     Value = gear.DefBonus,   Source = "Equipment" });
-            session.ActiveModifiers.Add(new CombatModifier { Id = "Equip:Dodge", Stat = ModifierStat.DodgeChance, Value = gear.DodgeBonus, Source = "Equipment" });
+            session.ActiveModifiers.Add(new CombatModifier
+            {
+                Id     = $"Equip:{piece.Id}:{affix.Stat}",
+                Stat   = affix.Stat,
+                Value  = affix.Value,
+                Source = "Equipment",
+            });
         }
 
         return session;
@@ -211,19 +220,34 @@ internal static class Program
     private static void PrintReport(
         List<Player> players,
         IReadOnlyList<EnemyDefinition> enemies,
-        Dictionary<(Strategy, EquipmentTier), FightStats[][]> sims,
+        List<EquipmentDefinition> weapons,
+        List<EquipmentDefinition> armors,
+        List<EquipmentDefinition> hats,
+        Dictionary<string, Dictionary<Strategy, FightStats[][]>> sims,
         int seed)
     {
-        int W = players.Count, E = enemies.Count;
-        string[] abbr = enemies.Select(e => CamelAbbrev(e.Name)).ToArray();
+        int W = players.Count, E = enemies.Count, Wep = weapons.Count;
+        string[] wAbbr = weapons.Select(WeaponAbbr).ToArray();
 
         Sep();
         Console.WriteLine("  COMBAT BALANCE SIMULATION");
-        Console.WriteLine($"  {W} players (L1-L{W})  x  {E} enemies  x  {FightsPerEnemy} fights  x  9 combos  =  {W * E * FightsPerEnemy * 9:N0} battles");
+        Console.WriteLine($"  {W} players (L1–L{W})  ×  {E} enemies  ×  {Wep} weapons  ×  {FightsPerEnemy} fights  ×  3 strategies");
         Console.WriteLine($"  Seed: {seed}");
-        Console.WriteLine($"  Strategies:  Basic=always Attack  |  Heavy=HeavyAttack/Defend  |  Magic={PrimarySpell}/Refocus");
-        Console.WriteLine($"  Equipment:   None  |  Low (WoodClub+LeatherArmor+TravelHat)  |  High (IronSword+BearHideCloak+HoodedCowl)");
+        Console.WriteLine($"  Strategies:  Basic = always Attack  |  Heavy = HeavyAttack/Defend  |  Magic = {PrimarySpell}/Refocus");
+        Console.WriteLine($"  Armor: random per fight ({string.Join(", ", armors.Select(a => a.Name))})");
+        Console.WriteLine($"  Hat:   random per fight ({string.Join(", ", hats.Select(h => h.Name))})");
         Sep();
+
+        // ── Weapon table ──────────────────────────────────────────────────────
+        Console.WriteLine();
+        Console.WriteLine("WEAPONS");
+        Console.WriteLine($"  {"Abbr",-5}  {"Name",-20}  {"DmgType",-12}  {"Affixes"}");
+        Console.WriteLine($"  {"----",-5}  {"----",-20}  {"-------",-12}  {"-------"}");
+        foreach (var w in weapons)
+        {
+            string affixStr = string.Join(", ", w.Affixes.Select(a => $"{a.Stat}+{a.Value}"));
+            Console.WriteLine($"  {WeaponAbbr(w),-5}  {w.Name,-20}  {w.WeaponDamageType,-12}  {affixStr}");
+        }
 
         // ── Player stats ──────────────────────────────────────────────────────
         Console.WriteLine();
@@ -233,111 +257,107 @@ internal static class Program
         foreach (var p in players)
             Console.WriteLine($"  L{p.Level,2}  {p.MaxHp,3}  {p.BaseAttack,3}  {p.BaseDefense,3}  {p.BaseMagic,3}  {p.BaseDodgeChance*100,4:F0}%  {(p.Level-1)*3,3}");
 
-        // ── Win-rate grids grouped by equipment tier ──────────────────────────
-        foreach (var tier in Enum.GetValues<EquipmentTier>())
+        // ── Win rate matrix: Enemy × Weapon (averaged across all levels + strategies) ──
+        Console.WriteLine();
+        Console.WriteLine("OVERALL WIN RATES  (avg all levels & strategies)");
+        PrintEnemyWeaponGrid(enemies, weapons, wAbbr,
+            (wi, ei) => AverageAllStrategies(sims, weapons[wi].Id, W, ei));
+
+        // ── Per-strategy breakdown ────────────────────────────────────────────
+        foreach (var strat in Enum.GetValues<Strategy>())
         {
             Console.WriteLine();
-            Console.WriteLine($"══ {TierLabel(tier).ToUpper()} ══{new string('═', Math.Max(0, 50 - TierLabel(tier).Length))}");
-            foreach (var strat in Enum.GetValues<Strategy>())
-                PrintGrid(StratLabel(strat), abbr, players, sims[(strat, tier)]);
+            Console.WriteLine($"STRATEGY: {StratLabel(strat).ToUpper()}");
+            PrintEnemyWeaponGrid(enemies, weapons, wAbbr,
+                (wi, ei) => sims[weapons[wi].Id][strat].Sum(row => row[ei].Wins)
+                            / (double)(W * FightsPerEnemy));
         }
 
-        // ── 9-column summary matrix ───────────────────────────────────────────
+        // ── Best weapon per enemy ─────────────────────────────────────────────
         Console.WriteLine();
         Sep();
-        Console.WriteLine("  9-COMBO SUMMARY  (overall win rate across all 20 levels)");
-        Console.WriteLine("                                         Basic              Heavy              Magic");
-        Console.WriteLine($"  {"Enemy",-22}  {"None",5} {"Low",5} {"High",5}   {"None",5} {"Low",5} {"High",5}   {"None",5} {"Low",5} {"High",5}");
-        Console.WriteLine($"  {new string('-',22)}  {new string('-',5)} {new string('-',5)} {new string('-',5)}   {new string('-',5)} {new string('-',5)} {new string('-',5)}   {new string('-',5)} {new string('-',5)} {new string('-',5)}");
+        Console.WriteLine("  BEST WEAPON PER ENEMY  (highest overall win rate)");
+        Console.WriteLine($"  {"Enemy",-26}  {"Best Weapon",-22}  {"Win%",5}  {"Worst Weapon",-22}  {"Win%",5}");
+        Console.WriteLine($"  {new string('-',26)}  {new string('-',22)}  {"----",5}  {new string('-',22)}  {"----",5}");
 
         for (int ei = 0; ei < E; ei++)
         {
-            double Rate(Strategy st, EquipmentTier eq) =>
-                sims[(st, eq)].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy);
-
-            string Pct(Strategy st, EquipmentTier eq) => $"{Rate(st, eq)*100:F0}%";
-
-            Console.WriteLine(
-                $"  {enemies[ei].Name,-22}" +
-                $"  {Pct(Strategy.AlwaysAttack, EquipmentTier.None),5}" +
-                $" {Pct(Strategy.AlwaysAttack, EquipmentTier.Low),5}" +
-                $" {Pct(Strategy.AlwaysAttack, EquipmentTier.High),5}" +
-                $"   {Pct(Strategy.AttackHeavy, EquipmentTier.None),5}" +
-                $" {Pct(Strategy.AttackHeavy, EquipmentTier.Low),5}" +
-                $" {Pct(Strategy.AttackHeavy, EquipmentTier.High),5}" +
-                $"   {Pct(Strategy.MagicHeavy, EquipmentTier.None),5}" +
-                $" {Pct(Strategy.MagicHeavy, EquipmentTier.Low),5}" +
-                $" {Pct(Strategy.MagicHeavy, EquipmentTier.High),5}");
-        }
-
-        // ── Equipment impact per strategy ─────────────────────────────────────
-        Console.WriteLine();
-        Console.WriteLine("EQUIPMENT LIFT  (High-tier vs No-equipment, per strategy)");
-        Console.WriteLine($"  {"Enemy",-22}  {"Basic Δ",8}  {"Heavy Δ",8}  {"Magic Δ",8}  {"Best combo",12}");
-        Console.WriteLine($"  {new string('-',22)}  {new string('-',8)}  {new string('-',8)}  {new string('-',8)}  {new string('-',12)}");
-
-        for (int ei = 0; ei < E; ei++)
-        {
-            double Rate(Strategy st, EquipmentTier eq) =>
-                sims[(st, eq)].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy);
-
-            double bLift = Rate(Strategy.AlwaysAttack, EquipmentTier.High) - Rate(Strategy.AlwaysAttack, EquipmentTier.None);
-            double hLift = Rate(Strategy.AttackHeavy,  EquipmentTier.High) - Rate(Strategy.AttackHeavy,  EquipmentTier.None);
-            double mLift = Rate(Strategy.MagicHeavy,   EquipmentTier.High) - Rate(Strategy.MagicHeavy,   EquipmentTier.None);
-
-            // Find best combo
-            double bestRate = -1;
-            string bestCombo = "";
-            foreach (var st in Enum.GetValues<Strategy>())
-            foreach (var eq in Enum.GetValues<EquipmentTier>())
+            double BestOfStrats(int wi)
             {
-                double r = Rate(st, eq);
-                if (r > bestRate) { bestRate = r; bestCombo = $"{StratShort(st)}+{TierShort(eq)}"; }
+                double max = 0;
+                foreach (var st in Enum.GetValues<Strategy>())
+                {
+                    double r = sims[weapons[wi].Id][st].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy);
+                    if (r > max) max = r;
+                }
+                return max;
             }
 
-            string Lift(double d) => d >= 0 ? $"+{d*100:F0}%" : $"{d*100:F0}%";
+            int bestWi  = Enumerable.Range(0, Wep).MaxBy(BestOfStrats);
+            int worstWi = Enumerable.Range(0, Wep).MinBy(BestOfStrats);
+
             Console.WriteLine(
-                $"  {enemies[ei].Name,-22}  {Lift(bLift),8}  {Lift(hLift),8}  {Lift(mLift),8}  {bestCombo + $" ({bestRate*100:F0}%)",12}");
+                $"  {enemies[ei].Name,-26}  {weapons[bestWi].Name,-22}  {BestOfStrats(bestWi)*100,4:F0}%  " +
+                $"{weapons[worstWi].Name,-22}  {BestOfStrats(worstWi)*100,4:F0}%");
         }
 
         // ── Balance flags ─────────────────────────────────────────────────────
         Console.WriteLine();
-        Console.WriteLine("BALANCE FLAGS");
+        Sep();
+        Console.WriteLine("  BALANCE FLAGS");
         Console.WriteLine();
         var flags = new List<string>();
 
         for (int ei = 0; ei < E; ei++)
         {
-            double Rate(Strategy st, EquipmentTier eq) =>
-                sims[(st, eq)].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy);
+            // Best win rate across all weapons × strategies
+            double bestAny = 0;
+            double bestL20 = 0;
+            foreach (var w in weapons)
+            foreach (var st in Enum.GetValues<Strategy>())
+            {
+                double overall = sims[w.Id][st].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy);
+                double l20     = sims[w.Id][st][W - 1][ei].WinRate;
+                if (overall > bestAny) bestAny = overall;
+                if (l20 > bestL20) bestL20 = l20;
+            }
 
-            double bestOverall = Enum.GetValues<Strategy>()
-                .SelectMany(st => Enum.GetValues<EquipmentTier>().Select(eq => Rate(st, eq)))
-                .Max();
+            if (bestAny < 0.02)
+                flags.Add($"  [UNBEATABLE]       {enemies[ei].Name} — < 2% win rate across all weapons & strategies.");
+            else if (bestL20 < 0.40)
+                flags.Add($"  [HARD AT L20]      {enemies[ei].Name} — best L20 win rate is only {bestL20*100:F0}%.");
 
-            double bestAtL20 = Enum.GetValues<Strategy>()
-                .SelectMany(st => Enum.GetValues<EquipmentTier>().Select(eq => sims[(st, eq)][W-1][ei].WinRate))
-                .Max();
+            // Trivial: any physical weapon beats it 100% at L1 with basic attack
+            bool trivial = weapons.Any(w =>
+                sims[w.Id][Strategy.AlwaysAttack][0][ei].WinRate >= 1.0);
+            if (trivial)
+                flags.Add($"  [TRIVIAL]          {enemies[ei].Name} — 100% at L1 with basic attack and some weapon.");
 
-            if (bestOverall < 0.02)
-                flags.Add($"  [UNBEATABLE]       {enemies[ei].Name} — < 2% win rate across all 9 combos.");
-            else if (bestAtL20 < 0.40)
-                flags.Add($"  [HARD AT L20]      {enemies[ei].Name} — best L20 win rate is only {bestAtL20*100:F0}%.");
+            // Magic-dominant: best magic weapon >> best physical weapon (overall)
+            double bestMagic = weapons
+                .Where(w => w.Affixes.Any(a => a.Stat == ModifierStat.Magic))
+                .Select(w => sims[w.Id][Strategy.MagicHeavy].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy))
+                .DefaultIfEmpty(0).Max();
+            double bestPhysical = weapons
+                .Where(w => w.Affixes.All(a => a.Stat != ModifierStat.Magic))
+                .Select(w => sims[w.Id][Strategy.AlwaysAttack].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy))
+                .DefaultIfEmpty(0).Max();
+            if (bestMagic - bestPhysical >= 0.30)
+                flags.Add($"  [MAGIC PREFERRED]  {enemies[ei].Name} — best magic {bestMagic*100:F0}% vs best physical {bestPhysical*100:F0}%.");
 
-            // Trivial if even the weakest combo beats it 100% at L1
-            if (sims[(Strategy.AlwaysAttack, EquipmentTier.None)][0][ei].WinRate >= 1.0)
-                flags.Add($"  [TRIVIAL]          {enemies[ei].Name} — 100% at L1 with no gear, basic attack.");
+            // Physical-resistant: no physical weapon breaks 50% overall
+            bool physResist = weapons
+                .Where(w => w.Affixes.All(a => a.Stat != ModifierStat.Magic))
+                .All(w => sims[w.Id][Strategy.AlwaysAttack].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy) < 0.50);
+            if (physResist && bestAny >= 0.10)
+                flags.Add($"  [PHYS RESISTANT]   {enemies[ei].Name} — no physical weapon exceeds 50% win rate.");
 
-            // Magic-dependent even with high gear
-            double mHigh  = Rate(Strategy.MagicHeavy,   EquipmentTier.High);
-            double bHigh  = Rate(Strategy.AlwaysAttack,  EquipmentTier.High);
-            if (mHigh - bHigh >= 0.30)
-                flags.Add($"  [MAGIC DEPENDENT]  {enemies[ei].Name} — Magic+High is {mHigh*100:F0}% vs Basic+High {bHigh*100:F0}% (likely high physical defense).");
-
-            // Equipment makes a huge difference vs physical but not magic
-            double equipLiftBasic = Rate(Strategy.AlwaysAttack, EquipmentTier.High) - Rate(Strategy.AlwaysAttack, EquipmentTier.None);
-            if (equipLiftBasic >= 0.25)
-                flags.Add($"  [EQUIP SENSITIVE]  {enemies[ei].Name} — high-tier gear lifts Basic win rate by {equipLiftBasic*100:F0}%.");
+            // Damage-type sensitive: best damage type >> worst damage type by 40%+
+            var weaponRates = weapons.Select(w =>
+                AverageAllStrategies(sims, w.Id, W, ei)).ToArray();
+            double spread = weaponRates.Max() - weaponRates.Min();
+            if (spread >= 0.40 && bestAny >= 0.30)
+                flags.Add($"  [TYPE SENSITIVE]   {enemies[ei].Name} — {spread*100:F0}% spread between best and worst weapon type.");
         }
 
         if (flags.Count == 0)
@@ -351,35 +371,49 @@ internal static class Program
 
     // ── Grid printer ──────────────────────────────────────────────────────────
 
-    private static void PrintGrid(string title, string[] abbr, List<Player> players, FightStats[][] results)
+    private static void PrintEnemyWeaponGrid(
+        IReadOnlyList<EnemyDefinition> enemies,
+        List<EquipmentDefinition> weapons,
+        string[] wAbbr,
+        Func<int, int, double> rateGetter)
     {
-        int W = players.Count, E = abbr.Length;
+        Console.Write($"  {"Enemy",-26}");
+        for (int wi = 0; wi < weapons.Count; wi++) Console.Write($" {wAbbr[wi],5}");
         Console.WriteLine();
-        Console.WriteLine($"  {title}");
-        Console.Write  ("       ");
-        foreach (var a in abbr) Console.Write($" {a,-5}");
-        Console.WriteLine("  | Ovrl");
-        Console.Write  ("  -----");
-        foreach (var _ in abbr) Console.Write("------");
-        Console.WriteLine("--+-----");
-        for (int pi = 0; pi < W; pi++)
+        Console.Write($"  {new string('-', 26)}");
+        for (int wi = 0; wi < weapons.Count; wi++) Console.Write($" {"-----",5}");
+        Console.WriteLine();
+
+        for (int ei = 0; ei < enemies.Count; ei++)
         {
-            Console.Write($"  L{players[pi].Level,2}  ");
-            int wins = 0;
-            for (int ei = 0; ei < E; ei++)
+            Console.Write($"  {enemies[ei].Name,-26}");
+            for (int wi = 0; wi < weapons.Count; wi++)
             {
-                var st = results[pi][ei];
-                wins += st.Wins;
-                Console.Write($" {st.WinRate*100,3:F0}% ");
+                double rate = rateGetter(wi, ei);
+                Console.Write($" {rate*100,4:F0}%");
             }
-            Console.WriteLine($"  | {(double)wins/(E*FightsPerEnemy)*100:F0}%");
+            Console.WriteLine();
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    private static double AverageAllStrategies(
+        Dictionary<string, Dictionary<Strategy, FightStats[][]>> sims,
+        string weaponId, int W, int ei)
+    {
+        double total = 0;
+        int count = 0;
+        foreach (var st in Enum.GetValues<Strategy>())
+        {
+            total += sims[weaponId][st].Sum(row => row[ei].Wins) / (double)(W * FightsPerEnemy);
+            count++;
+        }
+        return total / count;
+    }
+
     private static void Sep() =>
-        Console.WriteLine("=============================================================================");
+        Console.WriteLine("=".PadRight(90, '='));
 
     private static string StratLabel(Strategy s) => s switch
     {
@@ -389,52 +423,25 @@ internal static class Program
         _                     => s.ToString(),
     };
 
-    private static string StratShort(Strategy s) => s switch
+    private static string WeaponAbbr(EquipmentDefinition w) => w.Id switch
     {
-        Strategy.AlwaysAttack => "Basic",
-        Strategy.AttackHeavy  => "Heavy",
-        Strategy.MagicHeavy   => "Magic",
-        _                     => s.ToString(),
+        "FlintKnife"  => "Flnt",
+        "WoodClub"    => "Club",
+        "IronDagger"  => "Dggr",
+        "IronSword"   => "Swrd",
+        "IronMace"    => "Mace",
+        "EmberStaff"  => "Embr",
+        "FrostStaff"  => "Frst",
+        "StormStaff"  => "Strm",
+        "VineStaff"   => "Vine",
+        "ShadowStaff" => "Shdw",
+        _             => w.Id[..Math.Min(4, w.Id.Length)],
     };
-
-    private static string TierLabel(EquipmentTier t) => t switch
-    {
-        EquipmentTier.None => "No Equipment",
-        EquipmentTier.Low  => "Low Tier  (WoodClub + LeatherArmor + TravelHat)",
-        EquipmentTier.High => "High Tier (IronSword + BearHideCloak + HoodedCowl)",
-        _                  => t.ToString(),
-    };
-
-    private static string TierShort(EquipmentTier t) => t switch
-    {
-        EquipmentTier.None => "None",
-        EquipmentTier.Low  => "Low",
-        EquipmentTier.High => "High",
-        _                  => t.ToString(),
-    };
-
-    private static string CamelAbbrev(string name)
-    {
-        var words = new List<string>();
-        int start = 0;
-        for (int i = 1; i < name.Length; i++)
-            if (char.IsUpper(name[i])) { words.Add(name[start..i]); start = i; }
-        words.Add(name[start..]);
-        string abbr = words.Count == 1
-            ? name[..Math.Min(5, name.Length)]
-            : string.Concat(words.Select(w => w[..Math.Min(2, w.Length)]));
-        return (abbr.Length > 5 ? abbr[..5] : abbr).PadRight(5);
-    }
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-internal enum Strategy     { AlwaysAttack, AttackHeavy, MagicHeavy }
-internal enum EquipmentTier { None, Low, High }
-
-internal record EquipmentSet(
-    int AtkBonus, DamageType WeaponDmgType,
-    int DefBonus, float DodgeBonus);
+internal enum Strategy { AlwaysAttack, AttackHeavy, MagicHeavy }
 
 internal record FightStats(int Wins, int Total, double AvgTurns, double AvgHpFracOnWin)
 {

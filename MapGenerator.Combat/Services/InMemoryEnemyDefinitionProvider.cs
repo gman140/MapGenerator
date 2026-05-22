@@ -71,8 +71,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "SentientEgg", Name = "Sentient Egg",
             Description = "An unhatched creature pulsing with restless, angry energy. Nobody knows what's inside, and those who've tried to find out usually regret it.",
-            BaseHp = 35, BaseAttack = 10, BaseDefense = 5,
-            FleeChance = 0.50f, FleeHpThreshold = 0.20f,
+            BaseHp = 55, BaseAttack = 14, BaseDefense = 7,
+            FleeChance = 0.30f, FleeHpThreshold = 0.15f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack, Weight = 50 },
@@ -391,8 +391,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "BeaverSerpent", Name = "Snake-Headed Beaver",
             Description = "A river-dwelling hybrid with the body of a beaver and the venomous strike of a serpent. Fiercely territorial near waterways and bogs.",
-            BaseHp = 28, BaseAttack = 9, BaseDefense = 4,
-            FleeChance = 0.55f, FleeHpThreshold = 0.30f,
+            BaseHp = 48, BaseAttack = 14, BaseDefense = 7,
+            FleeChance = 0.35f, FleeHpThreshold = 0.20f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack,      Weight = 55 },
@@ -514,8 +514,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "DustWraith", Name = "Dust Wraith",
             Description = "Spectral remnants that drift on hot, dry winds, barely distinguishable from the desert haze. They are drawn to the living like moths to a flame.",
-            BaseHp = 22, BaseAttack = 11, BaseDefense = 1,
-            FleeChance = 0.70f, FleeHpThreshold = 0.40f,
+            BaseHp = 38, BaseAttack = 17, BaseDefense = 4,
+            FleeChance = 0.50f, FleeHpThreshold = 0.30f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack, Weight = 65 },
@@ -837,13 +837,13 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "TheArrangement", Name = "The Arrangement",
             Description = "Something that should not have a shape, wearing one anyway. Its origins and motives remain entirely opaque to all who have survived the encounter.",
-            BaseHp = 200, BaseAttack = 30, BaseDefense = 16,
+            BaseHp = 150, BaseAttack = 24, BaseDefense = 14,
             FleeChance = 0.05f, FleeHpThreshold = 0.05f,
             ActionTable =
             [
-                new() { Action = EnemyActionType.Attack,      Weight = 40 },
-                new() { Action = EnemyActionType.HeavyAttack, Weight = 35 },
-                new() { Action = EnemyActionType.Buff,        Weight = 15 },
+                new() { Action = EnemyActionType.Attack,      Weight = 45 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+                new() { Action = EnemyActionType.Buff,        Weight = 20 },
                 new() { Action = EnemyActionType.Defend,      Weight = 10 },
             ],
             BaseXp = 35,
@@ -852,7 +852,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             Resistances  = [DT.Dark, DT.Slashing],
             WeaknessText  = { [DT.Fire] = "The objects scatter from the heat — fire disrupts whatever binds them." },
             ResistanceText = { [DT.Dark] = "The arrangement operates in the dark. It does not register the change.", [DT.Slashing] = "Blades pass through the gaps in the formation. Nothing there to cut." },
-            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.4f, BuffTurns = 2,
+            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.25f, BuffTurns = 2,
             LootTable =
             [
                 new() { ItemId = "CrackedOrb",    Chance = 0.45f },
@@ -1044,8 +1044,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "WitchesBroom", Name = "Witch's Broom",
             Description = "An autonomous broom that has been given too many instructions or none at all. It has no eyes. It has tremendous purpose. These two facts combine badly.",
-            BaseHp = 25, BaseAttack = 14, BaseDefense = 3,
-            FleeChance = 0.80f, FleeHpThreshold = 0.40f,
+            BaseHp = 42, BaseAttack = 18, BaseDefense = 5,
+            FleeChance = 0.60f, FleeHpThreshold = 0.30f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack, Weight = 70 },
@@ -1164,9 +1164,9 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "WitchesOven", Name = "Witch's Oven",
             Description = "A furnace that has developed opinions. It does not flee. It has a door. The door opens. This is how it attacks. Something inside is always cooking. The smell is deeply wrong.",
-            BaseHp = 70, BaseAttack = 22, BaseDefense = 15,
+            BaseHp = 55, BaseAttack = 18, BaseDefense = 10,
             FleeChance = 0.0f, FleeHpThreshold = 0.0f,
-            DefendDamageBonus = 0.70f,
+            DefendDamageBonus = 0.50f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack,      Weight = 30 },
@@ -1223,7 +1223,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "WitchesMotherInLaw", Name = "Witch's Mother-in-Law",
             Description = "Nobody summoned her. She arrived on her own. She has extremely detailed opinions about everything you are doing wrong and the patience to enumerate them during combat.",
-            BaseHp = 180, BaseAttack = 28, BaseDefense = 14,
+            BaseHp = 140, BaseAttack = 22, BaseDefense = 12,
             FleeChance = 0.05f, FleeHpThreshold = 0.05f,
             ActionTable =
             [
@@ -1238,8 +1238,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             Resistances = [DT.Dark, DT.Nature],
             WeaknessText  = { [DT.Fire]  = "Fire is one of very few things she has nothing to say about. This is disorienting for her.", [DT.Storm] = "Lightning interrupts her mid-sentence. She does not recover immediately." },
             ResistanceText = { [DT.Dark]  = "She has seen things you cannot imagine. The dark is not among them.", [DT.Nature] = "She has been managing a garden for sixty years. Nature does not surprise her." },
-            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.4f, BuffTurns = 2,
-            RegenerateAmount = 15,
+            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.25f, BuffTurns = 2,
+            RegenerateAmount = 8,
             LootTable =
             [
                 new() { ItemId = "RottenSilks", Chance = 0.60f },
@@ -1360,8 +1360,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "CollapsedClown", Name = "Collapsed Clown",
             Description = "A clown who has given up on most things but not this. The makeup is still on. Some of it. The shoes are still enormous. Combat is chaotic and low to the ground. The honking is involuntary.",
-            BaseHp = 20, BaseAttack = 11, BaseDefense = 2,
-            FleeChance = 0.80f, FleeHpThreshold = 0.50f,
+            BaseHp = 36, BaseAttack = 15, BaseDefense = 4,
+            FleeChance = 0.60f, FleeHpThreshold = 0.35f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack, Weight = 70 },
@@ -1736,7 +1736,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "TheDrowningLord", Name = "The Drowning Lord",
             Description = "He drowned in his own estate. He has since drowned several times more. He has developed a position on this. His hands are very cold. The water in his lungs has opinions.",
-            BaseHp = 170, BaseAttack = 27, BaseDefense = 15,
+            BaseHp = 130, BaseAttack = 22, BaseDefense = 13,
             FleeChance = 0.05f, FleeHpThreshold = 0.05f,
             ActionTable =
             [
@@ -1751,7 +1751,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             Resistances = [DT.Dark, DT.Frost],
             WeaknessText  = { [DT.Storm]  = "Lightning and water are old enemies. He is mostly water." },
             ResistanceText = { [DT.Dark]   = "He has been in the dark at the bottom of his estate for decades. It is his home.", [DT.Frost] = "He has been cold for a very long time. This is not news to him." },
-            RegenerateAmount = 18,
+            RegenerateAmount = 10,
             LootTable =
             [
                 new() { ItemId = "TarnishedRelic", Chance = 0.60f },
@@ -1809,8 +1809,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "TombRobber", Name = "Tomb Robber",
             Description = "A living thief who got trapped in here with everything else. He was here before you. He has been here for a long time. He is not doing well. He will take everything you have if you let him.",
-            BaseHp = 30, BaseAttack = 15, BaseDefense = 5,
-            FleeChance = 0.70f, FleeHpThreshold = 0.35f,
+            BaseHp = 50, BaseAttack = 18, BaseDefense = 7,
+            FleeChance = 0.50f, FleeHpThreshold = 0.25f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack, Weight = 50 },
@@ -2014,8 +2014,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "MillGhost", Name = "Mill Ghost",
             Description = "The ghost of someone who worked the mill when the mill worked. The mill stopped. The wheel stopped. The water stopped. The ghost did not. It treats your presence as an interruption.",
-            BaseHp = 28, BaseAttack = 14, BaseDefense = 2,
-            FleeChance = 0.60f, FleeHpThreshold = 0.35f,
+            BaseHp = 46, BaseAttack = 18, BaseDefense = 5,
+            FleeChance = 0.40f, FleeHpThreshold = 0.25f,
             ActionTable =
             [
                 new() { Action = EnemyActionType.Attack, Weight = 40 },
@@ -2142,7 +2142,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
         {
             Id = "TheFerryman", Name = "The Ferryman",
             Description = "He ferries things across. He has always ferried things across. He does not specify what, or where to, or from where. You did not pay the toll. The pole he carries has been in use since before the mill existed.",
-            BaseHp = 165, BaseAttack = 27, BaseDefense = 13,
+            BaseHp = 130, BaseAttack = 22, BaseDefense = 11,
             FleeChance = 0.10f, FleeHpThreshold = 0.08f,
             ActionTable =
             [
@@ -2157,7 +2157,7 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             Resistances = [DT.Frost, DT.Dark],
             WeaknessText  = { [DT.Storm]  = "Lightning on the water. He has been struck before. He does not forget." },
             ResistanceText = { [DT.Frost]  = "The river does not freeze while he works it. It is an old arrangement.", [DT.Dark] = "The crossing is made in darkness. He navigates by other means." },
-            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.20f, BuffTurns = 3,
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.10f, BuffTurns = 3,
             LootTable =
             [
                 new() { ItemId = "RiverGlass",  Chance = 0.60f },
