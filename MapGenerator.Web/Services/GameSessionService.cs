@@ -668,9 +668,8 @@ public class GameSessionService : IAsyncDisposable
     {
         if (Player == null || Player.IsInDungeon) return false;
         var tile = _mapCache.GetCachedTile(Player.Q, Player.R);
-        return tile?.FeatureId is "CaveEntrance" or "IcyCavern" or "FrozenShrine"
-               or "AncientRuins" or "RuinedTower" or "RuinedTemple" or "CrumbledFortress"
-               or "StoneCircle" or "TreeHollow";
+        return tile?.FeatureId != null
+               && DungeonGenerationService.DungeonEntranceIds.Contains(tile.FeatureId);
     }
 
     public bool DungeonTileHasGather()

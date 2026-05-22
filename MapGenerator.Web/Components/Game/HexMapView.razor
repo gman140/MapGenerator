@@ -110,9 +110,15 @@
 
                         @if (featureDef != null)
                         {
-                            <circle cx="@cx.ToString("F1")" cy="@((cy + HexSize * 0.52).ToString("F1"))"
-                                    r="4"
-                                    class="feature-dot feature-@featureDef.Category.ToString().ToLower()" />
+                            bool isDungeon = DungeonGenerationService.DungeonEntranceIds.Contains(featureDef.Id);
+                            string fdx = cx.ToString("F1");
+                            string fdy = (cy + HexSize * 0.52).ToString("F1");
+                            if (isDungeon)
+                            {
+                                <circle cx="@fdx" cy="@fdy" r="5" class="feature-dungeon-halo" />
+                            }
+                            <circle cx="@fdx" cy="@fdy" r="4"
+                                    class="feature-dot @(isDungeon ? "feature-dungeon" : "feature-" + featureDef.Category.ToString().ToLower())" />
                         }
 
                         @{

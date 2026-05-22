@@ -566,7 +566,7 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             Id           = "WitchsCottage",
             DisplayNames = ["Witch's Cottage", "Hermit's Hovel", "Crumbled Hut", "Smoke-Stained Den", "Wise Woman's Den", "Herb-Hung Hut", "Edge-of-Woods Cottage", "Old One's House"],
             Category     = FeatureCategory.Ruins,
-            AllowedBiomes = [BiomeType.Swamp, BiomeType.Forest],
+            AllowedBiomes = [BiomeType.Swamp, BiomeType.Forest, BiomeType.Marsh],
             Probability  = 0.010f,
             ResourceYields =
             [
@@ -1568,6 +1568,148 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You look at it for a while. A flour grain, still flour, in a ruin that is centuries old. This is something.",
             ],
         },
+        // ── Dungeon entrances ──────────────────────────────────────────────
+        new()
+        {
+            Id           = "WitchesCircle",
+            DisplayNames = ["Witches' Circle", "Ritual Ground", "Candle Ring", "Marked Clearing", "Burned Circle", "Sigil Ground", "Black-Wax Ring", "Coven Ground"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.Forest, BiomeType.Marsh],
+            Probability  = 0.012f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Herbs",        Probability = 0.30f },
+                new() { ResourceId = "CrowFeather",  Probability = 0.20f },
+                new() { ResourceId = "PaleMushroom", Probability = 0.15f },
+                new() { ResourceId = "CrackedOrb",   Probability = 0.05f },
+            ],
+            PartA =
+            [
+                "A ring of scorched earth marks where something stood long enough to leave a lasting impression.",
+                "Seven candles are arranged in a circle on the ground. They are all lit. There is no wind.",
+                "Symbols have been burned into the soil here, each one deliberate and none of them friendly.",
+                "A crude figure made of bound sticks hangs from the nearest branch, turning very slowly.",
+                "The grass inside the ring has grown in the wrong direction — not up, but sideways, then up.",
+                "Something was tethered here, based on the marks in the earth. You do not look too long at the marks.",
+                "The trees around the clearing lean away from its center. The lean is subtle but unanimous.",
+            ],
+            PartB =
+            [
+                "The candles don't gutter when you pass your hand near them. The wax below is fresh. Someone was here today.",
+                "You step inside the ring. The sounds of the forest stop. Not fade — stop. They return when you step out.",
+                "You try to understand the symbols. One of them appears to understand you back. You look at a different one.",
+                "You don't touch it. You walk a complete circle around it before moving on. You feel this was the right call.",
+                "You study the direction of the grass for longer than you intended. A pattern starts to form. You leave.",
+                "You examine them carefully, then stop carefully. You clean your hands on your trousers. You continue.",
+                "You step into the clearing and feel yourself assessed, categorized, and filed as acceptable. You do not know by what.",
+            ],
+        },
+        new()
+        {
+            Id           = "CollapsingBigTop",
+            DisplayNames = ["Collapsing Big Top", "Fallen Circus Tent", "The Buried Carnival", "Tattered Canopy", "Collapsed Canvas", "Sunken Fairground", "The Lean-In Tent", "Sinking Performance Space"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.Plains, BiomeType.Grassland],
+            Probability  = 0.010f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Fiber",        Probability = 0.30f },
+                new() { ResourceId = "Ash",          Probability = 0.15f },
+                new() { ResourceId = "RottenSilks",  Probability = 0.12f },
+                new() { ResourceId = "TarnishedRing",Probability = 0.05f },
+            ],
+            PartA =
+            [
+                "The tent is still upright, barely, tilted at an angle that suggests ongoing disagreement with gravity.",
+                "Faded bunting hangs between the stakes in long, sad arcs. The colors have mostly gone.",
+                "Painted wooden signs lean against the canvas, their text faded to impression: an arrow, a face, a price.",
+                "The big top has half-collapsed, pulling stakes from the ground on one side. The other side still holds.",
+                "A ticket booth stands at the entrance, its window still open, its occupant long gone.",
+                "The smell of sawdust and something sweeter reaches you before the tent does.",
+                "Posters are peeling from the poles — an acrobat, a strongman, an act with no name, only a question mark.",
+            ],
+            PartB =
+            [
+                "You push inside. The interior smells of old rope and effort and something that clapped for a very long time.",
+                "You take one down. The face is still there under the fading. It is smiling in a way that has not aged well.",
+                "You follow the arrow. It leads you to another sign. That sign leads back to the first one. You feel this is intentional.",
+                "You prop the collapsed side up briefly. Inside: rows of empty seats, facing a ring, expecting something.",
+                "You look through the window. The booth is clean inside. Someone tidied before they left. This is the detail that stays with you.",
+                "You breathe it in and feel a crowd, briefly, in the way that spaces hold the shapes of the people who filled them.",
+                "You study the unnamed act for a long time. The question mark is larger than the other posters. You feel this is relevant.",
+            ],
+        },
+        new()
+        {
+            Id           = "DrownedManor",
+            DisplayNames = ["Drowned Manor", "Half-Sunken Estate", "The Sinking House", "Murk-Walled Manor", "Swamp-Taken Hall", "The Listing Estate", "Submerged Great House", "Flooded Manor House"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.Swamp, BiomeType.Marsh],
+            Probability  = 0.012f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Reed",        Probability = 0.25f },
+                new() { ResourceId = "Peat",        Probability = 0.20f },
+                new() { ResourceId = "RottenSilks", Probability = 0.10f },
+                new() { ResourceId = "TidalCoin",   Probability = 0.06f },
+            ],
+            PartA =
+            [
+                "The manor is sinking. It has been sinking for a long time. The ground floor is no longer accessible.",
+                "Windows still hold their glass, looking out from just above the waterline with quiet dignity.",
+                "A staircase rises from the swamp, the lower steps submerged, the upper ones leading to rooms you can't reach yet.",
+                "Curtains billow from a second-floor window. There is no wind. The window is open above standing water.",
+                "Someone painted a mark on the wall at the waterline — a line, dated three years ago. The water is higher now.",
+                "The roof is intact. Everything below it is a matter of interpretation.",
+                "A chandelier hangs inside, half-submerged, its candles replaced by aquatic moss that glows faintly green.",
+            ],
+            PartB =
+            [
+                "You find the highest accessible window and look in. The parlor furniture is still arranged for guests who did not arrive.",
+                "You look through them into the rooms. The rooms look back with the patience of something that has given up waiting.",
+                "You sit at the foot of the staircase where the dry steps begin. There is a dry boot print on the third step. Someone was here before you.",
+                "You watch the curtains for a long time. They billow with regular, breathing rhythm. You choose not to investigate this.",
+                "You find the line and note the date. You mark your own line above it. You feel briefly committed to something.",
+                "The roof has done its job. Everything below it has adapted to new management.",
+                "You look at it through the water for a while. The glow is very slow. You feel watched from below.",
+            ],
+        },
+        new()
+        {
+            Id           = "AbandonedMill",
+            DisplayNames = ["Abandoned Mill", "Sunken Mill House", "The Silent Wheel", "Stopped Mill", "Mill by the Water", "Dark Mill House", "Flooded Mill House", "The Grinding Place"],
+            Category     = FeatureCategory.Ruins,
+            AllowedBiomes = [BiomeType.River],
+            Probability  = 0.015f,
+            ResourceYields =
+            [
+                new() { ResourceId = "Stone",     Probability = 0.25f },
+                new() { ResourceId = "Wood",      Probability = 0.20f },
+                new() { ResourceId = "Flint",     Probability = 0.15f },
+                new() { ResourceId = "RiverGlass",Probability = 0.10f },
+            ],
+            PartA =
+            [
+                "The mill still stands, barely, its wheel unturning, its purpose suspended.",
+                "The waterwheel is intact but frozen mid-turn by something internal that stopped working long ago.",
+                "A millstone sits inside, perfectly preserved, grinding nothing with perpetual patience.",
+                "The mill door stands open. The inside smells of flour and damp stone and something older than both.",
+                "The race that fed the wheel is dry. Someone diverted the water intentionally. You find the diversion and cannot figure out why.",
+                "Flour dust has settled over everything inside in a pale layer, preserving the shape of the last day of work.",
+                "The accounts ledger lies open on the desk inside, its last entry mid-sentence, the pen still in its holder.",
+            ],
+            PartB =
+            [
+                "You push the wheel experimentally. It resists. Then: one full, agonizing rotation. Then it stops again. Satisfied.",
+                "You find the lock mechanism below the wheel. It is deliberate. Someone stopped this mill on purpose and left.",
+                "You set your hands on it. The millstone knows exactly what it is. The turning has been considerable.",
+                "You step inside. The flour dust rises briefly around your feet, carrying the shape of the last footprints.",
+                "You trace the diversion with your eye. You find the blocked channel. The block was placed carefully. You decide not to disturb it.",
+                "You run a finger through the flour dust on the desk. Still flour. Old, impractical flour. Still technically flour.",
+                "You read the last entry. It concerns the quality of last month's grain. The writer expected to write tomorrow's. They did not.",
+            ],
+        },
+
         new()
         {
             Id           = "RiverShrine",

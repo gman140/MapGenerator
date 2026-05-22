@@ -22,7 +22,15 @@ public class DungeonGenerationService
         ["CrumbledFortress"] = ("AncientTomb",   "AncientKey"),
         ["StoneCircle"]      = ("AncientTomb",   "AncientKey"),
         ["TreeHollow"]       = ("RootLabyrinth", "WoodKey"),
+        ["WitchesCircle"]    = ("CovensHollow",  "WitchKey"),
+        ["WitchsCottage"]    = ("CovensHollow",  "WitchKey"),
+        ["CollapsingBigTop"] = ("BuriedCarnival","CarnivalKey"),
+        ["DrownedManor"]     = ("DrownedEstate", "DrownedKey"),
+        ["AbandonedMill"]    = ("SunkenMill",    "MillKey"),
     };
+
+    public static IReadOnlySet<string> DungeonEntranceIds { get; } =
+        new HashSet<string>(ThemeMap.Keys, StringComparer.OrdinalIgnoreCase);
 
     private static readonly Dictionary<string, string[][]> LootPools = new()
     {
@@ -49,6 +57,30 @@ public class DungeonGenerationService
             ["Wood", "Fiber", "Herbs", "Moss", "Reed"],
             ["Amber", "HollowStone", "PaleMushroom"],
             ["DeepMushroom", "TangledRoot", "MossGem"],
+        ],
+        ["CovensHollow"] =
+        [
+            ["Herbs", "PaleMushroom", "Mushroom", "CrowFeather"],
+            ["Amber", "HollowStone", "RottenSilks", "CrackedOrb"],
+            ["BoneRune", "TarnishedRelic", "MossGem"],
+        ],
+        ["BuriedCarnival"] =
+        [
+            ["Fiber", "Wood", "Ash"],
+            ["TarnishedRing", "CrackedOrb", "RottenSilks"],
+            ["BoneFragment", "TidalCoin", "TarnishedRelic"],
+        ],
+        ["DrownedEstate"] =
+        [
+            ["Reed", "Peat", "Clay"],
+            ["TidalCoin", "TarnishedRing", "RiverGlass"],
+            ["BoneFragment", "TarnishedRelic", "GlowingMoss"],
+        ],
+        ["SunkenMill"] =
+        [
+            ["Stone", "Wood", "Flint"],
+            ["RiverGlass", "TidalCoin", "BoneFragment"],
+            ["TarnishedRelic", "MossGem", "DeepOre"],
         ],
     };
 

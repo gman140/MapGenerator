@@ -61,19 +61,19 @@ public class EnemySpawner
     // Possible enemies by biome
     private static readonly Dictionary<string, string[]> BiomeEnemies = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["Grassland"] = ["HexRabbit", "HexRabbit", "HexRabbit", "SentientEgg", "MushroomSprite"],
-        ["Plains"]    = ["HexRabbit", "HexRabbit", "SentientEgg", "DustWraith"],
+        ["Grassland"] = ["HexRabbit", "HexRabbit", "HexRabbit", "SentientEgg", "MushroomSprite", "StiltedMan", "CollapsedClown"],
+        ["Plains"]    = ["HexRabbit", "HexRabbit", "SentientEgg", "DustWraith", "StiltedMan", "CollapsedClown"],
         ["Beach"]     = ["HexRabbit", "Slime", "Slime"],
-        ["River"]     = ["BeaverSerpent", "Slime", "HexRabbit", "TwiceBornHeron"],
+        ["River"]     = ["BeaverSerpent", "Slime", "HexRabbit", "TwiceBornHeron", "MillGhost", "WaterloggedWorker"],
         ["Glacier"]   = ["HexRabbit", "Slime"],
         ["Shallows"]  = ["Slime", "HexRabbit"],
         ["Tundra"]    = ["HexRabbit", "BeaverSerpent", "Wolf", "TwiceBornHeron"],
         ["Snow"]      = ["Wolf", "BeaverSerpent", "Bear", "TwiceBornHeron"],
-        ["Desert"]    = ["DustWraith", "DustWraith", "SentientEgg"],
+        ["Desert"]    = ["DustWraith", "DustWraith", "SentientEgg", "TombRobber"],
         ["Savanna"]   = ["DustWraith", "Wolf", "SentientEgg"],
-        ["Swamp"]     = ["Slime", "BeaverSerpent", "SentientEgg", "MushroomSprite", "FermentedThing", "TwiceBornHeron"],
-        ["Marsh"]     = ["Slime", "BeaverSerpent", "MushroomSprite", "SentientEgg", "TwiceBornHeron"],
-        ["Forest"]    = ["MushroomSprite", "HexRabbit", "BeaverSerpent", "Wolf", "SentientEgg", "PaleLibrarian"],
+        ["Swamp"]     = ["Slime", "BeaverSerpent", "SentientEgg", "MushroomSprite", "FermentedThing", "TwiceBornHeron", "SoggyButler", "DecomposedHound", "BogNoble"],
+        ["Marsh"]     = ["Slime", "BeaverSerpent", "MushroomSprite", "SentientEgg", "TwiceBornHeron", "Witch", "WitchesBroom"],
+        ["Forest"]    = ["MushroomSprite", "HexRabbit", "BeaverSerpent", "Wolf", "SentientEgg", "PaleLibrarian", "Witch", "WitchesBroom"],
         ["Mountain"]  = ["Bear", "Wolf", "BeaverSerpent", "StoneShepherd"],
         ["Jungle"]    = ["Wolf", "Bear", "MushroomSprite", "SentientEgg", "FermentedThing"],
         ["Volcano"]   = ["DustWraith", "Bear", "Wolf", "StoneShepherd"],
@@ -82,9 +82,26 @@ public class EnemySpawner
     private static readonly Dictionary<string, string[]> DungeonThemeEnemies = new(StringComparer.OrdinalIgnoreCase)
     {
         ["CrystalCavern"]  = ["Slime", "StoneShepherd"],
-        ["AncientTomb"]    = ["SentientEgg", "PaleLibrarian"],
+        ["AncientTomb"]    = ["SentientEgg", "PaleLibrarian", "TombRobber", "SarcophagusGuard"],
         ["RootLabyrinth"]  = ["Slime", "Wolf", "MushroomSprite", "FermentedThing"],
         ["FrozenVault"]    = ["Wolf", "Bear", "TwiceBornHeron"],
+        ["CovensHollow"]   = ["Witch", "WitchesBroom", "WitchesCoven", "WitchesOven"],
+        ["BuriedCarnival"] = ["StiltedMan", "CollapsedClown", "FunhouseMirror"],
+        ["DrownedEstate"]  = ["SoggyButler", "DecomposedHound", "BogNoble"],
+        ["SunkenMill"]     = ["MillGhost", "WaterloggedWorker"],
+    };
+
+    // Per-theme boss pools — if a theme has an entry here, only those bosses spawn in that dungeon
+    private static readonly Dictionary<string, string[]> ThemeBossPools = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["CrystalCavern"]  = ["CaveTroll"],
+        ["FrozenVault"]    = ["TheArrangement"],
+        ["RootLabyrinth"]  = ["CoronatedRat"],
+        ["AncientTomb"]    = ["TheUnwrapped"],
+        ["CovensHollow"]   = ["WitchesMotherInLaw"],
+        ["BuriedCarnival"] = ["TheRingmaster"],
+        ["DrownedEstate"]  = ["TheDrowningLord"],
+        ["SunkenMill"]     = ["TheFerryman"],
     };
 
     private static readonly string[] BossPool = ["CaveTroll", "TheArrangement", "CoronatedRat"];
@@ -100,6 +117,10 @@ public class EnemySpawner
 
     public static string[] GetLocations(string enemyId)
     {
+        foreach (var (theme, pool) in ThemeBossPools)
+            if (pool.Contains(enemyId))
+                return [$"{theme} (Boss)"];
+
         if (BossPool.Contains(enemyId))
             return ["Dungeon Boss"];
 
@@ -122,7 +143,10 @@ public class EnemySpawner
 
         if (context.RoomType == "Boss")
         {
-            string bossId = BossPool[rng.Next(BossPool.Length)];
+            string[] bossPool = context.DungeonTheme != null
+                && ThemeBossPools.TryGetValue(context.DungeonTheme, out var themedBossPool)
+                ? themedBossPool : BossPool;
+            string bossId = bossPool[rng.Next(bossPool.Length)];
             var def = _enemyProvider.GetById(bossId);
             if (def != null) enemies.Add(SpawnFromDef(def, rng, affixId: null));
             return enemies;

@@ -60,10 +60,14 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "TidalCoin",     Name = "Tidal Coin",     Description = "Old currency, revealed by water. The kingdom it represents is unrecognizable." },
 
         // ── Dungeon keys ──────────────────────────────────────────────────────
-        new() { Id = "IronKey",    Name = "Iron Key",    Description = "Pitted and cold. It fits a lock somewhere underground." },
-        new() { Id = "FrostKey",   Name = "Frost Key",   Description = "The metal is always cold. Something below is waiting to be opened." },
-        new() { Id = "AncientKey", Name = "Ancient Key", Description = "Older than the tomb it opens. Handle with the respect that implies." },
-        new() { Id = "WoodKey",    Name = "Wood Key",    Description = "Carved from something that grew in the dark. Still smells of it." },
+        new() { Id = "IronKey",     Name = "Iron Key",     Description = "Pitted and cold. It fits a lock somewhere underground." },
+        new() { Id = "FrostKey",    Name = "Frost Key",    Description = "The metal is always cold. Something below is waiting to be opened." },
+        new() { Id = "AncientKey",  Name = "Ancient Key",  Description = "Older than the tomb it opens. Handle with the respect that implies." },
+        new() { Id = "WoodKey",     Name = "Wood Key",     Description = "Carved from something that grew in the dark. Still smells of it." },
+        new() { Id = "WitchKey",    Name = "Witch's Key",  Description = "A gnarled twig carved with symbols that shift if you look too long. Something below opens for it." },
+        new() { Id = "CarnivalKey", Name = "Carnival Ticket", Description = "Faded and damp. Still technically valid. The attraction below is still technically operating." },
+        new() { Id = "DrownedKey",  Name = "Drowned Key",  Description = "Heavy with water it has never lost. The lock it fits has been underwater for a very long time." },
+        new() { Id = "MillKey",     Name = "Miller's Key", Description = "Still smells faintly of flour and cold stone. Someone kept it carefully for a long time." },
 
         // ── Dungeon-exclusive resources ───────────────────────────────────────
         new() { Id = "CaveCrystal",    Name = "Cave Crystal",    Description = "It grew in the dark over a very long time. It does not know what sunlight is." },

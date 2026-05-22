@@ -973,6 +973,1242 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 "It stops. The last rat in the crown steps off, looks at you once, and leaves. This feels intentional.",
             ],
         },
+
+        // ── Coven Hollow enemies ──────────────────────────────────────────────
+        new()
+        {
+            Id = "Witch", Name = "Witch",
+            Description = "A hedge witch with too much knowledge of uncomfortable things. She operates at the edge of forests and bogs, professional and unpleasant, and hexes herself before hexing you.",
+            BaseHp = 45, BaseAttack = 16, BaseDefense = 7,
+            FleeChance = 0.40f, FleeHpThreshold = 0.20f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 40 },
+                new() { Action = EnemyActionType.Buff,   Weight = 40 },
+                new() { Action = EnemyActionType.Defend, Weight = 20 },
+            ],
+            BaseXp = 12,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Fire],
+            Resistances = [DT.Dark, DT.Nature],
+            WeaknessText  = { [DT.Fire]   = "Fire cuts through the hex. Witches have always had that problem." },
+            ResistanceText = { [DT.Dark]   = "She works in the dark. It finds nothing to hold.", [DT.Nature] = "She knows every plant that could harm her. They hesitate." },
+            BuffStat = ModifierStat.Attack, BuffValue = 10f, BuffTurns = 3,
+            LootTable =
+            [
+                new() { ItemId = "Herbs",       Chance = 0.50f },
+                new() { ItemId = "RottenSilks", Chance = 0.35f },
+                new() { ItemId = "CrackedOrb",  Chance = 0.20f },
+                new() { ItemId = "PaleMushroom",Chance = 0.25f },
+            ],
+            AppearTexts =
+            [
+                "She was already here. She was expecting you, specifically. She does not seem pleased about it.",
+                "A woman at the edge of the treeline turns to face you. She has been watching for some time.",
+                "She looks you over with the expression of someone pricing a replacement.",
+            ],
+            AttackTexts =
+            [
+                "She points at you with two fingers and something dark arrives from that direction.",
+                "A word you do not recognize, delivered flatly, and then pain.",
+                "She strikes without preamble or apparent effort.",
+                "The hex lands before she finishes saying it. She is very efficient.",
+            ],
+            BuffTexts =
+            [
+                "She recites something under her breath and her eyes go briefly the color of mud.",
+                "She traces a symbol on her own arm. It does not look comfortable. She does not look bothered.",
+                "A short, clipped invocation. Her hands stop shaking. This is worse.",
+            ],
+            DefendTexts =
+            [
+                "She raises one hand and the air between you thickens slightly.",
+                "She takes a step back, muttering, and something settles around her like a second skin.",
+            ],
+            FleeTexts =
+            [
+                "She turns and walks into the treeline at a pace that is not running but is still faster than yours.",
+                "She says something over her shoulder that you cannot quite hear. The air smells different afterward.",
+                "She steps sideways, and the undergrowth simply closes around her.",
+                "She is gone. You are not sure when she decided to go.",
+            ],
+            DeathTexts =
+            [
+                "She sits down in the dirt and does not get up. She seems annoyed about this.",
+                "She folds forward and the air around her goes flat and ordinary.",
+                "She says one more word. It doesn't do anything. Then she is still.",
+            ],
+        },
+
+        new()
+        {
+            Id = "WitchesBroom", Name = "Witch's Broom",
+            Description = "An autonomous broom that has been given too many instructions or none at all. It has no eyes. It has tremendous purpose. These two facts combine badly.",
+            BaseHp = 25, BaseAttack = 14, BaseDefense = 3,
+            FleeChance = 0.80f, FleeHpThreshold = 0.40f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 70 },
+                new() { Action = EnemyActionType.Defend, Weight = 30 },
+            ],
+            BaseXp = 7,
+            AttackDamageType = DT.Slashing,
+            Weaknesses  = [DT.Fire],
+            Resistances = [DT.Dark],
+            WeaknessText  = { [DT.Fire]  = "The bristles catch immediately. A broom has always been a fire hazard." },
+            ResistanceText = { [DT.Dark]  = "It operates in the dark as a matter of routine. The darkness is not a threat." },
+            LootTable =
+            [
+                new() { ItemId = "CrowFeather", Chance = 0.50f },
+                new() { ItemId = "Fiber",       Chance = 0.40f },
+                new() { ItemId = "Herbs",       Chance = 0.20f },
+            ],
+            AppearTexts =
+            [
+                "A broom stands upright in the center of the room. It turns toward you. It does not have a face to turn.",
+                "You hear bristles on stone, advancing with the rhythm of something that knows exactly where it is going.",
+                "The broom was leaning against the wall. Now it is not leaning. Now it is moving toward you.",
+            ],
+            AttackTexts =
+            [
+                "The bristle end catches you across the shins with surprising authority.",
+                "It sweeps at your legs with the focused intensity of something that has always done this.",
+                "The handle end swings around and connects with the side of your head.",
+                "It makes no sound. It just arrives.",
+            ],
+            DefendTexts =
+            [
+                "The broom plants its handle and bristles outward, becoming an improbable barrier.",
+                "It spins in place once, rapidly, as if resetting.",
+            ],
+            FleeTexts =
+            [
+                "The broom shoots across the floor and through a gap in the wall it should not have fit through.",
+                "It reverses direction instantly and is simply gone.",
+                "It retreats at speed, trailing bristles, vanishing around the corner before you can follow.",
+                "It sweeps itself out of the situation.",
+            ],
+            DeathTexts =
+            [
+                "The broom falls over sideways. The bristles twitch once.",
+                "It clatters to the floor and stays there, which is all it ever was before.",
+                "The purpose goes out of it all at once and it is just a broom again.",
+            ],
+        },
+
+        new()
+        {
+            Id = "WitchesCoven", Name = "Witches' Coven",
+            Description = "Three or more witches achieving consensus, which is rare and dangerous. Treat as a single entity. It speaks in overlapping voices and has already decided what to do with you.",
+            BaseHp = 55, BaseAttack = 19, BaseDefense = 8,
+            FleeChance = 0.25f, FleeHpThreshold = 0.15f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 30 },
+                new() { Action = EnemyActionType.Buff,   Weight = 50 },
+                new() { Action = EnemyActionType.Defend, Weight = 20 },
+            ],
+            BaseXp = 15,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Fire, DT.Storm],
+            Resistances = [DT.Dark, DT.Nature],
+            WeaknessText  = { [DT.Fire]  = "Fire disrupts consensus. Witches forget their arguments when something is burning.", [DT.Storm] = "Lightning strikes the tallest point. The group has several tallest points and loses composure." },
+            ResistanceText = { [DT.Dark]  = "They have been meeting in the dark for years. This is familiar.", [DT.Nature] = "They grow half of what they use. The natural world cooperates with them." },
+            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.35f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "RottenSilks", Chance = 0.40f },
+                new() { ItemId = "CrackedOrb",  Chance = 0.30f },
+                new() { ItemId = "Herbs",       Chance = 0.35f },
+                new() { ItemId = "PaleMushroom",Chance = 0.20f },
+            ],
+            AppearTexts =
+            [
+                "They are already speaking when you enter. Not to each other. To the room.",
+                "Three figures. Then a fourth. The voices don't quite match the mouths they come from.",
+                "They reach agreement about you before you finish opening the door.",
+            ],
+            AttackTexts =
+            [
+                "They speak the same word at the same moment and direct it at you.",
+                "One points. The others continue working. The pointing is sufficient.",
+                "The attack emerges from all of them simultaneously. This is why consensus is dangerous.",
+                "They do not look up. The hex arrives anyway.",
+            ],
+            BuffTexts =
+            [
+                "They confer quietly. The voices overlap until they become one voice. Something shifts in the air.",
+                "A brief, crackling silence. Then agreement. Then the air around them tightens.",
+                "They reach consensus. You can tell because the room gets colder.",
+            ],
+            DefendTexts =
+            [
+                "They arrange themselves into a shape that is not quite a circle and seems to help anyway.",
+                "They speak together and the space between you goes briefly resistant.",
+            ],
+            FleeTexts =
+            [
+                "They agree to leave and do so in unison, their footsteps perfectly matched.",
+                "The voices stop. The figures go. Not running — withdrawing, with dignity.",
+                "They disperse through separate exits simultaneously, as if this was always the plan.",
+            ],
+            DeathTexts =
+            [
+                "The consensus breaks. They become individuals again, and then they are still.",
+                "One voice drops out, then another, then the last. The room is quiet.",
+                "They settle to the ground in sequence, still arranged, even at the end.",
+            ],
+        },
+
+        new()
+        {
+            Id = "WitchesOven", Name = "Witch's Oven",
+            Description = "A furnace that has developed opinions. It does not flee. It has a door. The door opens. This is how it attacks. Something inside is always cooking. The smell is deeply wrong.",
+            BaseHp = 70, BaseAttack = 22, BaseDefense = 15,
+            FleeChance = 0.0f, FleeHpThreshold = 0.0f,
+            DefendDamageBonus = 0.70f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 30 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 50 },
+                new() { Action = EnemyActionType.Defend,      Weight = 20 },
+            ],
+            BaseXp = 18,
+            AttackDamageType = DT.Fire,
+            Weaknesses  = [DT.Frost, DT.Storm],
+            Resistances = [DT.Fire],
+            WeaknessText  = { [DT.Frost]  = "Cold extinguishes the fire inside. The oven goes quiet.", [DT.Storm] = "Lightning finds the iron body and grounds itself thoroughly through it." },
+            ResistanceText = { [DT.Fire]   = "The fire is on the inside. Additional fire is simply fuel." },
+            LootTable =
+            [
+                new() { ItemId = "Ash",       Chance = 0.50f },
+                new() { ItemId = "Coal",      Chance = 0.40f },
+                new() { ItemId = "Herbs",     Chance = 0.30f },
+                new() { ItemId = "CrackedOrb",Chance = 0.10f },
+            ],
+            AppearTexts =
+            [
+                "An oven stands in the center of the room. It is running. Nobody lit it. The door is closed. For now.",
+                "You smell it before you see it. Then you see it, and the smell becomes more relevant.",
+                "The oven is bolted to nothing. It is also watching you, in the way that ovens should not be able to.",
+            ],
+            AttackTexts =
+            [
+                "The door opens. Something comes out briefly. You are involved.",
+                "A burst of heat and intent, directed.",
+                "It leans — somehow — and makes contact with the corner of its iron body.",
+                "The door swings wide and the inside temperature becomes your problem.",
+            ],
+            HeavyAttackTexts =
+            [
+                "The door flings fully open and the interior commits to you entirely.",
+                "It heaves forward and brings the full weight of cast iron to bear.",
+                "The door opens wide and something that has been cooking too long comes out with conviction.",
+            ],
+            DefendTexts =
+            [
+                "The door closes with a decisive clang. The surface gets hotter.",
+                "It hunkers down, sealing every gap. You could not open it if you tried.",
+                "It becomes very still. The heat radiating from it is the only indication that anything is happening.",
+            ],
+            DeathTexts =
+            [
+                "The door swings open one final time and does not close. The fire inside goes out.",
+                "It tips over with an enormous crash. The smell dissipates slowly. The contents remain unidentified.",
+                "It goes cold. Not gradually — all at once, which is its own kind of unsettling.",
+            ],
+        },
+
+        new()
+        {
+            Id = "WitchesMotherInLaw", Name = "Witch's Mother-in-Law",
+            Description = "Nobody summoned her. She arrived on her own. She has extremely detailed opinions about everything you are doing wrong and the patience to enumerate them during combat.",
+            BaseHp = 180, BaseAttack = 28, BaseDefense = 14,
+            FleeChance = 0.05f, FleeHpThreshold = 0.05f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 30 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+                new() { Action = EnemyActionType.Buff,        Weight = 30 },
+                new() { Action = EnemyActionType.Regenerate,  Weight = 15 },
+            ],
+            BaseXp = 32,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Fire, DT.Storm],
+            Resistances = [DT.Dark, DT.Nature],
+            WeaknessText  = { [DT.Fire]  = "Fire is one of very few things she has nothing to say about. This is disorienting for her.", [DT.Storm] = "Lightning interrupts her mid-sentence. She does not recover immediately." },
+            ResistanceText = { [DT.Dark]  = "She has seen things you cannot imagine. The dark is not among them.", [DT.Nature] = "She has been managing a garden for sixty years. Nature does not surprise her." },
+            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.4f, BuffTurns = 2,
+            RegenerateAmount = 15,
+            LootTable =
+            [
+                new() { ItemId = "RottenSilks", Chance = 0.60f },
+                new() { ItemId = "CrackedOrb",  Chance = 0.50f },
+                new() { ItemId = "PaleMushroom",Chance = 0.30f },
+                new() { ItemId = "Amber",       Chance = 0.25f },
+                new() { ItemId = "Spyglass",    Chance = 0.03f },
+            ],
+            AppearTexts =
+            [
+                "She is already in the room. She has opinions about that too.",
+                "A voice precedes her — calm, precise, cataloguing your faults in order of severity.",
+                "She enters without announcement and begins making corrections immediately.",
+            ],
+            AttackTexts =
+            [
+                "She strikes with the authority of someone who has been right about everything for a very long time.",
+                "A hex delivered mid-sentence, without interrupting the sentence.",
+                "She does not raise her voice. The impact is considerable anyway.",
+                "You are hit, and then told exactly what you did to cause it.",
+            ],
+            HeavyAttackTexts =
+            [
+                "She reaches the end of a point and punctuates it with something catastrophic.",
+                "The full force of accumulated grievance, delivered precisely.",
+                "She hits you with the confidence of someone who has been waiting for this moment for years.",
+            ],
+            BuffTexts =
+            [
+                "She squares her shoulders and decides to take this more seriously.",
+                "She recites a list of her own credentials. Something in the air shifts in her favor.",
+                "She finds a new thread of grievance and follows it somewhere terrible.",
+            ],
+            RegenerateTexts =
+            [
+                "She straightens up, looks you over, and seems to find you lacking in sufficient ways to recover.",
+                "She draws something from a deep, private reserve of indignation.",
+                "She takes a long breath and lets it out slowly. She appears freshened.",
+            ],
+            FleeTexts =
+            [
+                "She leaves on her own terms, having documented this thoroughly.",
+                "She withdraws with a final observation that continues to sting after she is gone.",
+            ],
+            DeathTexts =
+            [
+                "She goes still mid-sentence. The sentence was not finished. This will bother you.",
+                "She sits down, primly, and does not get up. Her posture remains impeccable.",
+                "The last thing she does is give you a look that communicates her opinion of how this went.",
+            ],
+        },
+
+        // ── Buried Carnival enemies ───────────────────────────────────────────
+        new()
+        {
+            Id = "StiltedMan", Name = "Stilted Man",
+            Description = "A carnival performer on stilts that are, at this point, part of him. He has been on them too long. He moves wrong. He is very tall. Hitting him requires considerable upward effort.",
+            BaseHp = 35, BaseAttack = 13, BaseDefense = 5,
+            FleeChance = 0.35f, FleeHpThreshold = 0.20f,
+            DefendDamageBonus = 0.60f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 50 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 30 },
+                new() { Action = EnemyActionType.Defend,      Weight = 20 },
+            ],
+            BaseXp = 9,
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses = [DT.Slashing, DT.Storm],
+            WeaknessText  = { [DT.Slashing] = "The stilts are structural. A blade finds the joints.", [DT.Storm] = "He is very tall. Lightning notices." },
+            LootTable =
+            [
+                new() { ItemId = "Fiber",      Chance = 0.40f },
+                new() { ItemId = "Rope",       Chance = 0.30f },
+                new() { ItemId = "Feathers",   Chance = 0.20f },
+                new() { ItemId = "CrowFeather",Chance = 0.15f },
+            ],
+            AppearTexts =
+            [
+                "Something very tall moves in the dark above you. Then it steps forward and you realize it has feet, eventually.",
+                "He enters from the far end and crosses the space between you in fewer steps than he should need.",
+                "He is looking down at you from a height that requires you to recalibrate the encounter.",
+            ],
+            AttackTexts =
+            [
+                "A stilt comes down in your vicinity. It is both slower and worse than you anticipated.",
+                "He leans and strikes from a direction you weren't watching because it was above you.",
+                "He shuffles his weight and one arm swings down from a great height.",
+                "The reach is longer than you planned for. This is a recurring problem with tall things.",
+            ],
+            HeavyAttackTexts =
+            [
+                "He rocks back on his stilts and falls forward deliberately. This is the attack.",
+                "He tips toward you with the full weight of his considerable altitude.",
+                "He teeters, and for a moment you think he's falling. He is. At you.",
+            ],
+            DefendTexts =
+            [
+                "He plants the stilts and spreads his arms. He is now a very large, very awkward obstacle.",
+                "He crouches — slightly — and the reduction in height is more threatening than you expected.",
+            ],
+            FleeTexts =
+            [
+                "He turns and lopes away with a stride that covers too much ground per step.",
+                "The stilts carry him away over obstacles that would stop someone at normal elevation.",
+                "He ducks through a door that was too large for a normal person and too small for him. He goes anyway.",
+                "He retreats with surprising grace for someone whose feet are six feet off the ground.",
+            ],
+            DeathTexts =
+            [
+                "He tips over. The fall takes a very long time. The landing is significant.",
+                "He goes in stages — stilts first, then the rest of him, then the stilts again.",
+                "He comes down. It takes a while. The floor notices.",
+            ],
+        },
+
+        new()
+        {
+            Id = "CollapsedClown", Name = "Collapsed Clown",
+            Description = "A clown who has given up on most things but not this. The makeup is still on. Some of it. The shoes are still enormous. Combat is chaotic and low to the ground. The honking is involuntary.",
+            BaseHp = 20, BaseAttack = 11, BaseDefense = 2,
+            FleeChance = 0.80f, FleeHpThreshold = 0.50f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 70 },
+                new() { Action = EnemyActionType.Buff,   Weight = 30 },
+            ],
+            BaseXp = 5,
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses = [DT.Fire, DT.Slashing],
+            WeaknessText  = { [DT.Fire]    = "The costume is extremely flammable. This was always a workplace safety concern.", [DT.Slashing] = "He moves too low to dodge something that comes at ankle height. The blade finds him anyway." },
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.20f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "Fiber",      Chance = 0.50f },
+                new() { ItemId = "CrowFeather",Chance = 0.30f },
+                new() { ItemId = "Feathers",   Chance = 0.35f },
+            ],
+            AppearTexts =
+            [
+                "Something is already on the ground. Then it gets up. This is the clown.",
+                "The shoes arrive first, sliding around the corner. The rest of the clown follows at speed.",
+                "He was lying in the middle of the room. He is not anymore. He has noticed you.",
+            ],
+            AttackTexts =
+            [
+                "He dives at your ankles with the full commitment of someone with nothing to lose.",
+                "A shoe connects with something. The honking is not intentional.",
+                "He rolls, stands, hits, falls over. Only the middle part was planned.",
+                "The attack is low, fast, and badly organized. It still lands.",
+            ],
+            BuffTexts =
+            [
+                "He hits himself on both sides of the head and something clarifies behind his eyes.",
+                "He shakes his collar and does something with his feet that seems to help.",
+                "He stands up very straight, which is new, and seems briefly more dangerous for it.",
+            ],
+            FleeTexts =
+            [
+                "He falls over in the direction of the exit and keeps going.",
+                "He scrambles away on all fours, which is faster than his upright mode.",
+                "The shoes carry him away at a speed that seems to surprise him as much as you.",
+                "He is gone before you can articulate what he was.",
+            ],
+            DeathTexts =
+            [
+                "He falls over for the last time. The honking stops.",
+                "He goes flat against the floor with the resignation of something that was already mostly there.",
+                "The shoes remain. The rest of him is still inside them, technically.",
+            ],
+        },
+
+        new()
+        {
+            Id = "FunhouseMirror", Name = "Funhouse Mirror",
+            Description = "A mirror that reflects wrong and hits back. The reflection inside is not yours. It is doing things you are not doing. When it moves toward the glass from the inside, that is the attack.",
+            BaseHp = 40, BaseAttack = 15, BaseDefense = 6,
+            FleeChance = 0.50f, FleeHpThreshold = 0.25f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 40 },
+                new() { Action = EnemyActionType.Buff,   Weight = 50 },
+                new() { Action = EnemyActionType.Defend, Weight = 10 },
+            ],
+            BaseXp = 13,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Bludgeoning],
+            Resistances = [DT.Slashing, DT.Piercing],
+            WeaknessText  = { [DT.Bludgeoning] = "Glass breaks. The reflection breaks with it." },
+            ResistanceText = { [DT.Slashing]    = "The blade passes through at an angle the glass redirects.", [DT.Piercing] = "The point finds the reflection rather than the surface." },
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.25f, BuffTurns = 3,
+            LootTable =
+            [
+                new() { ItemId = "RiverGlass",  Chance = 0.50f },
+                new() { ItemId = "CrackedOrb",  Chance = 0.35f },
+                new() { ItemId = "HollowStone", Chance = 0.20f },
+            ],
+            AppearTexts =
+            [
+                "A tall mirror stands in the middle of the room. Your reflection is already doing something different.",
+                "The reflection in it is you, adjusted. The adjustments are not flattering and they are moving on their own.",
+                "You look at it. What is inside looks back, and then does something you did not do.",
+            ],
+            AttackTexts =
+            [
+                "The reflection presses itself against the glass from the inside. The glass comes forward.",
+                "It mimics a strike you didn't make and it lands anyway.",
+                "Something comes through the surface. It should not be able to do that.",
+                "The reflection reaches the edge of the mirror and keeps going briefly.",
+            ],
+            BuffTexts =
+            [
+                "The image inside shifts and warps until you can barely locate it. It likes this.",
+                "The reflection performs a gesture that does something to the glass, which then does something to the air.",
+                "It stretches itself across the surface until it is everywhere and nowhere in particular.",
+            ],
+            DefendTexts =
+            [
+                "The mirror tilts slightly and you see only the ceiling. The reflection waits.",
+                "The surface goes opaque. Whatever is on the other side of it is now invisible.",
+            ],
+            FleeTexts =
+            [
+                "The reflection walks away inside the mirror and takes the mirror with it somehow.",
+                "The glass goes dark and the whole thing slides backward into the wall.",
+                "The reflection turns away from the glass, and the mirror follows it into somewhere else.",
+            ],
+            DeathTexts =
+            [
+                "The glass cracks. The reflection cracks with it, and then both go still.",
+                "It shatters. What was inside is gone. What is on the floor is just glass.",
+                "The image fragments and the surface goes flat and ordinary. The pieces are just pieces.",
+            ],
+        },
+
+        new()
+        {
+            Id = "TheRingmaster", Name = "The Ringmaster",
+            Description = "The show must go on. He has been saying this for too long, to an audience that left, in a tent that is no longer standing. His voice still carries. His presence commands the room.",
+            BaseHp = 160, BaseAttack = 25, BaseDefense = 13,
+            FleeChance = 0.08f, FleeHpThreshold = 0.08f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 30 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+                new() { Action = EnemyActionType.Buff,        Weight = 35 },
+                new() { Action = EnemyActionType.Defend,      Weight = 10 },
+            ],
+            BaseXp = 30,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Fire],
+            Resistances = [DT.Dark],
+            WeaknessText  = { [DT.Fire]  = "The coat catches. His authority does not extend to fire." },
+            ResistanceText = { [DT.Dark]  = "He has worked in dark tents his entire career. Darkness is atmosphere." },
+            BuffStat = ModifierStat.DamageMultiplier, BuffValue = 0.45f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "Rope",          Chance = 0.60f },
+                new() { ItemId = "CrowFeather",   Chance = 0.50f },
+                new() { ItemId = "TarnishedRing", Chance = 0.40f },
+                new() { ItemId = "Amber",         Chance = 0.25f },
+                new() { ItemId = "Compass",       Chance = 0.04f },
+            ],
+            AppearTexts =
+            [
+                "He steps into the center of the room and gestures as though presenting something. There is nothing. He presents it anyway.",
+                "His voice arrives before he does. It is a voice that expects to be listened to, and has not yet noticed that nobody is.",
+                "He is wearing the coat. The coat is enormous. He fills the room the way only someone who has done this for decades can.",
+            ],
+            AttackTexts =
+            [
+                "The whip cracks and the sound alone is a commitment.",
+                "He gestures and something happens. He has always been very good at that.",
+                "He strikes with the precision of someone who spent years directing others to do exactly this.",
+                "The cane connects with a flourish that he clearly finds satisfying.",
+            ],
+            HeavyAttackTexts =
+            [
+                "He builds to it — a full introduction — and then delivers.",
+                "He announces this attack. You are still hit.",
+                "The show reaches its climax. You are the climax. This is not good.",
+            ],
+            BuffTexts =
+            [
+                "He addresses the empty stands and draws something from their attention anyway.",
+                "He straightens his coat, adjusts his hat, and seems taller. He was already very tall.",
+                "He claps twice and the echo in the room changes. He used that.",
+            ],
+            DefendTexts =
+            [
+                "He raises a hand and the act pauses. Even now, he controls the pace.",
+                "He steps back and looks at you with the calm of someone between acts.",
+            ],
+            FleeTexts =
+            [
+                "He announces an intermission and withdraws through a curtain that is not there but parts anyway.",
+                "He tips his hat and departs with the unhurried authority of someone ending a performance on his terms.",
+            ],
+            DeathTexts =
+            [
+                "He goes down slowly, with ceremony, as if he planned this too.",
+                "The coat settles around him. The hat stays on. He remains presentable.",
+                "He falls. The empty stands receive it in silence. He would have preferred applause.",
+            ],
+        },
+
+        // ── Drowned Estate enemies ────────────────────────────────────────────
+        new()
+        {
+            Id = "SoggyButler", Name = "Soggy Butler",
+            Description = "A formally dressed drowned servant who insists on protocol. He has been in the water for decades but his posture has not suffered. The tray is still level.",
+            BaseHp = 50, BaseAttack = 17, BaseDefense = 10,
+            FleeChance = 0.20f, FleeHpThreshold = 0.10f,
+            DefendDamageBonus = 0.65f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 35 },
+                new() { Action = EnemyActionType.Defend,      Weight = 50 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 15 },
+            ],
+            BaseXp = 13,
+            AttackDamageType = DT.Bludgeoning,
+            Resistances = [DT.Bludgeoning],
+            ResistanceText = { [DT.Bludgeoning] = "He has absorbed many impacts over the years. Decades underwater have only improved his tolerance." },
+            LootTable =
+            [
+                new() { ItemId = "Peat",          Chance = 0.40f },
+                new() { ItemId = "Fiber",         Chance = 0.35f },
+                new() { ItemId = "BoneFragment",  Chance = 0.20f },
+                new() { ItemId = "TarnishedRing", Chance = 0.10f },
+            ],
+            AppearTexts =
+            [
+                "A butler enters. He is dripping. His uniform is immaculate. He presents these facts as equally important.",
+                "He arrives with the bearing of someone who has been waiting to be of service and is now available.",
+                "Water runs from his cuffs as he straightens his jacket. He does not acknowledge it. Neither should you.",
+            ],
+            AttackTexts =
+            [
+                "He strikes with the tray. He does not put it down first.",
+                "A precise blow delivered without expression or commentary.",
+                "He addresses you with the elbow and returns to attention.",
+                "He indicates, formally, that this is necessary, and then does it.",
+            ],
+            HeavyAttackTexts =
+            [
+                "He sets the tray down, squares himself, and provides service of a different kind.",
+                "He delivers it with both hands. The tray is retrieved immediately afterward.",
+                "He briefly abandons decorum. The result is considerable.",
+            ],
+            DefendTexts =
+            [
+                "He raises the tray and waits. His posture is exactly correct.",
+                "He does not move. He simply becomes more present, which turns out to be a defense.",
+                "He positions himself between you and whatever he is protecting, which appears to be his dignity.",
+            ],
+            FleeTexts =
+            [
+                "He excuses himself, formally, and steps backward through a door he did not come through.",
+                "He withdraws with a short bow and does not explain where he is going.",
+                "He leaves. The water on the floor marks where he stood.",
+            ],
+            DeathTexts =
+            [
+                "He folds at the waist, catches himself, and then completes the fold.",
+                "He goes down still holding the tray level. It takes another moment for the tray to fall.",
+                "He settles into the water on the floor. He looks, if anything, more comfortable.",
+            ],
+        },
+
+        new()
+        {
+            Id = "DecomposedHound", Name = "Decomposed Hound",
+            Description = "A dog that returned from a state of being dead. Still loyal. Still a good dog. The condition is temporary in the sense that most conditions are. It is very fast and the barking is wrong.",
+            BaseHp = 40, BaseAttack = 19, BaseDefense = 6,
+            FleeChance = 0.45f, FleeHpThreshold = 0.20f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 70 },
+                new() { Action = EnemyActionType.Buff,   Weight = 30 },
+            ],
+            BaseXp = 11,
+            AttackDamageType = DT.Slashing,
+            Weaknesses  = [DT.Fire, DT.Storm],
+            Resistances = [DT.Dark],
+            WeaknessText  = { [DT.Fire]  = "It recoils from the flame. Some instincts survive the transition.", [DT.Storm] = "Lightning disperses whatever holds the pieces together. It briefly becomes more of a suggestion." },
+            ResistanceText = { [DT.Dark]  = "It has been in the dark for a long time. The dark is comfortable." },
+            BuffStat = ModifierStat.Attack, BuffValue = 6f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "BoneFragment", Chance = 0.50f },
+                new() { ItemId = "Peat",         Chance = 0.35f },
+                new() { ItemId = "Feathers",     Chance = 0.20f },
+            ],
+            AppearTexts =
+            [
+                "It rounds the corner at speed and skids to a stop. It is very obviously a dog. It is very obviously not fine.",
+                "You hear it before you see it — the nails, the panting, and then a third sound that is not either of those.",
+                "It sits. It looks at you. Its tail moves. This is the worst part.",
+            ],
+            AttackTexts =
+            [
+                "It lunges with the loyalty of something that has found a purpose and applied it to you.",
+                "The bite is fast and certain. It has done this before, in life and since.",
+                "It circles once and then commits, completely.",
+                "It is very eager. The eagerness is the most unsettling thing about it.",
+            ],
+            BuffTexts =
+            [
+                "It makes a sound that is trying to be a bark and is something adjacent to that.",
+                "It shakes itself once, which dislodges some things. It seems to find this clarifying.",
+                "It lowers its head and the wrong sound comes again and it looks more focused.",
+            ],
+            FleeTexts =
+            [
+                "It backs away, still facing you, still wagging, and then turns and goes.",
+                "It retreats with the same speed it arrived with, which is considerable.",
+                "It decides and leaves before you can follow the decision.",
+                "It goes somewhere. It will go there very fast.",
+            ],
+            DeathTexts =
+            [
+                "It lies down. It looks comfortable. It is still.",
+                "It settles into the mud as if returning to something it knows.",
+                "Whatever kept it moving lets go. It stays a dog.",
+            ],
+        },
+
+        new()
+        {
+            Id = "BogNoble", Name = "Bog Noble",
+            Description = "An armored aristocrat who sank with his estate and never left. He is still technically the lord of this land. The land is the bottom of a bog. He is very formal about this.",
+            BaseHp = 65, BaseAttack = 20, BaseDefense = 16,
+            FleeChance = 0.10f, FleeHpThreshold = 0.08f,
+            DefendDamageBonus = 0.75f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 30 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 20 },
+                new() { Action = EnemyActionType.Defend,      Weight = 50 },
+            ],
+            BaseXp = 17,
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses  = [DT.Storm],
+            Resistances = [DT.Bludgeoning, DT.Piercing],
+            WeaknessText  = { [DT.Storm]        = "Lightning finds the metal in the armor and makes its displeasure known through every joint." },
+            ResistanceText = { [DT.Bludgeoning]  = "The armor absorbed impacts for three centuries before the bog. Still works.", [DT.Piercing] = "The plate has not worn through. Whatever you are pointing at it is not getting through." },
+            LootTable =
+            [
+                new() { ItemId = "TarnishedRing",  Chance = 0.40f },
+                new() { ItemId = "BoneFragment",   Chance = 0.35f },
+                new() { ItemId = "Peat",           Chance = 0.30f },
+                new() { ItemId = "TarnishedRelic", Chance = 0.15f },
+            ],
+            AppearTexts =
+            [
+                "He rises from the water already standing, which is not the order things usually go.",
+                "He is wearing armor that has been in a bog for a very long time. He is wearing it correctly.",
+                "He regards you with the measured displeasure of a landowner who has found trespassers.",
+            ],
+            AttackTexts =
+            [
+                "He strikes with a formality that suggests he has done this to many unauthorized visitors.",
+                "The mace comes around with the weight of centuries of accumulated grievance.",
+                "A measured blow, properly executed. He does things correctly.",
+                "He says nothing. He acts. This is what lords do.",
+            ],
+            HeavyAttackTexts =
+            [
+                "He draws himself up to full height and delivers a statement.",
+                "He swings with the authority of someone who still considers this his land.",
+                "It is a declaration more than a strike. The declaration has mass.",
+            ],
+            DefendTexts =
+            [
+                "He plants himself and holds. The armor and the attitude are both considerable.",
+                "He raises his shield in a way that makes clear he will not be moved by anything you can manage.",
+                "He stands his ground. This is, to him, simply standing. He has always stood on this ground.",
+            ],
+            FleeTexts =
+            [
+                "He retreats without turning, maintaining the authority of someone who chose to go.",
+                "He withdraws into the deeper water, still upright, until he is gone.",
+            ],
+            DeathTexts =
+            [
+                "He sinks back into the bog from which he rose. The water closes over the armor.",
+                "He goes down piece by piece, with the slow collapse of something that refused to fall quickly.",
+                "He stops. For the second time. He stays down this time.",
+            ],
+        },
+
+        new()
+        {
+            Id = "TheDrowningLord", Name = "The Drowning Lord",
+            Description = "He drowned in his own estate. He has since drowned several times more. He has developed a position on this. His hands are very cold. The water in his lungs has opinions.",
+            BaseHp = 170, BaseAttack = 27, BaseDefense = 15,
+            FleeChance = 0.05f, FleeHpThreshold = 0.05f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 35 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+                new() { Action = EnemyActionType.Regenerate,  Weight = 25 },
+                new() { Action = EnemyActionType.Defend,      Weight = 15 },
+            ],
+            BaseXp = 31,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Storm],
+            Resistances = [DT.Dark, DT.Frost],
+            WeaknessText  = { [DT.Storm]  = "Lightning and water are old enemies. He is mostly water." },
+            ResistanceText = { [DT.Dark]   = "He has been in the dark at the bottom of his estate for decades. It is his home.", [DT.Frost] = "He has been cold for a very long time. This is not news to him." },
+            RegenerateAmount = 18,
+            LootTable =
+            [
+                new() { ItemId = "TarnishedRelic", Chance = 0.60f },
+                new() { ItemId = "BoneFragment",   Chance = 0.50f },
+                new() { ItemId = "Peat",           Chance = 0.40f },
+                new() { ItemId = "RiverGlass",     Chance = 0.30f },
+                new() { ItemId = "Lantern",        Chance = 0.03f },
+            ],
+            AppearTexts =
+            [
+                "He rises from the water and the water rises with him, briefly.",
+                "Something vast and waterlogged assembles itself at the far end of the room.",
+                "He has drowned several times. It shows. He is very calm about it.",
+            ],
+            AttackTexts =
+            [
+                "He reaches forward and his hands are very cold and very certain.",
+                "He strikes with the accumulated weight of repeated drowning.",
+                "The blow carries water and depth and several decades of unresolved situation.",
+                "He does not hurry. He has been in the water long enough to understand patience.",
+            ],
+            HeavyAttackTexts =
+            [
+                "He gathers himself and delivers something that carries the pressure of deep water.",
+                "He pulls back and swings forward and the water in him goes with the motion.",
+                "He makes a sound like lungs, then commits entirely.",
+            ],
+            DefendTexts =
+            [
+                "He stands very still. The water dripping from him is the only sound.",
+                "He raises his arms and the water around him helps, slightly.",
+                "He holds his ground with the confidence of something that has already survived the worst.",
+            ],
+            RegenerateTexts =
+            [
+                "Water seeps into the wounds from outside. They close, slowly, from the inside.",
+                "He breathes in. The sound this makes is not the sound breathing should make. He looks better.",
+                "He draws himself back together. It takes a moment. It works.",
+            ],
+            FleeTexts =
+            [
+                "He sinks back into the floor, which is wet enough to accept this.",
+                "He withdraws through the water with the ease of something that lives there.",
+            ],
+            DeathTexts =
+            [
+                "He goes under. This time the water keeps him.",
+                "He sinks into himself, slowly, and the water follows.",
+                "He stops. For the last time. The water does not.",
+            ],
+        },
+
+        // ── Ancient Tomb enemies ──────────────────────────────────────────────
+        new()
+        {
+            Id = "TombRobber", Name = "Tomb Robber",
+            Description = "A living thief who got trapped in here with everything else. He was here before you. He has been here for a long time. He is not doing well. He will take everything you have if you let him.",
+            BaseHp = 30, BaseAttack = 15, BaseDefense = 5,
+            FleeChance = 0.70f, FleeHpThreshold = 0.35f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 50 },
+                new() { Action = EnemyActionType.Buff,   Weight = 35 },
+                new() { Action = EnemyActionType.Defend, Weight = 15 },
+            ],
+            BaseXp = 8,
+            AttackDamageType = DT.Piercing,
+            Weaknesses = [DT.Storm],
+            WeaknessText  = { [DT.Storm]  = "He grew up aboveground. Lightning still startles him the way it startles the living." },
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.15f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "TidalCoin",   Chance = 0.40f },
+                new() { ItemId = "BoneFragment",Chance = 0.30f },
+                new() { ItemId = "Flint",       Chance = 0.25f },
+                new() { ItemId = "AncientShard",Chance = 0.15f },
+            ],
+            AppearTexts =
+            [
+                "A man steps out of the dark with the look of someone who has been here long enough to stop being surprised.",
+                "He was already watching you. He has been watching the entrance for some time.",
+                "He is wearing things from the tomb. Some of them belonged to someone. He found them here.",
+            ],
+            AttackTexts =
+            [
+                "He stabs quickly and steps back before you can answer it.",
+                "The blade comes from the low angle, which is not where you were looking.",
+                "He is fast and quiet and has been practicing on things that can't move.",
+                "A quick thrust, efficient, and he is already repositioning.",
+            ],
+            BuffTexts =
+            [
+                "He moves into a shadow and you lose him for a moment. He uses that moment.",
+                "He rolls his shoulder and shifts his weight and becomes harder to read.",
+                "He takes a breath and something in his stance clarifies.",
+            ],
+            DefendTexts =
+            [
+                "He puts something between you and himself and waits.",
+                "He backs into a corner with the calm of someone who knows where all the corners are.",
+            ],
+            FleeTexts =
+            [
+                "He goes. Fast. Through a passage you did not know was there.",
+                "He was here and then he was not. He has had a lot of practice leaving quickly.",
+                "He takes something on the way out. You notice this a moment too late.",
+                "He exits considerably faster than he entered.",
+            ],
+            DeathTexts =
+            [
+                "He falls between two sarcophagi and stays there, which feels appropriate.",
+                "He goes down with the look of someone who knew this was a possibility.",
+                "He collapses and does not get up. He has been in worse positions. This one is final.",
+            ],
+        },
+
+        new()
+        {
+            Id = "SarcophagusGuard", Name = "Sarcophagus Guard",
+            Description = "An ancient mummified soldier, still at post. The wrappings are somewhat worse for wear after several thousand years but the intention has held up extremely well. It has not received updated orders. It does not require them.",
+            BaseHp = 85, BaseAttack = 23, BaseDefense = 18,
+            FleeChance = 0.05f, FleeHpThreshold = 0.05f,
+            DefendDamageBonus = 0.80f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 35 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+                new() { Action = EnemyActionType.Defend,      Weight = 40 },
+            ],
+            BaseXp = 19,
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses  = [DT.Storm, DT.Nature],
+            Resistances = [DT.Bludgeoning, DT.Slashing, DT.Piercing],
+            WeaknessText  = { [DT.Storm]        = "Lightning disrupts the binding. The wrappings spark.", [DT.Nature] = "Vines find the gaps in the wrappings and lever them apart." },
+            ResistanceText = { [DT.Bludgeoning]  = "You are hitting something that is mostly bone and wrapping. The force distributes.", [DT.Slashing] = "The bindings catch the blade and redirect it.", [DT.Piercing] = "The wrappings deflect the point. There is a great deal of wrapping." },
+            LootTable =
+            [
+                new() { ItemId = "BoneFragment", Chance = 0.60f },
+                new() { ItemId = "AncientShard", Chance = 0.40f },
+                new() { ItemId = "BoneRune",     Chance = 0.25f },
+                new() { ItemId = "Stone",        Chance = 0.35f },
+            ],
+            AppearTexts =
+            [
+                "It was standing here when you arrived. It has been standing here since before the architecture around it was new.",
+                "It turns toward you. Slowly. With the certainty of something that has turned toward intruders before and will again.",
+                "It was still. Then you crossed a threshold it remembers. Now it is not still.",
+            ],
+            AttackTexts =
+            [
+                "It strikes with the form of someone who learned this correctly a very long time ago.",
+                "The blow is not fast. It does not need to be fast. It needs to connect.",
+                "It reaches out and applies force in the way it was trained to apply force.",
+                "Several thousand years of standing guard, and then this. You are this.",
+            ],
+            HeavyAttackTexts =
+            [
+                "It draws back in a way that looks ceremonial. It is not ceremonial.",
+                "It commits the full weight of a very old soldier to the next strike.",
+                "It steps forward — one step, deliberate — and delivers everything.",
+            ],
+            DefendTexts =
+            [
+                "It plants itself between you and the sarcophagus. This is its function. It fulfills it.",
+                "It raises its arms in a defensive position that has not changed in several thousand years.",
+                "It stands. The standing is the defense. It has very good standing.",
+            ],
+            FleeTexts =
+            [
+                "It does not flee. It steps back. There is a distinction, and it knows the distinction.",
+                "It retreats to its post and holds. This is not running. This is repositioning to the objective.",
+            ],
+            DeathTexts =
+            [
+                "It falls. The wrappings settle. The guard is no longer at post.",
+                "It comes apart slowly, the bindings loosening. What they were holding together dissipates.",
+                "It leans against the wall it was guarding and slides down it. A final report to no one.",
+            ],
+        },
+
+        new()
+        {
+            Id = "TheUnwrapped", Name = "The Unwrapped",
+            Description = "The wrappings came off at some point. What was underneath kept going. It does not recall having them. It is enormous and extremely old and the bandages trailing from its wrists are the only evidence it was ever anything other than this.",
+            BaseHp = 175, BaseAttack = 26, BaseDefense = 15,
+            FleeChance = 0.05f, FleeHpThreshold = 0.05f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 35 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 20 },
+                new() { Action = EnemyActionType.Regenerate,  Weight = 30 },
+                new() { Action = EnemyActionType.Buff,        Weight = 15 },
+            ],
+            BaseXp = 30,
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses  = [DT.Fire],
+            Resistances = [DT.Dark],
+            WeaknessText  = { [DT.Fire]  = "The trailing bandages catch. It noticed this and does not like it." },
+            ResistanceText = { [DT.Dark]  = "It has been in the dark since before you were born. Possibly since before your civilization." },
+            RegenerateAmount = 14,
+            BuffStat = ModifierStat.Attack, BuffValue = 8f, BuffTurns = 2,
+            LootTable =
+            [
+                new() { ItemId = "BoneRune",       Chance = 0.60f },
+                new() { ItemId = "AncientShard",   Chance = 0.50f },
+                new() { ItemId = "TarnishedRelic", Chance = 0.30f },
+                new() { ItemId = "Compass",        Chance = 0.03f },
+            ],
+            AppearTexts =
+            [
+                "Something very large fills the far end of the passage. It was there before the torch reached it.",
+                "You hear it moving — a dry, papery sound at a scale that should not make that sound.",
+                "The bandages trailing from its wrists reach you before it does. Then it does.",
+            ],
+            AttackTexts =
+            [
+                "It strikes with an arm that is approximately the size of a small tree and equally intentional.",
+                "The blow is old and enormous and does not care about the specific details.",
+                "It reaches and you are at the end of the reach.",
+                "It connects. The only announcement was the air moving ahead of it.",
+            ],
+            HeavyAttackTexts =
+            [
+                "It raises both arms and holds the position for a moment that is somehow worse than the blow.",
+                "It commits everything to the next motion. The room shudders slightly ahead of impact.",
+                "It brings down something that feels geological and is only technically a punch.",
+            ],
+            DefendTexts =
+            [
+                "It stands in the way. There is a great deal of it to stand in the way.",
+                "It draws in its trailing wrappings and becomes slightly more consolidated.",
+            ],
+            RegenerateTexts =
+            [
+                "The wrappings tighten across something. It looks more intact than before.",
+                "It is very old. The thing that keeps it going is not slowing down.",
+                "Something in it resets. The damage you made is less visible now.",
+            ],
+            BuffTexts =
+            [
+                "It shakes itself once, slowly, and seems to remember something about what it was.",
+                "The trailing bandages pull taut and it stands differently. More deliberately.",
+                "It inhales — the first sound it has made — and its posture shifts.",
+            ],
+            FleeTexts =
+            [
+                "It turns and walks away with the unhurried confidence of something that has never needed to run.",
+                "It retreats. The passage fills completely as it goes. Then it doesn't.",
+            ],
+            DeathTexts =
+            [
+                "It sits down, very slowly, and the sitting becomes the end.",
+                "The wrappings go slack. Whatever the wrappings were containing releases.",
+                "It stops in the middle of a step and stays there. Then it doesn't stay there. Then it is on the floor.",
+            ],
+        },
+
+        // ── Sunken Mill enemies ───────────────────────────────────────────────
+        new()
+        {
+            Id = "MillGhost", Name = "Mill Ghost",
+            Description = "The ghost of someone who worked the mill when the mill worked. The mill stopped. The wheel stopped. The water stopped. The ghost did not. It treats your presence as an interruption.",
+            BaseHp = 28, BaseAttack = 14, BaseDefense = 2,
+            FleeChance = 0.60f, FleeHpThreshold = 0.35f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack, Weight = 40 },
+                new() { Action = EnemyActionType.Buff,   Weight = 50 },
+                new() { Action = EnemyActionType.Defend, Weight = 10 },
+            ],
+            BaseXp = 8,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Fire, DT.Storm],
+            Resistances = [DT.Slashing, DT.Piercing, DT.Dark],
+            WeaknessText  = { [DT.Fire]  = "Fire disrupts the form. It cannot maintain its shape in the heat.", [DT.Storm] = "Lightning passes through and finds something to ground itself on regardless." },
+            ResistanceText = { [DT.Slashing]  = "The blade passes through. There is nothing there to cut.", [DT.Piercing] = "It parts around the point and reforms.", [DT.Dark] = "It has spent decades in a dark mill. The dark finds no purchase here." },
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.25f, BuffTurns = 3,
+            LootTable =
+            [
+                new() { ItemId = "Driftwood", Chance = 0.40f },
+                new() { ItemId = "Fiber",     Chance = 0.35f },
+                new() { ItemId = "RiverGlass",Chance = 0.20f },
+            ],
+            AppearTexts =
+            [
+                "A figure is going through the motions of work that is no longer there to be done.",
+                "It does not look up when you enter. It is busy. The work finished decades ago.",
+                "Something translucent and purposeful moves through the machinery. The machinery does not respond.",
+            ],
+            AttackTexts =
+            [
+                "It turns from its task and swings with the force of something that has been interrupted.",
+                "It passes through you briefly. Cold. Wrong.",
+                "It brings a hand down in the motion of work and the motion connects.",
+                "It strikes with the irritation of someone who had a schedule.",
+            ],
+            BuffTexts =
+            [
+                "It goes translucent and continues working, and both things happen at once.",
+                "It fades slightly at the edges, becoming less there to hit.",
+                "It presses itself into the motion of labor and becomes harder to locate.",
+            ],
+            DefendTexts =
+            [
+                "It steps into the machinery and lets the gaps between things protect it.",
+                "It becomes briefly more wall than ghost.",
+            ],
+            FleeTexts =
+            [
+                "It passes through the nearest wall and the work sounds continue briefly on the other side.",
+                "It disperses into the space between the planks and is gone.",
+                "It simply goes elsewhere, with the efficiency of something that has somewhere to be.",
+                "It fades mid-motion and does not return.",
+            ],
+            DeathTexts =
+            [
+                "It stops in the middle of a motion it has completed ten thousand times. Does not complete it.",
+                "The work finally ends. It takes the ghost with it.",
+                "It disperses gradually, like mist off water in the morning, until there is nothing there.",
+            ],
+        },
+
+        new()
+        {
+            Id = "WaterloggedWorker", Name = "Waterlogged Worker",
+            Description = "A drowned laborer still carrying out duties. The work is not finished. The work will never be finished. Water drips from everything it carries. The grinding sound it makes when moving is the worker, not the mill.",
+            BaseHp = 55, BaseAttack = 18, BaseDefense = 9,
+            FleeChance = 0.30f, FleeHpThreshold = 0.15f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 55 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 20 },
+                new() { Action = EnemyActionType.Defend,      Weight = 25 },
+            ],
+            BaseXp = 13,
+            AttackDamageType = DT.Bludgeoning,
+            Weaknesses  = [DT.Storm, DT.Fire],
+            Resistances = [DT.Frost],
+            WeaknessText  = { [DT.Storm]  = "The water in it conducts. Lightning finds the whole body at once.", [DT.Fire] = "Steam and confusion. Something about the heat disrupts whatever keeps it going." },
+            ResistanceText = { [DT.Frost]  = "It is already saturated. Cold finds nothing new to freeze." },
+            LootTable =
+            [
+                new() { ItemId = "Driftwood",   Chance = 0.50f },
+                new() { ItemId = "Rope",        Chance = 0.35f },
+                new() { ItemId = "Wood",        Chance = 0.30f },
+                new() { ItemId = "BoneFragment",Chance = 0.15f },
+            ],
+            AppearTexts =
+            [
+                "It is carrying something. It has been carrying it for a very long time. It will continue.",
+                "Water runs from it constantly. The sound of work is coming from inside it.",
+                "It rounds the corner at a slow, unstoppable pace and does not acknowledge your presence.",
+            ],
+            AttackTexts =
+            [
+                "It swings whatever it is carrying. The tool and the intention are equally blunt.",
+                "It walks into you, which is the attack.",
+                "It sets down its burden briefly, addresses you, picks the burden back up.",
+                "The strike is not angry. It is procedural. That is somehow worse.",
+            ],
+            HeavyAttackTexts =
+            [
+                "It stops walking, focuses, and applies everything to the next moment.",
+                "It sets down its load, uses both hands, and picks the load back up. Sequentially.",
+                "The grinding intensifies briefly and then it delivers something with full commitment.",
+            ],
+            DefendTexts =
+            [
+                "It holds its burden between you and itself. The burden is considerable.",
+                "It plants its feet and continues working. You are a complication, not a stoppage.",
+                "It angles itself and keeps moving, incorporating your presence into the route.",
+            ],
+            FleeTexts =
+            [
+                "It turns and walks away at the same pace it arrived. It does not change speed for anything.",
+                "It takes a different route. It has a route. It takes it.",
+                "It goes. Water marks where it was. The grinding fades.",
+            ],
+            DeathTexts =
+            [
+                "It sets down its burden and does not pick it back up.",
+                "It stops mid-stride and the water drains out of it and the work is done.",
+                "It goes down slowly, still reaching for the work, not quite completing the motion.",
+            ],
+        },
+
+        new()
+        {
+            Id = "TheFerryman", Name = "The Ferryman",
+            Description = "He ferries things across. He has always ferried things across. He does not specify what, or where to, or from where. You did not pay the toll. The pole he carries has been in use since before the mill existed.",
+            BaseHp = 165, BaseAttack = 27, BaseDefense = 13,
+            FleeChance = 0.10f, FleeHpThreshold = 0.08f,
+            ActionTable =
+            [
+                new() { Action = EnemyActionType.Attack,      Weight = 35 },
+                new() { Action = EnemyActionType.HeavyAttack, Weight = 25 },
+                new() { Action = EnemyActionType.Buff,        Weight = 30 },
+                new() { Action = EnemyActionType.Defend,      Weight = 10 },
+            ],
+            BaseXp = 29,
+            AttackDamageType = DT.Dark,
+            Weaknesses  = [DT.Storm],
+            Resistances = [DT.Frost, DT.Dark],
+            WeaknessText  = { [DT.Storm]  = "Lightning on the water. He has been struck before. He does not forget." },
+            ResistanceText = { [DT.Frost]  = "The river does not freeze while he works it. It is an old arrangement.", [DT.Dark] = "The crossing is made in darkness. He navigates by other means." },
+            BuffStat = ModifierStat.DodgeChance, BuffValue = 0.20f, BuffTurns = 3,
+            LootTable =
+            [
+                new() { ItemId = "RiverGlass",  Chance = 0.60f },
+                new() { ItemId = "Driftwood",   Chance = 0.50f },
+                new() { ItemId = "TidalCoin",   Chance = 0.40f },
+                new() { ItemId = "BoneFragment",Chance = 0.30f },
+                new() { ItemId = "Spyglass",    Chance = 0.04f },
+            ],
+            AppearTexts =
+            [
+                "He is already at the far end of the water. He has already seen you. He is already coming.",
+                "A pole extends from the mist. He is attached to the other end of it. He does not hurry.",
+                "He arrives at the bank and looks at you with the patience of someone who always arrives eventually.",
+            ],
+            AttackTexts =
+            [
+                "The pole comes across at head height. He has done this many times.",
+                "He pushes forward with the pole and the force is old and specific.",
+                "He strikes without announcement. The toll is the announcement.",
+                "He brings the pole around in a motion that is still technically ferrying, just applied to you.",
+            ],
+            HeavyAttackTexts =
+            [
+                "He plants the pole and uses it to bring himself to you, very fast.",
+                "He winds back and delivers the full length of it across the narrowest space.",
+                "He steps into the stroke. The river moves with him.",
+            ],
+            BuffTexts =
+            [
+                "He drifts backward on something that is not quite the water and becomes harder to place.",
+                "The mist comes with him and he arranges it to his advantage.",
+                "He recedes slightly and the water closes around where he was standing.",
+            ],
+            DefendTexts =
+            [
+                "He holds the pole in front of him crosswise. It is longer than the gap between you.",
+                "He goes still on the water in a way that suggests he is waiting, not stopped.",
+            ],
+            FleeTexts =
+            [
+                "He pushes back into the mist and the mist accepts him.",
+                "He returns to the water. The crossing is over. He will take you another time.",
+                "He poles away without comment. He did not need to explain before, and he does not now.",
+            ],
+            DeathTexts =
+            [
+                "He goes into the water and does not resurface. For the first time, he is the one crossing.",
+                "The pole floats. He does not.",
+                "He settles into the shallows and is still. The river moves around him and keeps going.",
+            ],
+        },
     ];
 
     private static readonly Dictionary<string, EnemyDefinition> _byId =
