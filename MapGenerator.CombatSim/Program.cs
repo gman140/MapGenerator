@@ -32,15 +32,15 @@ internal static class Program
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         int seed = args.Length > 0 && int.TryParse(args[0], out int s) ? s : Seed;
 
-        var enemyProvider     = new InMemoryEnemyDefinitionProvider();
-        var affixProvider     = new InMemoryEnemyAffixProvider();
-        var resourceProvider  = new InMemoryResourceDefinitionProvider();
-        var foodProvider      = new InMemoryFoodDefinitionProvider();
-        var spellProvider     = new InMemorySpellDefinitionProvider();
-        var companionProvider = new InMemoryCompanionDefinitionProvider();
-        var spawner           = new EnemySpawner(enemyProvider, affixProvider);
-        var engine            = new CombatEngine(
-            enemyProvider, resourceProvider, foodProvider,
+        var enemyProvider      = new InMemoryEnemyDefinitionProvider();
+        var affixProvider      = new InMemoryEnemyAffixProvider();
+        var equipmentProvider  = new InMemoryEquipmentDefinitionProvider();
+        var consumableProvider = new InMemoryConsumableDefinitionProvider();
+        var spellProvider      = new InMemorySpellDefinitionProvider();
+        var companionProvider  = new InMemoryCompanionDefinitionProvider();
+        var spawner            = new EnemySpawner(enemyProvider, affixProvider);
+        var engine             = new CombatEngine(
+            enemyProvider, equipmentProvider, consumableProvider,
             spellProvider, companionProvider, spawner);
 
         var allEnemies = enemyProvider.All;

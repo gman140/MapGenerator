@@ -4,17 +4,15 @@ using MapGenerator.Domain.Models;
 
 namespace MapGenerator.Application.Services;
 
-public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
+public class InMemoryConsumableDefinitionProvider : IConsumableDefinitionProvider
 {
-    private static readonly FoodDefinition[] _definitions =
+    private static readonly ConsumableDefinition[] _definitions =
     [
-        // ── Raw gatherable ────────────────────────────────────────────────────
+        // ── Raw food — gatherable ─────────────────────────────────────────────
         new()
         {
-            ResourceId     = "Berries",
-            Name           = "Berries",
-            SatietyRestore = 12,
-            EatMessages    =
+            Id = "Berries", Name = "Berries", SatietyRestore = 12,
+            UseMessages =
             [
                 "You eat a handful of berries. Tart and a little too small, but welcome.",
                 "The berries are sour enough to make you wince, but you finish them.",
@@ -24,10 +22,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "Mushroom",
-            Name           = "Mushroom",
-            SatietyRestore = 10,
-            EatMessages    =
+            Id = "Mushroom", Name = "Mushroom", SatietyRestore = 10,
+            UseMessages =
             [
                 "You eat the mushroom raw. Earthy, chewy, not entirely unpleasant.",
                 "It tastes of the forest floor. You eat it anyway.",
@@ -37,23 +33,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "Herbs",
-            Name           = "Herbs",
-            SatietyRestore = 8,
-            EatMessages    =
-            [
-                "You chew the herbs slowly. Bitter, green, and vaguely medicinal.",
-                "They taste medicinal and not particularly inviting. You finish them.",
-                "The herbs are more pungent than expected. You eat them and move on.",
-                "You eat the herbs raw. Your stomach accepts this grudgingly.",
-            ],
-        },
-        new()
-        {
-            ResourceId     = "WildCarrot",
-            Name           = "Wild Carrot",
-            SatietyRestore = 8,
-            EatMessages    =
+            Id = "WildCarrot", Name = "Wild Carrot", SatietyRestore = 8,
+            UseMessages =
             [
                 "Thin and pale and faintly bitter at the core. You eat it anyway.",
                 "It tastes almost like a carrot. Almost.",
@@ -63,10 +44,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "Acorn",
-            Name           = "Acorn",
-            SatietyRestore = 5,
-            EatMessages    =
+            Id = "Acorn", Name = "Acorn", SatietyRestore = 5,
+            UseMessages =
             [
                 "Bitter. Chalky. You finish it with the resigned efficiency of someone who knows what hunger is.",
                 "The bitterness is sharp and stays. You eat another anyway.",
@@ -76,10 +55,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "WildGarlic",
-            Name           = "Wild Garlic",
-            SatietyRestore = 6,
-            EatMessages    =
+            Id = "WildGarlic", Name = "Wild Garlic", SatietyRestore = 6,
+            UseMessages =
             [
                 "Pungent. You will be announcing your presence to things downwind for some time.",
                 "Aggressively flavored. You finish it. You will smell like a decision.",
@@ -89,10 +66,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "BaobabFruit",
-            Name           = "Baobab Fruit",
-            SatietyRestore = 14,
-            EatMessages    =
+            Id = "BaobabFruit", Name = "Baobab Fruit", SatietyRestore = 14,
+            UseMessages =
             [
                 "Dry and chalky and strangely tart. It is not unpleasant once you commit to it.",
                 "It has a sourness that builds. You finish it and feel it sitting properly in your stomach.",
@@ -102,10 +77,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "Yam",
-            Name           = "Yam",
-            SatietyRestore = 12,
-            EatMessages    =
+            Id = "Yam", Name = "Yam", SatietyRestore = 12,
+            UseMessages =
             [
                 "Raw yam is a commitment. You have made it. It is starchy and dense.",
                 "Dense and slightly astringent. You eat it with the focused determination it requires.",
@@ -115,10 +88,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "HeartOfPalm",
-            Name           = "Heart of Palm",
-            SatietyRestore = 10,
-            EatMessages    =
+            Id = "HeartOfPalm", Name = "Heart of Palm", SatietyRestore = 10,
+            UseMessages =
             [
                 "Mild to the point of apology. Tender, pale, and almost politely flavorless.",
                 "It tastes of very little, very gently. You are grateful for the texture.",
@@ -128,10 +99,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "CattailRoot",
-            Name           = "Cattail Root",
-            SatietyRestore = 10,
-            EatMessages    =
+            Id = "CattailRoot", Name = "Cattail Root", SatietyRestore = 10,
+            UseMessages =
             [
                 "Starchy and wet and pulled from the mud. It has its own kind of dignity.",
                 "Dense, earthy, with the particular flavor of something that grew in standing water.",
@@ -141,10 +110,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "RockLichen",
-            Name           = "Rock Lichen",
-            SatietyRestore = 4,
-            EatMessages    =
+            Id = "RockLichen", Name = "Rock Lichen", SatietyRestore = 4,
+            UseMessages =
             [
                 "It tastes of stone and time and very little else. You chew it for longer than you expected.",
                 "Dry and slightly bitter. You eat it with the grim acknowledgment of someone who has tried everything else.",
@@ -154,10 +121,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "PineNut",
-            Name           = "Pine Nut",
-            SatietyRestore = 8,
-            EatMessages    =
+            Id = "PineNut", Name = "Pine Nut", SatietyRestore = 8,
+            UseMessages =
             [
                 "Small and oily and good. Worth the trouble entirely.",
                 "You eat them one at a time and each one is quietly excellent.",
@@ -166,13 +131,11 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
             ],
         },
 
-        // ── Cooked — no buff ──────────────────────────────────────────────────
+        // ── Cooked food — no buff ─────────────────────────────────────────────
         new()
         {
-            ResourceId     = "CookedFish",
-            Name           = "Cooked Fish",
-            SatietyRestore = 40,
-            EatMessages    =
+            Id = "CookedFish", Name = "Cooked Fish", SatietyRestore = 40,
+            UseMessages =
             [
                 "The fish is charred on the outside and perfectly soft inside. You finish it in silence.",
                 "It flakes apart at the touch. You eat every last bit.",
@@ -183,10 +146,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "CookedMushroom",
-            Name           = "Cooked Mushroom",
-            SatietyRestore = 25,
-            EatMessages    =
+            Id = "CookedMushroom", Name = "Cooked Mushroom", SatietyRestore = 25,
+            UseMessages =
             [
                 "Cooking made them something else entirely — rich and soft and good.",
                 "The heat brought out something you didn't expect. You eat them quickly.",
@@ -196,10 +157,8 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "CattailCakes",
-            Name           = "Cattail Cakes",
-            SatietyRestore = 30,
-            EatMessages    =
+            Id = "CattailCakes", Name = "Cattail Cakes", SatietyRestore = 30,
+            UseMessages =
             [
                 "Earthy and dense and made with the kind of patience that shows in the result.",
                 "They are modest cakes but they are cakes. You eat them with appropriate appreciation.",
@@ -208,14 +167,12 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
             ],
         },
 
-        // ── Cooked — with buffs ───────────────────────────────────────────────
+        // ── Cooked food — with out-of-combat buffs ────────────────────────────
         new()
         {
-            ResourceId     = "HerbTea",
-            Name           = "Herb Tea",
-            SatietyRestore = 22,
-            Buff           = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.50, Charges = 20 },
-            EatMessages    =
+            Id = "HerbTea", Name = "Herb Tea", SatietyRestore = 22,
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.50, Charges = 20 },
+            UseMessages =
             [
                 "The tea is bitter and herbal and good in the way that things that are good for you often aren't. You feel quick afterward.",
                 "You drink it slowly. It clears something in your chest you hadn't noticed. Your movements feel lighter.",
@@ -225,11 +182,9 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "MushroomSoup",
-            Name           = "Mushroom Soup",
-            SatietyRestore = 50,
-            Buff           = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.60, Charges = 24 },
-            EatMessages    =
+            Id = "MushroomSoup", Name = "Mushroom Soup", SatietyRestore = 50,
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.60, Charges = 24 },
+            UseMessages =
             [
                 "The soup is hot and deep and exactly right. You eat it slowly to make it last. It settles into you and stays.",
                 "Salt and mushroom and warmth. You drink the last of it from the bowl. Your hunger feels far away.",
@@ -240,11 +195,9 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "BerryPie",
-            Name           = "Berry Pie",
-            SatietyRestore = 60,
-            Buff           = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.50, Charges = 16 },
-            EatMessages    =
+            Id = "BerryPie", Name = "Berry Pie", SatietyRestore = 60,
+            Buff = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.50, Charges = 16 },
+            UseMessages =
             [
                 "The crust is imperfect and the berries are too tart and it is very good. Something in it sharpens you.",
                 "You eat it in careful slices and wish there were more. Afterward your hands feel very capable.",
@@ -255,11 +208,9 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "GarlicFlatbread",
-            Name           = "Garlic Flatbread",
-            SatietyRestore = 28,
-            Buff           = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.50, Charges = 12 },
-            EatMessages    =
+            Id = "GarlicFlatbread", Name = "Garlic Flatbread", SatietyRestore = 28,
+            Buff = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.50, Charges = 12 },
+            UseMessages =
             [
                 "The garlic is everywhere and you are glad for it. Your eyes are sharp afterward.",
                 "Blistered and pungent and hot from the fire. You eat it fast and feel ready for something.",
@@ -269,11 +220,9 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "YamStew",
-            Name           = "Yam Stew",
-            SatietyRestore = 40,
-            Buff           = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.60, Charges = 24 },
-            EatMessages    =
+            Id = "YamStew", Name = "Yam Stew", SatietyRestore = 40,
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.60, Charges = 24 },
+            UseMessages =
             [
                 "Dense and slow and deeply filling. You feel it anchor you. Hunger seems like someone else's problem.",
                 "The yam has absorbed everything and given it back as comfort. You eat it all.",
@@ -283,11 +232,9 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "AcornPorridge",
-            Name           = "Acorn Porridge",
-            SatietyRestore = 22,
-            Buff           = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.65, Charges = 12 },
-            EatMessages    =
+            Id = "AcornPorridge", Name = "Acorn Porridge", SatietyRestore = 22,
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.65, Charges = 12 },
+            UseMessages =
             [
                 "Patient preparation has made something tolerable out of something that wasn't. You feel a modest energy.",
                 "It is no one's favorite but it is warm and filling and it moves through you efficiently.",
@@ -297,11 +244,9 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
         },
         new()
         {
-            ResourceId     = "BaobabBrew",
-            Name           = "Baobab Brew",
-            SatietyRestore = 18,
-            Buff           = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.60, Charges = 32 },
-            EatMessages    =
+            Id = "BaobabBrew", Name = "Baobab Brew", SatietyRestore = 18,
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.60, Charges = 32 },
+            UseMessages =
             [
                 "Tart and slightly fizzy and deeply strange. Something in it settles and hums.",
                 "You drink it cautiously and then quickly. The tartness gives way to something that feels like readiness.",
@@ -309,13 +254,87 @@ public class InMemoryFoodDefinitionProvider : IFoodDefinitionProvider
                 "It is the most peculiar thing you have eaten out here. It is also, somehow, exactly right. You feel it for a long time.",
             ],
         },
+
+        // ── Dual-use: gatherable AND usable in combat ─────────────────────────
+        new()
+        {
+            Id = "Herbs", Name = "Herbs",
+            Description    = "Fragrant leaves of ambiguous medicinal value. Edible, and sometimes medicinal.",
+            SatietyRestore = 8,
+            UseMessages    =
+            [
+                "You chew the herbs slowly. Bitter, green, and vaguely medicinal.",
+                "They taste medicinal and not particularly inviting. You finish them.",
+                "The herbs are more pungent than expected. You eat them and move on.",
+                "You eat the herbs raw. Your stomach accepts this grudgingly.",
+            ],
+            UsableInCombat = true, CombatHpRestore = 15, CombatBuffLabel = "Heal +15",
+        },
+        new()
+        {
+            Id = "BoneFragment", Name = "Bone Fragment",
+            Description    = "Old. You prefer not to speculate further.",
+            UsableInCombat = true,
+            CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 4f, CombatBuffTurns = 2,
+            CombatBuffLabel = "Def +4",
+        },
+        new()
+        {
+            Id = "SlimeGel", Name = "Slime Gel",
+            Description    = "A viscous, quivering substance left behind by the slime. Warm.",
+            UsableInCombat = true, CombatHpRestore = 10, CombatBuffLabel = "Heal +10",
+        },
+        new()
+        {
+            Id = "GoldenYolk", Name = "Golden Yolk",
+            Description    = "The yolk of a sentient egg. It is deeply unsettling how golden it is.",
+            UsableInCombat = true,
+            CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 6f, CombatBuffTurns = 2,
+            CombatBuffLabel = "Atk +6",
+        },
+
+        // ── Crafted combat consumables ────────────────────────────────────────
+        new()
+        {
+            Id = "Poultice", Name = "Poultice",
+            Description    = "Herbs, moss, and reed, pressed together with intent. Smells of the ground. Works better than it smells.",
+            UsableInCombat = true, CombatHpRestore = 40, CombatBuffLabel = "Heal +40",
+        },
+        new()
+        {
+            Id = "StaminaDraught", Name = "Stamina Draught",
+            Description    = "A bitter, reedy brew. Tastes like effort. Restores your will to keep moving.",
+            UsableInCombat = true, CombatStaminaRestore = 5, CombatBuffLabel = "Stamina +5",
+        },
+        new()
+        {
+            Id = "WarPaint", Name = "War Paint",
+            Description    = "Charred bone and coal, smeared with purpose. It changes something behind the eyes.",
+            UsableInCombat = true,
+            CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 10f, CombatBuffTurns = 3,
+            CombatBuffLabel = "Atk +10",
+        },
+        new()
+        {
+            Id = "Antidote", Name = "Antidote",
+            Description    = "Herbs and amber steeped with pale mushroom. Bitter and immediate. The affliction recedes.",
+            UsableInCombat = true, CombatBuffLabel = "Cure Disease/Venom",
+            ClearsStatuses = [ModifierStat.Disease, ModifierStat.Venom],
+        },
+        new()
+        {
+            Id = "SoothingSalve", Name = "Soothing Salve",
+            Description    = "Clay, moss, and herbs worked into a cooling paste. Applied quickly, it draws the harm out.",
+            UsableInCombat = true, CombatBuffLabel = "Cure Burn/Curse",
+            ClearsStatuses = [ModifierStat.Burn, ModifierStat.StaminaDrain],
+        },
     ];
 
-    private static readonly Dictionary<string, FoodDefinition> _byId =
-        _definitions.ToDictionary(d => d.ResourceId);
+    private static readonly Dictionary<string, ConsumableDefinition> _byId =
+        _definitions.ToDictionary(d => d.Id);
 
-    public IReadOnlyList<FoodDefinition> All => _definitions;
+    public IReadOnlyList<ConsumableDefinition> All => _definitions;
 
-    public FoodDefinition? GetById(string resourceId) =>
-        _byId.TryGetValue(resourceId, out var def) ? def : null;
+    public ConsumableDefinition? GetById(string id) =>
+        _byId.TryGetValue(id, out var def) ? def : null;
 }

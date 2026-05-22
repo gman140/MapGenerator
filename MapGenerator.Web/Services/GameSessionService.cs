@@ -25,7 +25,8 @@ public class GameSessionService : IAsyncDisposable
     private readonly MapGeneratorService _mapCache;
     private readonly GameBroadcastService _broadcast;
     private readonly SettlementCacheService _settlementCache;
-    private readonly IFoodDefinitionProvider _foodProvider;
+    private readonly IConsumableDefinitionProvider _consumableProvider;
+    private readonly IEquipmentDefinitionProvider _equipmentProvider;
     private readonly IPlayerRepository _playerRepo;
     private readonly IPlayerTileVisitRepository _visitRepo;
     private readonly ITileNoteRepository _noteRepo;
@@ -35,7 +36,6 @@ public class GameSessionService : IAsyncDisposable
     private readonly IDungeonRepository _dungeonRepo;
     private readonly ICombatEngine _combatEngine;
     private readonly ICombatRepository _combatRepo;
-    private readonly IResourceDefinitionProvider _resourceProvider;
     private readonly ITileInventoryRepository _tileInventoryRepo;
     private readonly ICompanionRepository _companionRepo;
     private readonly ICompanionDefinitionProvider _companionDefProvider;
@@ -62,7 +62,8 @@ public class GameSessionService : IAsyncDisposable
         MapGeneratorService mapCache,
         GameBroadcastService broadcast,
         SettlementCacheService settlementCache,
-        IFoodDefinitionProvider foodProvider,
+        IConsumableDefinitionProvider consumableProvider,
+        IEquipmentDefinitionProvider equipmentProvider,
         IPlayerRepository playerRepo,
         IPlayerTileVisitRepository visitRepo,
         ITileNoteRepository noteRepo,
@@ -72,7 +73,6 @@ public class GameSessionService : IAsyncDisposable
         IDungeonRepository dungeonRepo,
         ICombatEngine combatEngine,
         ICombatRepository combatRepo,
-        IResourceDefinitionProvider resourceProvider,
         ITileInventoryRepository tileInventoryRepo,
         ICompanionRepository companionRepo,
         ICompanionDefinitionProvider companionDefProvider)
@@ -92,7 +92,8 @@ public class GameSessionService : IAsyncDisposable
         _mapCache        = mapCache;
         _broadcast       = broadcast;
         _settlementCache = settlementCache;
-        _foodProvider    = foodProvider;
+        _consumableProvider = consumableProvider;
+        _equipmentProvider  = equipmentProvider;
         _playerRepo      = playerRepo;
         _visitRepo       = visitRepo;
         _noteRepo        = noteRepo;
@@ -100,10 +101,9 @@ public class GameSessionService : IAsyncDisposable
         _roadRepo        = roadRepo;
         _dungeonSvc      = dungeonSvc;
         _dungeonRepo     = dungeonRepo;
-        _combatEngine         = combatEngine;
-        _combatRepo           = combatRepo;
-        _resourceProvider     = resourceProvider;
-        _tileInventoryRepo    = tileInventoryRepo;
+        _combatEngine      = combatEngine;
+        _combatRepo        = combatRepo;
+        _tileInventoryRepo = tileInventoryRepo;
         _companionRepo        = companionRepo;
         _companionDefProvider = companionDefProvider;
     }
@@ -578,28 +578,28 @@ public class GameSessionService : IAsyncDisposable
         _mapCache.UpdateCachedSign(Player.Q, Player.R, content, Player.Username);
     }
 
-    public async Task<(bool success, string message)> EatAsync(string resourceId)
+    public async Task<(bool success, string message)> UseAsync(string itemId)
     {
         if (Player == null) return (false, "Not logged in.");
-        var foodDef = _foodProvider.GetById(resourceId);
-        if (foodDef == null) return (false, "You cannot eat that.");
+        var def = _consumableProvider.GetById(itemId);
+        if (def == null || def.SatietyRestore <= 0) return (false, "You cannot eat that.");
 
-        Player.Inventory.TryGetValue(resourceId, out int qty);
-        if (qty <= 0) return (false, $"You don't have any {foodDef.Name}.");
+        Player.Inventory.TryGetValue(itemId, out int qty);
+        if (qty <= 0) return (false, $"You don't have any {def.Name}.");
 
-        if (qty == 1) Player.Inventory.Remove(resourceId);
-        else Player.Inventory[resourceId] = qty - 1;
+        if (qty == 1) Player.Inventory.Remove(itemId);
+        else Player.Inventory[itemId] = qty - 1;
 
-        Player.Satiety = Math.Min(100, Player.Satiety + foodDef.SatietyRestore);
-        if (foodDef.Buff != null)
-            BuffService.ApplyBuff(Player, foodDef.Buff);
+        Player.Satiety = Math.Min(100, Player.Satiety + def.SatietyRestore);
+        if (def.Buff != null)
+            BuffService.ApplyBuff(Player, def.Buff);
         Player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(Player);
 
         var rng = new Random();
-        var message = foodDef.EatMessages.Length > 0
-            ? foodDef.EatMessages[rng.Next(foodDef.EatMessages.Length)]
-            : $"You eat the {foodDef.Name}.";
+        var message = def.UseMessages.Length > 0
+            ? def.UseMessages[rng.Next(def.UseMessages.Length)]
+            : $"You eat the {def.Name}.";
         return (true, message);
     }
 
@@ -889,8 +889,8 @@ public class GameSessionService : IAsyncDisposable
     public async Task<string?> EquipItemAsync(string itemId)
     {
         if (Player == null) return "Not logged in.";
-        var def = _resourceProvider.GetById(itemId);
-        if (def?.EquipmentSlot == null) return "That item cannot be equipped.";
+        var def = _equipmentProvider.GetById(itemId);
+        if (def == null) return "That item cannot be equipped.";
 
         int qty = Player.Inventory.GetValueOrDefault(itemId)
                 + Player.CraftedItems.GetValueOrDefault(itemId);
@@ -900,7 +900,7 @@ public class GameSessionService : IAsyncDisposable
         {
             case "Weapon": Player.EquippedWeaponId = itemId; break;
             case "Armor":  Player.EquippedArmorId  = itemId; break;
-            case "Hat":    Player.EquippedHatId    = itemId; break;
+            case "Hat":    Player.EquippedHatId     = itemId; break;
             default: return "Unknown equipment slot.";
         }
 

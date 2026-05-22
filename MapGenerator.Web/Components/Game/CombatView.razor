@@ -2,7 +2,7 @@
 @using MapGenerator.Combat.Interfaces
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
-@inject MapGenerator.Domain.Interfaces.IResourceDefinitionProvider ResourceProvider
+@inject MapGenerator.Domain.Interfaces.IConsumableDefinitionProvider ConsumableProvider
 @inject ISpellDefinitionProvider SpellProvider
 
 
@@ -237,7 +237,7 @@
                 <div class="combat-item-picker">
                     @foreach (var (id, qty) in CombatItems)
                     {
-                        var def = ResourceProvider.GetById(id);
+                        var def = ConsumableProvider.GetById(id);
                         <button class="combat-item-btn" @onclick="() => UseItem(id)">
                             <span class="item-name">@(def?.Name ?? id)</span>
                             @if (def?.CombatBuffLabel != null)
@@ -294,9 +294,7 @@
             .Concat(PlayerCraftedItems)
             .GroupBy(kv => kv.Key)
             .Select(g => (g.Key, g.Sum(kv => kv.Value)))
-            .Where(t => t.Item2 > 0
-                && ResourceProvider.GetById(t.Key) is { } def
-                && def.Traits.HasFlag(ItemTrait.CombatConsumable));
+            .Where(t => t.Item2 > 0 && ConsumableProvider.GetById(t.Key)?.UsableInCombat == true);
 
     private bool HasCombatItems => CombatItems.Any();
     private bool CannotTakeAction() => _waitingForResult;

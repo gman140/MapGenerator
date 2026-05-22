@@ -1,9 +1,8 @@
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
-@inject IResourceDefinitionProvider ResourceProvider
+@inject IItemRegistry Items
 @inject ICraftingRecipeProvider RecipeProvider
-@inject IFoodDefinitionProvider FoodProvider
 
 @{
     int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value)
@@ -17,18 +16,24 @@
     var allItems   = Inventory.Concat(CraftedItems)
                               .GroupBy(kv => kv.Key)
                               .ToDictionary(g => g.Key, g => g.Sum(kv => kv.Value));
-    var food      = allItems.Where(kv => kv.Value > 0 && FoodProvider.GetById(kv.Key) != null)
+    var food       = allItems.Where(kv => kv.Value > 0 && Items.FindConsumable(kv.Key)?.SatietyRestore > 0)
                              .OrderBy(kv => kv.Key).ToList();
-    var materials = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key) is { EquipmentSlot: null } && FoodProvider.GetById(kv.Key) == null)
+    var consumables= allItems.Where(kv => kv.Value > 0
+                                       && Items.FindConsumable(kv.Key) is { SatietyRestore: <= 0 } c && c.UsableInCombat)
                              .OrderBy(kv => kv.Key).ToList();
-    var crafted   = allItems.Where(kv => kv.Value > 0 && RecipeProvider.GetById(kv.Key) != null
-                                       && FoodProvider.GetById(kv.Key) == null
-                                       && ResourceProvider.GetById(kv.Key) is not { EquipmentSlot: not null })
+    var materials  = allItems.Where(kv => kv.Value > 0
+                                       && Items.FindConsumable(kv.Key) == null
+                                       && Items.FindEquipment(kv.Key) == null)
+                             .OrderBy(kv => kv.Key).ToList();
+    var crafted    = allItems.Where(kv => kv.Value > 0
+                                       && RecipeProvider.GetById(kv.Key) != null
+                                       && Items.FindConsumable(kv.Key) == null
+                                       && Items.FindEquipment(kv.Key) == null)
                              .OrderBy(kv => kv.Key).ToList();
 
-    var weaponItems = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key)?.EquipmentSlot == "Weapon").OrderBy(kv => kv.Key).ToList();
-    var armorItems  = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key)?.EquipmentSlot == "Armor").OrderBy(kv => kv.Key).ToList();
-    var hatItems    = allItems.Where(kv => kv.Value > 0 && ResourceProvider.GetById(kv.Key)?.EquipmentSlot == "Hat").OrderBy(kv => kv.Key).ToList();
+    var weaponItems = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Weapon").OrderBy(kv => kv.Key).ToList();
+    var armorItems  = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Armor").OrderBy(kv => kv.Key).ToList();
+    var hatItems    = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Hat").OrderBy(kv => kv.Key).ToList();
 }
 @if (_open)
 {
@@ -46,7 +51,7 @@
 
             @if (_tab == 0)
             {
-                @if (food.Count == 0 && materials.Count == 0 && crafted.Count == 0)
+                @if (food.Count == 0 && consumables.Count == 0 && materials.Count == 0 && crafted.Count == 0)
                 {
                     <p class="inventory-empty">Nothing gathered yet.</p>
                 }
@@ -56,25 +61,52 @@
                     <div class="inv-modal-list">
                         @foreach (var (id, qty) in food)
                         {
-                            var foodDef    = FoodProvider.GetById(id)!;
-                            var resDef     = ResourceProvider.GetById(id);
+                            var def        = Items.FindConsumable(id)!;
+                            var matDef     = Items.FindMaterial(id);
                             var recipeDef  = RecipeProvider.GetById(id);
-                            var name       = resDef?.Name ?? recipeDef?.Name ?? foodDef.Name;
-                            var desc       = resDef?.Description ?? recipeDef?.Description ?? string.Empty;
+                            var name       = matDef?.Name ?? recipeDef?.Name ?? def.Name;
+                            var desc       = matDef?.Description ?? recipeDef?.Description ?? def.Description;
                             var capturedId = id;
                             <div class="inv-modal-item">
                                 <div class="inv-modal-item-header">
                                     <span class="inv-modal-name">@name</span>
                                     <span class="inv-modal-qty">×@qty</span>
-                                    <button class="eat-btn" @onclick="() => OnEat.InvokeAsync(capturedId)">Eat</button>
+                                    <button class="eat-btn" @onclick="() => OnUse.InvokeAsync(capturedId)">Eat</button>
                                 </div>
                                 @if (!string.IsNullOrEmpty(desc))
                                 {
                                     <p class="inv-modal-desc">@desc</p>
                                 }
-                                @if (foodDef.Buff != null)
+                                @if (def.Buff != null)
                                 {
-                                    <p class="inv-modal-buff">@FormatBuff(foodDef.Buff)</p>
+                                    <p class="inv-modal-buff">@FormatBuff(def.Buff)</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                @if (consumables.Count > 0)
+                {
+                    <p class="inventory-section-label">Consumables</p>
+                    <div class="inv-modal-list">
+                        @foreach (var (id, qty) in consumables)
+                        {
+                            var def        = Items.FindConsumable(id)!;
+                            var matDef     = Items.FindMaterial(id);
+                            var name       = matDef?.Name ?? def.Name;
+                            var desc       = matDef?.Description ?? def.Description;
+                            <div class="inv-modal-item">
+                                <div class="inv-modal-item-header">
+                                    <span class="inv-modal-name">@name</span>
+                                    <span class="inv-modal-qty">×@qty</span>
+                                    @if (!string.IsNullOrEmpty(def.CombatBuffLabel))
+                                    {
+                                        <span class="inv-modal-buff">@def.CombatBuffLabel</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(desc))
+                                {
+                                    <p class="inv-modal-desc">@desc</p>
                                 }
                             </div>
                         }
@@ -86,7 +118,8 @@
                     <div class="inv-modal-list">
                         @foreach (var (id, qty) in materials)
                         {
-                            var def = ResourceProvider.GetById(id)!;
+                            var def = Items.FindMaterial(id);
+                            if (def == null) continue;
                             <div class="inv-modal-item">
                                 <div class="inv-modal-item-header">
                                     <span class="inv-modal-name">@def.Name</span>
@@ -139,7 +172,7 @@
     [Parameter] public string? EquippedWeaponId { get; set; }
     [Parameter] public string? EquippedArmorId { get; set; }
     [Parameter] public string? EquippedHatId { get; set; }
-    [Parameter] public EventCallback<string> OnEat { get; set; }
+    [Parameter] public EventCallback<string> OnUse { get; set; }
     [Parameter] public EventCallback<string> OnEquip { get; set; }
     [Parameter] public EventCallback<string> OnUnequip { get; set; }
 
@@ -160,7 +193,7 @@
 
         if (equippedId != null)
         {
-            var def = ResourceProvider.GetById(equippedId);
+            var def  = Items.FindEquipment(equippedId);
             var name = def?.Name ?? equippedId;
             __builder.OpenElement(7, "span");
             __builder.AddAttribute(8, "class", "equip-slot-equipped");
@@ -189,17 +222,17 @@
             int seq = 16;
             foreach (var (id, qty) in available)
             {
-                var def = ResourceProvider.GetById(id);
-                var name = def?.Name ?? id;
+                var def       = Items.FindEquipment(id);
+                var name      = def?.Name ?? id;
                 bool isEquipped = id == equippedId;
-                var capturedId = id;
+                var capturedId  = id;
                 __builder.OpenElement(seq++, "div");
                 __builder.AddAttribute(seq++, "class", "equip-available-item");
                 __builder.OpenElement(seq++, "span");
                 __builder.AddAttribute(seq++, "class", "inv-modal-name");
                 __builder.AddContent(seq++, name);
                 __builder.CloseElement();
-                if (def != null && HasEquipStats(def))
+                if (def != null && def.Affixes.Count > 0)
                 {
                     __builder.OpenElement(seq++, "span");
                     __builder.AddAttribute(seq++, "class", "equip-stat-hint");
@@ -220,24 +253,25 @@
         __builder.CloseElement(); // equip-slot
     };
 
-    private static bool HasEquipStats(ResourceDefinition def) =>
-        def.AttackBonus != 0 || def.DefenseBonus != 0 || def.ResistanceBonus != 0 ||
-        def.DodgeChanceBonus != 0 || def.MagicBonus != 0 || def.HpRegenBonus != 0 ||
-        def.ManaRegenBonus != 0 || def.StaminaRegenBonus != 0 || def.HealBonus != 0 ||
-        def.EquipmentSlot == "Weapon";
-
-    private static string FormatEquipStats(ResourceDefinition def)
+    private static string FormatEquipStats(EquipmentDefinition def)
     {
         var parts = new List<string>();
-        if (def.AttackBonus != 0)        parts.Add($"+{def.AttackBonus} Atk");
-        if (def.MagicBonus != 0)         parts.Add($"+{def.MagicBonus} Mag");
-        if (def.DefenseBonus != 0)       parts.Add($"+{def.DefenseBonus} Def");
-        if (def.ResistanceBonus != 0)    parts.Add($"+{def.ResistanceBonus} Res");
-        if (def.DodgeChanceBonus != 0)   parts.Add($"+{def.DodgeChanceBonus * 100:F0}% Dodge");
-        if (def.StaminaRegenBonus != 0)  parts.Add($"+{def.StaminaRegenBonus} Stam/turn");
-        if (def.ManaRegenBonus != 0)     parts.Add($"+{def.ManaRegenBonus} Mana/turn");
-        if (def.HpRegenBonus != 0)       parts.Add($"+{def.HpRegenBonus} HP/turn");
-        if (def.HealBonus != 0)          parts.Add($"+{def.HealBonus * 100:F0}% Heal");
+        foreach (var affix in def.Affixes)
+        {
+            parts.Add(affix.Stat switch
+            {
+                ModifierStat.Attack      => $"+{(int)affix.Value} Atk",
+                ModifierStat.Magic       => $"+{(int)affix.Value} Mag",
+                ModifierStat.Defense     => $"+{(int)affix.Value} Def",
+                ModifierStat.Resistance  => $"+{(int)affix.Value} Res",
+                ModifierStat.DodgeChance => $"+{affix.Value * 100:F0}% Dodge",
+                ModifierStat.StaminaRegen=> $"+{(int)affix.Value} Stam/turn",
+                ModifierStat.ManaRegen   => $"+{(int)affix.Value} Mana/turn",
+                ModifierStat.HpRegen     => $"+{(int)affix.Value} HP/turn",
+                ModifierStat.HealBonus   => $"+{affix.Value * 100:F0}% Heal",
+                _                        => $"+{affix.Value} {affix.Stat}",
+            });
+        }
         if (def.EquipmentSlot == "Weapon")
             parts.Add(FormatDamageType(def.WeaponDamageType));
         return string.Join(" · ", parts);

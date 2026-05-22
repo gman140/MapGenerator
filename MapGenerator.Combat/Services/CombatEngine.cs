@@ -10,8 +10,8 @@ namespace MapGenerator.Combat.Services;
 public class CombatEngine : ICombatEngine
 {
     private readonly IEnemyDefinitionProvider _enemyProvider;
-    private readonly IResourceDefinitionProvider _resourceProvider;
-    private readonly IFoodDefinitionProvider _foodProvider;
+    private readonly IEquipmentDefinitionProvider _equipmentProvider;
+    private readonly IConsumableDefinitionProvider _consumableProvider;
     private readonly ISpellDefinitionProvider _spellProvider;
     private readonly ICompanionDefinitionProvider _companionProvider;
     private readonly EnemySpawner _spawner;
@@ -31,15 +31,15 @@ public class CombatEngine : ICombatEngine
 
     public CombatEngine(
         IEnemyDefinitionProvider enemyProvider,
-        IResourceDefinitionProvider resourceProvider,
-        IFoodDefinitionProvider foodProvider,
+        IEquipmentDefinitionProvider equipmentProvider,
+        IConsumableDefinitionProvider consumableProvider,
         ISpellDefinitionProvider spellProvider,
         ICompanionDefinitionProvider companionProvider,
         EnemySpawner spawner)
     {
         _enemyProvider      = enemyProvider;
-        _resourceProvider   = resourceProvider;
-        _foodProvider       = foodProvider;
+        _equipmentProvider  = equipmentProvider;
+        _consumableProvider = consumableProvider;
         _spellProvider      = spellProvider;
         _companionProvider  = companionProvider;
         _spawner            = spawner;
@@ -76,7 +76,7 @@ public class CombatEngine : ICombatEngine
 
         if (player.EquippedWeaponId != null)
         {
-            var weaponDef = _resourceProvider.GetById(player.EquippedWeaponId);
+            var weaponDef = _equipmentProvider.GetById(player.EquippedWeaponId);
             if (weaponDef != null)
                 session.PlayerWeaponDamageType = weaponDef.WeaponDamageType;
         }
@@ -467,66 +467,65 @@ public class CombatEngine : ICombatEngine
             return;
         }
 
-        var resDef = _resourceProvider.GetById(itemId);
-        if (resDef != null && resDef.Traits.HasFlag(ItemTrait.CombatConsumable))
+        var consumable = _consumableProvider.GetById(itemId);
+        if (consumable != null && consumable.UsableInCombat)
         {
             ConsumeItem(player, itemId);
             var evt = new CombatEvent { Kind = CombatEventKind.PlayerUpdate, DelayMs = 300 };
             var parts = new List<string>();
 
-            if (resDef.CombatHpRestore > 0)
+            if (consumable.CombatHpRestore > 0)
             {
                 float healMult = 1f + session.ActiveModifiers.Where(m => m.Stat == ModifierStat.HealBonus).Sum(m => m.Value);
-                int rawHeal = (int)(resDef.CombatHpRestore * healMult);
+                int rawHeal = (int)(consumable.CombatHpRestore * healMult);
                 int before = session.PlayerHp;
                 session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + rawHeal);
                 int healed = session.PlayerHp - before;
                 evt.PlayerHp = session.PlayerHp;
                 parts.Add($"restored {healed} HP");
             }
-            if (resDef.CombatStaminaRestore > 0)
+            if (consumable.CombatStaminaRestore > 0)
             {
-                session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + resDef.CombatStaminaRestore);
+                session.PlayerStamina = Math.Min(session.PlayerMaxStamina, session.PlayerStamina + consumable.CombatStaminaRestore);
                 evt.PlayerStamina = session.PlayerStamina;
-                parts.Add($"recovered {resDef.CombatStaminaRestore} stamina");
+                parts.Add($"recovered {consumable.CombatStaminaRestore} stamina");
             }
-            if (resDef.CombatBuffStat.HasValue && resDef.CombatBuffTurns > 0)
+            if (consumable.CombatBuffStat.HasValue && consumable.CombatBuffTurns > 0)
             {
                 session.ActiveModifiers.Add(new CombatModifier
                 {
                     Id             = $"Item:{itemId}",
-                    Stat           = resDef.CombatBuffStat.Value,
-                    Value          = resDef.CombatBuffValue,
-                    TurnsRemaining = resDef.CombatBuffTurns,
+                    Stat           = consumable.CombatBuffStat.Value,
+                    Value          = consumable.CombatBuffValue,
+                    TurnsRemaining = consumable.CombatBuffTurns,
                     Source         = $"Item:{itemId}",
                 });
-                parts.Add(resDef.CombatBuffLabel ?? $"+{resDef.CombatBuffValue} for {resDef.CombatBuffTurns}t");
+                parts.Add(consumable.CombatBuffLabel ?? $"+{consumable.CombatBuffValue} for {consumable.CombatBuffTurns}t");
             }
-            if (resDef.ClearsStatuses?.Length > 0)
+            if (consumable.ClearsStatuses?.Length > 0)
             {
-                int cleared = session.ActiveModifiers.RemoveAll(m => resDef.ClearsStatuses.Contains(m.Stat));
+                int cleared = session.ActiveModifiers.RemoveAll(m => consumable.ClearsStatuses.Contains(m.Stat));
                 if (cleared > 0)
                     parts.Add($"cured {cleared} affliction(s)");
             }
 
-            string msg = $"You use {resDef.Name}. " + (parts.Count > 0 ? string.Join(", ", parts) + "." : "Nothing happened.");
+            string msg = $"You use {consumable.Name}. " + (parts.Count > 0 ? string.Join(", ", parts) + "." : "Nothing happened.");
             session.Log.Add(msg);
             evt.Log = msg;
             events.Add(evt);
             return;
         }
 
-        var food = _foodProvider.GetById(itemId);
-        if (food != null)
+        if (consumable != null)
         {
-            int heal = Math.Max(1, (int)Math.Ceiling(food.SatietyRestore / 2.0));
+            int heal = Math.Max(1, (int)Math.Ceiling(consumable.SatietyRestore / 2.0));
             int before = session.PlayerHp;
             session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + heal);
             int healed = session.PlayerHp - before;
-            player.Satiety = Math.Min(100, player.Satiety + food.SatietyRestore);
+            player.Satiety = Math.Min(100, player.Satiety + consumable.SatietyRestore);
             ConsumeItem(player, itemId);
 
-            string msg = $"You eat the {food.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
+            string msg = $"You eat the {consumable.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
             session.Log.Add(msg);
             events.Add(new CombatEvent
             {
@@ -1085,62 +1084,16 @@ public class CombatEngine : ICombatEngine
     private void TryApplyEquipmentItem(CombatSession session, string? itemId)
     {
         if (itemId == null) return;
-        var def = _resourceProvider.GetById(itemId);
+        var def = _equipmentProvider.GetById(itemId);
         if (def == null) return;
 
-        if (def.AttackBonus != 0)
+        foreach (var affix in def.Affixes)
             session.ActiveModifiers.Add(new CombatModifier
             {
-                Id = $"Equip:Atk:{itemId}", Stat = ModifierStat.Attack,
-                Value = def.AttackBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.DefenseBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:Def:{itemId}", Stat = ModifierStat.Defense,
-                Value = def.DefenseBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.ResistanceBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:Res:{itemId}", Stat = ModifierStat.Resistance,
-                Value = def.ResistanceBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.DodgeChanceBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:Dodge:{itemId}", Stat = ModifierStat.DodgeChance,
-                Value = def.DodgeChanceBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.MagicBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:Mag:{itemId}", Stat = ModifierStat.Magic,
-                Value = def.MagicBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.HpRegenBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:HpRegen:{itemId}", Stat = ModifierStat.HpRegen,
-                Value = def.HpRegenBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.ManaRegenBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:ManaRegen:{itemId}", Stat = ModifierStat.ManaRegen,
-                Value = def.ManaRegenBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.StaminaRegenBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:StamRegen:{itemId}", Stat = ModifierStat.StaminaRegen,
-                Value = def.StaminaRegenBonus, Source = $"Equipment:{itemId}",
-            });
-        if (def.HealBonus != 0)
-            session.ActiveModifiers.Add(new CombatModifier
-            {
-                Id = $"Equip:Heal:{itemId}", Stat = ModifierStat.HealBonus,
-                Value = def.HealBonus, Source = $"Equipment:{itemId}",
+                Id     = $"Equip:{affix.Stat}:{itemId}",
+                Stat   = affix.Stat,
+                Value  = affix.Value,
+                Source = $"Equipment:{itemId}",
             });
     }
 

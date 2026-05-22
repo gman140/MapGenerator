@@ -6,7 +6,7 @@
 @using MapGenerator.Domain.Interfaces
 @inject GameSessionService Session
 @inject IEnemyDefinitionProvider EnemyProvider
-@inject IResourceDefinitionProvider ResourceProvider
+@inject IEquipmentDefinitionProvider EquipmentProvider
 
 <div class="modal-overlay" @onclick="HandleCancel">
     <div class="sprite-editor-modal" @onclick:stopPropagation
@@ -334,7 +334,7 @@
     private RenderFragment EquipRow(string icon, string? itemId) => __builder =>
     {
         if (itemId == null) return;
-        var def = ResourceProvider.GetById(itemId);
+        var def = EquipmentProvider.GetById(itemId);
         if (def == null) return;
         string stats = FormatEquipStats(def);
         <div class="pstab-equip-row">
@@ -347,18 +347,25 @@
         </div>
     };
 
-    private static string FormatEquipStats(ResourceDefinition def)
+    private static string FormatEquipStats(EquipmentDefinition def)
     {
         var parts = new List<string>();
-        if (def.AttackBonus != 0)       parts.Add($"+{def.AttackBonus} Atk");
-        if (def.MagicBonus != 0)        parts.Add($"+{def.MagicBonus} Mag");
-        if (def.DefenseBonus != 0)      parts.Add($"+{def.DefenseBonus} Def");
-        if (def.ResistanceBonus != 0)   parts.Add($"+{def.ResistanceBonus} Res");
-        if (def.DodgeChanceBonus != 0)  parts.Add($"+{def.DodgeChanceBonus * 100:F0}% Dodge");
-        if (def.StaminaRegenBonus != 0) parts.Add($"+{def.StaminaRegenBonus} Stam/turn");
-        if (def.ManaRegenBonus != 0)    parts.Add($"+{def.ManaRegenBonus} Mana/turn");
-        if (def.HpRegenBonus != 0)      parts.Add($"+{def.HpRegenBonus} HP/turn");
-        if (def.HealBonus != 0)         parts.Add($"+{def.HealBonus * 100:F0}% Heal");
+        foreach (var affix in def.Affixes)
+        {
+            parts.Add(affix.Stat switch
+            {
+                ModifierStat.Attack      => $"+{(int)affix.Value} Atk",
+                ModifierStat.Magic       => $"+{(int)affix.Value} Mag",
+                ModifierStat.Defense     => $"+{(int)affix.Value} Def",
+                ModifierStat.Resistance  => $"+{(int)affix.Value} Res",
+                ModifierStat.DodgeChance => $"+{affix.Value * 100:F0}% Dodge",
+                ModifierStat.StaminaRegen=> $"+{(int)affix.Value} Stam/turn",
+                ModifierStat.ManaRegen   => $"+{(int)affix.Value} Mana/turn",
+                ModifierStat.HpRegen     => $"+{(int)affix.Value} HP/turn",
+                ModifierStat.HealBonus   => $"+{affix.Value * 100:F0}% Heal",
+                _                        => $"+{affix.Value} {affix.Stat}",
+            });
+        }
         if (def.EquipmentSlot == "Weapon")
             parts.Add(FormatDamageType(def.WeaponDamageType));
         return string.Join(" · ", parts);
