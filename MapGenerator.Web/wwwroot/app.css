@@ -1018,6 +1018,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-status-badge.status-burn        { background: rgba(220,100,20,.25); border-color: rgba(240,120,30,.5); color: #ff9040; }
 .combat-status-badge.status-venom       { background: rgba(60,180,60,.25); border-color: rgba(80,200,80,.5); color: #60e060; }
 .combat-status-badge.status-staminadrain { background: rgba(100,80,160,.25); border-color: rgba(120,90,180,.5); color: #a080e0; }
+.combat-status-badge.status-stun         { background: rgba(240,200,40,.2);  border-color: rgba(255,220,60,.5);  color: #ffd84a; }
 
 /* ── SpriteView component ────────────────────────────────────────────────── */
 .sprite-view { display: block; image-rendering: pixelated; }

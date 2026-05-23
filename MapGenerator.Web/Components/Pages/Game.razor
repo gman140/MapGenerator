@@ -719,6 +719,23 @@ OnDance="HandleDanceAsync"
                 case CombatEventKind.ShakeEnemy when evt.EnemyInstanceId != null:
                     _combatView?.TriggerEnemyShake(evt.EnemyInstanceId);
                     break;
+                case CombatEventKind.PlayerUpdate:
+                    _combatSession.ActiveModifiers = turnResult.Session.ActiveModifiers;
+                    break;
+                case CombatEventKind.StatusApplied:
+                {
+                    if (evt.EnemyInstanceId != null)
+                    {
+                        var src = turnResult.Session.Enemies.FirstOrDefault(e => e.InstanceId == evt.EnemyInstanceId);
+                        var dst = _combatSession.Enemies.FirstOrDefault(e => e.InstanceId == evt.EnemyInstanceId);
+                        if (src != null && dst != null) dst.ActiveModifiers = src.ActiveModifiers;
+                    }
+                    else
+                    {
+                        _combatSession.ActiveModifiers = turnResult.Session.ActiveModifiers;
+                    }
+                    break;
+                }
                 case CombatEventKind.PlayerMagicCast:
                     _combatView?.TriggerPlayerMagicCast();
                     break;

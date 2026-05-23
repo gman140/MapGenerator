@@ -452,18 +452,22 @@
         ModifierStat.Burn         => "status-burn",
         ModifierStat.Venom        => "status-venom",
         ModifierStat.StaminaDrain => "status-staminadrain",
+        ModifierStat.Stun         => "status-stun",
         _                         => "buff",
     };
 
     private static string ModifierLabel(CombatModifier mod)
     {
+        if (mod.Stat == ModifierStat.Stun)
+            return $"💫 Stunned ({mod.TurnsRemaining}t)";
+
         if (IsDoT(mod.Stat))
         {
             return mod.Stat switch
             {
                 ModifierStat.Disease      => $"🦠 Disease ({mod.TurnsRemaining}t)",
                 ModifierStat.Burn         => $"🔥 Burn ({mod.TurnsRemaining}t)",
-                ModifierStat.Venom        => $"🐍 Venom ({mod.TurnsRemaining}t)",
+                ModifierStat.Venom        => $"🐍 Poison ({mod.TurnsRemaining}t)",
                 ModifierStat.StaminaDrain => $"💀 Curse ({mod.TurnsRemaining}t)",
                 _                         => mod.Stat.ToString(),
             };
@@ -475,6 +479,8 @@
             ModifierStat.DodgeChance      => "💨",
             ModifierStat.StaminaRegen     => "⚡",
             ModifierStat.DamageMultiplier => "💥",
+            ModifierStat.Magic            => "✦",
+            ModifierStat.Resistance       => "🔮",
             _                             => "✦",
         };
         string val = mod.Stat == ModifierStat.DodgeChance

@@ -220,6 +220,15 @@ public class CombatEngine : ICombatEngine
                 continue;
             }
 
+            // Stun check — 50% chance the enemy cannot act this turn
+            if (enemy.ActiveModifiers.Any(m => m.Stat == ModifierStat.Stun) && _rng.NextDouble() < 0.50)
+            {
+                string stunMsg = $"The {enemy.Name} is stunned and cannot act!";
+                session.Log.Add(stunMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.EnemyBounce, EnemyInstanceId = enemy.InstanceId, Log = stunMsg, DelayMs = 250 });
+                continue;
+            }
+
             ExecuteEnemyAction(session, player, enemy, def, events);
         }
 
@@ -602,23 +611,47 @@ public class CombatEngine : ICombatEngine
             DelayMs = 80,
         });
 
-        // Self-heal spell
+        // Self spell (heal and/or buff)
         if (spell.TargetType == TargetType.Self)
         {
-            float healMult = 1f + session.ActiveModifiers.Where(m => m.Stat == ModifierStat.HealBonus).Sum(m => m.Value);
-            int heal = (int)((spell.HealAmount + EffectivePlayerMagic(session) / 2) * healMult);
-            int before = session.PlayerHp;
-            session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + heal);
-            int healed = session.PlayerHp - before;
-            string msg = $"You cast {spell.Name}. You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})";
+            var logParts = new List<string>();
+
+            if (spell.HealAmount > 0)
+            {
+                float healMult = 1f + session.ActiveModifiers.Where(m => m.Stat == ModifierStat.HealBonus).Sum(m => m.Value);
+                int heal = (int)((spell.HealAmount + EffectivePlayerMagic(session) / 2) * healMult);
+                int before = session.PlayerHp;
+                session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + heal);
+                int healed = session.PlayerHp - before;
+                logParts.Add($"You recover {healed} HP. ({session.PlayerHp}/{session.PlayerMaxHp})");
+            }
+
+            foreach (var buff in spell.SelfBuffs)
+            {
+                var existing = session.ActiveModifiers.FirstOrDefault(m => m.Stat == buff.Stat && m.Source == $"Spell:{spell.Id}");
+                if (existing != null)
+                    existing.TurnsRemaining = Math.Max(existing.TurnsRemaining ?? 0, buff.Turns);
+                else
+                    session.ActiveModifiers.Add(new CombatModifier
+                    {
+                        Id             = $"Spell:{spell.Id}:{buff.Stat}",
+                        Stat           = buff.Stat,
+                        Value          = buff.Value,
+                        TurnsRemaining = buff.Turns,
+                        Source         = $"Spell:{spell.Id}",
+                    });
+                logParts.Add(FormatSelfBuff(buff));
+            }
+
+            string msg = $"You cast {spell.Name}. {string.Join(" ", logParts)}".TrimEnd();
             session.Log.Add(msg);
             events.Add(new CombatEvent { Kind = CombatEventKind.PlayerMagicHeal });
             events.Add(new CombatEvent
             {
-                Kind = CombatEventKind.PlayerUpdate,
-                Log = msg,
+                Kind     = CombatEventKind.PlayerUpdate,
+                Log      = msg,
                 PlayerHp = session.PlayerHp,
-                DelayMs = 350,
+                DelayMs  = 350,
             });
             return;
         }
@@ -647,40 +680,54 @@ public class CombatEngine : ICombatEngine
         foreach (var target in targets)
         {
             var enemyDef = _enemyProvider.GetById(target.DefinitionId);
-            double variance = 0.85 + _rng.NextDouble() * 0.30;
-            int rawDamage = (int)Math.Max(1, EffectivePlayerMagic(session) * spell.Power * variance);
+            bool killed = false;
 
-            int damage = spell.SecondaryDamageType.HasValue
-                ? ApplySplitDamage(rawDamage, spell.DamageType!.Value, spell.SecondaryDamageType, spell.SecondaryRatio, enemyDef)
-                : spell.DamageType.HasValue
-                    ? (int)Math.Max(1, rawDamage * GetTypeEffectiveness(spell.DamageType.Value, enemyDef).modifier)
-                    : rawDamage;
-
-            var (_, typeLog) = spell.DamageType.HasValue
-                ? GetTypeEffectiveness(spell.DamageType.Value, enemyDef)
-                : (1f, null);
-
-            target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
-            bool killed = target.CurrentHp == 0;
-            string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
-            string fell = killed ? $" The {target.Name} falls." : string.Empty;
-            string log = $"It strikes the {target.Name} for {damage} damage.{typeNote}{fell}";
-            session.Log.Add(log);
-
-            events.Add(new CombatEvent
+            if (spell.Power > 0)
             {
-                Kind = CombatEventKind.ShakeMagicEnemy,
-                EnemyInstanceId = target.InstanceId,
-                Log = log,
-                EnemyHp = target.CurrentHp,
-                DelayMs = 320,
-            });
+                double variance = 0.85 + _rng.NextDouble() * 0.30;
+                int rawDamage = (int)Math.Max(1, EffectivePlayerMagic(session) * spell.Power * variance);
 
-            if (killed)
-                events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+                int damage = spell.SecondaryDamageType.HasValue
+                    ? ApplySplitDamage(rawDamage, spell.DamageType!.Value, spell.SecondaryDamageType, spell.SecondaryRatio, enemyDef)
+                    : spell.DamageType.HasValue
+                        ? (int)Math.Max(1, rawDamage * GetTypeEffectiveness(spell.DamageType.Value, enemyDef).modifier)
+                        : rawDamage;
 
-            if (!killed && spell.OnHit != null && _rng.NextDouble() < spell.OnHit.Chance)
-                ApplyOrRefreshEnemyStatus(target, spell.OnHit, session, events);
+                var (_, typeLog) = spell.DamageType.HasValue
+                    ? GetTypeEffectiveness(spell.DamageType.Value, enemyDef)
+                    : (1f, null);
+
+                target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
+                killed = target.CurrentHp == 0;
+                string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
+                string fell = killed ? $" The {target.Name} falls." : string.Empty;
+                string log = $"It strikes the {target.Name} for {damage} damage.{typeNote}{fell}";
+                session.Log.Add(log);
+
+                events.Add(new CombatEvent
+                {
+                    Kind            = CombatEventKind.ShakeMagicEnemy,
+                    EnemyInstanceId = target.InstanceId,
+                    Log             = log,
+                    EnemyHp         = target.CurrentHp,
+                    DelayMs         = 320,
+                });
+
+                if (killed)
+                    events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+            }
+            else
+            {
+                // Pure debuff — no damage
+                string log = $"Your curse settles over the {target.Name}.";
+                session.Log.Add(log);
+                events.Add(new CombatEvent { Kind = CombatEventKind.EnemyBounce, EnemyInstanceId = target.InstanceId, Log = log, DelayMs = 280 });
+            }
+
+            if (!killed)
+                foreach (var hit in spell.OnHits)
+                    if (_rng.NextDouble() < hit.Chance)
+                        ApplyOrRefreshEnemyStatus(target, hit, session, events);
         }
     }
 
@@ -1064,16 +1111,29 @@ public class CombatEngine : ICombatEngine
             Source         = $"Status:{effect.StatusType}",
         });
 
-        string label = effect.StatusType switch
-        {
-            ModifierStat.Burn         => "Burn",
-            ModifierStat.Venom        => "Venom",
-            _                         => effect.StatusType.ToString(),
-        };
-        string msg = $"The {target.Name} is afflicted with {label}!";
+        string msg = effect.StatusType == ModifierStat.Stun
+            ? $"The {target.Name} is stunned!"
+            : $"The {target.Name} is afflicted with {effect.StatusType switch
+            {
+                ModifierStat.Burn    => "Burn",
+                ModifierStat.Venom   => "Poison",
+                ModifierStat.Disease => "Disease",
+                _                    => effect.StatusType.ToString(),
+            }}!";
         session.Log.Add(msg);
-        events.Add(new CombatEvent { Kind = CombatEventKind.StatusApplied, Log = msg, DelayMs = 250 });
+        events.Add(new CombatEvent { Kind = CombatEventKind.StatusApplied, EnemyInstanceId = target.InstanceId, Log = msg, DelayMs = 250 });
     }
+
+    private static string FormatSelfBuff(SelfBuff buff) => buff.Stat switch
+    {
+        ModifierStat.Defense     => $"+{(int)buff.Value} Defense for {buff.Turns} turns.",
+        ModifierStat.Resistance  => $"+{(int)buff.Value} Resistance for {buff.Turns} turns.",
+        ModifierStat.Attack      => $"+{(int)buff.Value} Attack for {buff.Turns} turns.",
+        ModifierStat.Magic       => $"+{(int)buff.Value} Magic for {buff.Turns} turns.",
+        ModifierStat.DodgeChance => $"+{buff.Value * 100:0}% Dodge for {buff.Turns} turns.",
+        ModifierStat.StaminaRegen => $"+{(int)buff.Value} Stamina Regen for {buff.Turns} turns.",
+        _                        => $"{buff.Stat} boosted for {buff.Turns} turns.",
+    };
 
     // ── Equipment modifiers ──────────────────────────────────────────────────
 
@@ -1170,11 +1230,19 @@ public class CombatEngine : ICombatEngine
             for (int i = enemy.ActiveModifiers.Count - 1; i >= 0; i--)
             {
                 var mod = enemy.ActiveModifiers[i];
-                if (mod.Stat is ModifierStat.Burn or ModifierStat.Venom)
+                if (mod.Stat is ModifierStat.Burn or ModifierStat.Venom or ModifierStat.Disease)
                 {
-                    int dmg = (int)Math.Max(1, mod.Value);
+                    int dmg = mod.Stat == ModifierStat.Venom
+                        ? (int)Math.Max(1, enemy.MaxHp * mod.Value * 1.5f)   // Venom scales harder
+                        : (int)Math.Max(1, enemy.MaxHp * mod.Value);          // Burn / Disease HP-scaled
                     enemy.CurrentHp = Math.Max(0, enemy.CurrentHp - dmg);
-                    string msg = $"[{mod.Stat}] burns the {enemy.Name} for {dmg} damage. ({enemy.CurrentHp} HP)";
+                    string effectName = mod.Stat switch
+                    {
+                        ModifierStat.Venom   => "Poison",
+                        ModifierStat.Disease => "Disease",
+                        _                    => "Burn",
+                    };
+                    string msg = $"[{effectName}] deals {dmg} damage to the {enemy.Name}. ({enemy.CurrentHp} HP)";
                     session.Log.Add(msg);
                     events.Add(new CombatEvent
                     {

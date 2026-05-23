@@ -16,4 +16,5 @@ public enum ModifierStat
     ManaRegen,
     HpRegen,
     HealBonus,
+    Stun,
 }
