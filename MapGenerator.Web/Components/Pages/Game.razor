@@ -13,6 +13,7 @@
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
+@using MapGenerator.Web.Services
 @implements IAsyncDisposable
 
 <PageTitle>@(Session.Player?.Username ?? "World Map")</PageTitle>
@@ -60,7 +61,9 @@ else
                         Companion="Session.Companion"
                         CompanionDefinition="Session.CompanionDefinition"
                         OnOpenCompanion="() => _showCompanionDialog = true"
-                        OnKissPlayer="HandleKissPlayerAsync" />
+                        HasCompanion="Session.Companion != null"
+                        OnKissPlayer="HandleKissPlayerAsync"
+                        OnBattlePlayer="HandleBattlePlayerAsync" />
             <InventoryModal Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
@@ -218,6 +221,13 @@ OnDance="HandleDanceAsync"
                          OnRelease="HandleReleaseAsync" />
     }
 
+    <CompanionBattlePanel Challenge="_pendingBattleChallenge"
+                          Result="_battleResult"
+                          IsVictory="_battleVictory"
+                          OnAccept="HandleBattleAcceptAsync"
+                          OnDecline="HandleBattleDeclineAsync"
+                          OnClose="() => { _battleResult = null; _battleVictory = null; }" />
+
     @if (_moveError != null)
     {
         <div class="toast-error">@_moveError</div>
@@ -273,6 +283,11 @@ OnDance="HandleDanceAsync"
         "You were dead for a period that theologians would describe as 'significant' and biologists would describe as 'impossible.' Nevertheless, here you are. Some forces in the universe are simply too stubborn to stay gone.",
     ];
 
+    // Companion battle state
+    private CompanionBattleChallenge? _pendingBattleChallenge;
+    private CompanionBattleResult? _battleResult;
+    private bool? _battleVictory; // null=draw, true=win, false=loss
+
     // Dungeon state
     private DungeonFloor? _dungeonFloor;
     private HashSet<(int Q, int R)> _revealedDungeonRooms = [];
@@ -315,15 +330,18 @@ OnDance="HandleDanceAsync"
             _revealedDungeonRooms = [(Session.Player.DungeonQ, Session.Player.DungeonR)];
         }
 
-        Broadcast.PlayerMoved        += OnPlayerMoved;
-        Broadcast.MessageReceived    += OnMessageReceived;
-        Broadcast.MapRegenerated     += OnMapRegenerated;
-        Broadcast.EggLaid            += OnEggLaid;
-        Broadcast.PlayerDanced       += OnPlayerDanced;
-        Broadcast.PlayerKissed       += OnPlayerKissed;
-        Broadcast.PlayerColorChanged += OnPlayerColorChanged;
-        Broadcast.RoadsChanged       += OnRoadsChanged;
-        Broadcast.EggExploded        += OnEggExploded;
+        Broadcast.PlayerMoved               += OnPlayerMoved;
+        Broadcast.MessageReceived           += OnMessageReceived;
+        Broadcast.MapRegenerated            += OnMapRegenerated;
+        Broadcast.EggLaid                   += OnEggLaid;
+        Broadcast.PlayerDanced              += OnPlayerDanced;
+        Broadcast.PlayerKissed              += OnPlayerKissed;
+        Broadcast.PlayerColorChanged        += OnPlayerColorChanged;
+        Broadcast.RoadsChanged              += OnRoadsChanged;
+        Broadcast.EggExploded               += OnEggExploded;
+        Broadcast.CompanionChallengeReceived += OnCompanionChallengeReceived;
+        Broadcast.CompanionChallengeDeclined += OnCompanionChallengeDeclined;
+        Broadcast.CompanionBattleCompleted   += OnCompanionBattleCompleted;
 
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
         StateHasChanged();
@@ -1075,6 +1093,82 @@ OnDance="HandleDanceAsync"
         StateHasChanged();
     }
 
+    // ── Companion Battle ──────────────────────────────────────────────────────
+
+    private void HandleBattlePlayerAsync((string Id, string Username) target)
+    {
+        var (ok, error) = Session.ChallengeCompanionBattle(target.Id, target.Username);
+        if (!ok)
+        {
+            ShowToast(error ?? "Cannot challenge that player.");
+            return;
+        }
+        _localMessages.Add(new ChatMessage
+        {
+            SenderName = "World", Content = $"You challenge {target.Username}'s companion to a battle!",
+            IsSystemMessage = true, SentAt = DateTime.UtcNow
+        });
+        StateHasChanged();
+    }
+
+    private async Task HandleBattleAcceptAsync()
+    {
+        if (_pendingBattleChallenge == null) return;
+        var challengerId = _pendingBattleChallenge.ChallengerId;
+        _pendingBattleChallenge = null;
+
+        var (ok, error) = Session.AcceptCompanionBattle(challengerId);
+        if (!ok)
+        {
+            ShowToast(error ?? "Could not start battle.");
+            StateHasChanged();
+        }
+        // Result will arrive via OnCompanionBattleCompleted
+    }
+
+    private void HandleBattleDeclineAsync()
+    {
+        _pendingBattleChallenge = null;
+        Session.DeclineCompanionBattle();
+        StateHasChanged();
+    }
+
+    private void OnCompanionChallengeReceived(string targetId, CompanionBattleChallenge challenge)
+    {
+        InvokeAsync(() =>
+        {
+            if (Session.Player?.Id != targetId) return;
+            _pendingBattleChallenge = challenge;
+            StateHasChanged();
+        });
+    }
+
+    private void OnCompanionChallengeDeclined(string challengerId)
+    {
+        InvokeAsync(() =>
+        {
+            if (Session.Player?.Id != challengerId) return;
+            _localMessages.Add(new ChatMessage
+            {
+                SenderName = "World", Content = "Your battle challenge was declined.",
+                IsSystemMessage = true, SentAt = DateTime.UtcNow
+            });
+            StateHasChanged();
+        });
+    }
+
+    private void OnCompanionBattleCompleted(string playerId, CompanionBattleResult result)
+    {
+        InvokeAsync(() =>
+        {
+            if (Session.Player?.Id != playerId) return;
+            _pendingBattleChallenge = null;
+            _battleResult = result;
+            _battleVictory = result.WinnerId == null ? null : result.WinnerId == playerId;
+            StateHasChanged();
+        });
+    }
+
     private void OnRoadsChanged() => InvokeAsync(StateHasChanged);
 
     private void OnEggExploded(string playerId, int q, int r)
@@ -1126,15 +1220,18 @@ OnDance="HandleDanceAsync"
 
     public async ValueTask DisposeAsync()
     {
-        Broadcast.PlayerMoved        -= OnPlayerMoved;
-        Broadcast.MessageReceived    -= OnMessageReceived;
-        Broadcast.MapRegenerated     -= OnMapRegenerated;
-        Broadcast.EggLaid            -= OnEggLaid;
-        Broadcast.PlayerDanced       -= OnPlayerDanced;
-        Broadcast.PlayerKissed       -= OnPlayerKissed;
-        Broadcast.PlayerColorChanged -= OnPlayerColorChanged;
-        Broadcast.RoadsChanged       -= OnRoadsChanged;
-        Broadcast.EggExploded        -= OnEggExploded;
+        Broadcast.PlayerMoved               -= OnPlayerMoved;
+        Broadcast.MessageReceived           -= OnMessageReceived;
+        Broadcast.MapRegenerated            -= OnMapRegenerated;
+        Broadcast.EggLaid                   -= OnEggLaid;
+        Broadcast.PlayerDanced              -= OnPlayerDanced;
+        Broadcast.PlayerKissed              -= OnPlayerKissed;
+        Broadcast.PlayerColorChanged        -= OnPlayerColorChanged;
+        Broadcast.RoadsChanged              -= OnRoadsChanged;
+        Broadcast.EggExploded               -= OnEggExploded;
+        Broadcast.CompanionChallengeReceived -= OnCompanionChallengeReceived;
+        Broadcast.CompanionChallengeDeclined -= OnCompanionChallengeDeclined;
+        Broadcast.CompanionBattleCompleted   -= OnCompanionBattleCompleted;
         _toastTimer?.Dispose();
         await Session.DisposeAsync();
     }

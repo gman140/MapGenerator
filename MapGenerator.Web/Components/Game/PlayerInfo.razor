@@ -104,7 +104,7 @@
     {
         <div class="players-here">
             <span class="section-label">Here:</span>
-            @foreach (var (id, username, eggsDestroyed) in OnlinePlayers)
+            @foreach (var (id, username, eggsDestroyed, otherHasCompanion) in OnlinePlayers)
             {
                 <span class="player-chip @(id == Player.Id ? "self" : "")">
                     @username
@@ -121,6 +121,13 @@
                                 @onclick="async () => await OnKissPlayer.InvokeAsync((capturedId, capturedName))">
                             @(_kissRemainingMs > 0 ? $"💋 {(_kissRemainingMs / 1000.0):F0}s" : "💋")
                         </button>
+                        @if (HasCompanion && otherHasCompanion)
+                        {
+                            <button class="battle-btn" title="Challenge @username's companion"
+                                    @onclick="async () => await OnBattlePlayer.InvokeAsync((capturedId, capturedName))">
+                                ⚔
+                            </button>
+                        }
                     }
                 </span>
             }
@@ -139,12 +146,14 @@
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public long CooldownUntil { get; set; }
     [Parameter] public DateTime? LastKissedAt { get; set; }
-    [Parameter] public List<(string Id, string Username, int EggsDestroyed)> OnlinePlayers { get; set; } = [];
+    [Parameter] public List<(string Id, string Username, int EggsDestroyed, bool HasCompanion)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback OnEditSprite { get; set; }
     [Parameter] public PlayerCompanion? Companion { get; set; }
     [Parameter] public CompanionDefinition? CompanionDefinition { get; set; }
+    [Parameter] public bool HasCompanion { get; set; }
     [Parameter] public EventCallback OnOpenCompanion { get; set; }
     [Parameter] public EventCallback<(string Id, string Username)> OnKissPlayer { get; set; }
+    [Parameter] public EventCallback<(string Id, string Username)> OnBattlePlayer { get; set; }
 
     private long _cooldownRemaining;
     private double _fillPct;

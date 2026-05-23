@@ -1,0 +1,357 @@
+@using MapGenerator.Web.Services
+@inject IJSRuntime JS
+@implements IDisposable
+
+@if (Challenge != null && Result == null)
+{
+    <div class="battle-challenge-notify">
+        <div class="battle-challenge-portrait">
+            @if (Challenge.ChallengerCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
+            {
+                <SpriteView Pixels="@Challenge.ChallengerCompanionSprite" Size="48" />
+            }
+            else
+            {
+                <span class="battle-challenge-emoji">🐾</span>
+            }
+        </div>
+        <div class="battle-challenge-body">
+            <div class="battle-challenge-title">⚔ Battle Challenge!</div>
+            <div class="battle-challenge-text">
+                <strong>@Challenge.ChallengerName</strong>'s <strong>@Challenge.ChallengerCompanionName</strong> wants to fight!
+            </div>
+            @if (_remaining > 0)
+            {
+                <div class="battle-challenge-timer">Expires in @_remaining.ToString("F0")s</div>
+            }
+        </div>
+        <div class="battle-challenge-actions">
+            <button class="battle-accept-btn" @onclick="OnAccept">Accept</button>
+            <button class="battle-decline-btn" @onclick="OnDecline">Decline</button>
+        </div>
+    </div>
+}
+
+@if (Result != null)
+{
+    <div class="modal-overlay" @onclick="@(_battleAnimating ? EventCallback.Empty : OnClose)">
+        <div class="battle-result-modal" @onclick:stopPropagation>
+
+            <div class="battle-result-header">
+                @if (_battleAnimating)
+                {
+                    <span class="battle-outcome animating">⚔ Battle in progress…</span>
+                }
+                else if (IsVictory == null)
+                {
+                    <span class="battle-outcome draw">⚖ Draw!</span>
+                }
+                else if (IsVictory == true)
+                {
+                    <span class="battle-outcome win">🏆 Victory!</span>
+                }
+                else
+                {
+                    <span class="battle-outcome loss">💀 Defeat</span>
+                }
+            </div>
+
+            <div class="battle-result-matchup">
+                <div class="battle-result-side @(!_battleAnimating && Result.WinnerId == Result.ChallengerId ? "winner" : "")">
+                    <div class="battle-sprite-anim @_challengerAnim">
+                        @if (Result.ChallengerCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
+                        {
+                            <SpriteView Pixels="@Result.ChallengerCompanionSprite" Size="64" />
+                        }
+                        else
+                        {
+                            <span class="battle-result-emoji">🐾</span>
+                        }
+                    </div>
+                    <div class="battle-hp-bar">
+                        <div class="battle-hp-fill @GetHpClass(_displayChallengerHp, _displayChallengerMaxHp)"
+                             style="width: @HpPct(_displayChallengerHp, _displayChallengerMaxHp)%"></div>
+                    </div>
+                    <div class="battle-hp-text">@_displayChallengerHp / @_displayChallengerMaxHp</div>
+                    <div class="battle-result-companion">@Result.ChallengerCompanionName</div>
+                    <div class="battle-result-player">@Result.ChallengerName</div>
+                </div>
+
+                <div class="battle-result-vs">VS</div>
+
+                <div class="battle-result-side @(!_battleAnimating && Result.WinnerId == Result.AccepterId ? "winner" : "")">
+                    <div class="battle-sprite-anim @_accepterAnim">
+                        @if (Result.AccepterCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
+                        {
+                            <SpriteView Pixels="@Result.AccepterCompanionSprite" Size="64" />
+                        }
+                        else
+                        {
+                            <span class="battle-result-emoji">🐾</span>
+                        }
+                    </div>
+                    <div class="battle-hp-bar">
+                        <div class="battle-hp-fill @GetHpClass(_displayAccepterHp, _displayAccepterMaxHp)"
+                             style="width: @HpPct(_displayAccepterHp, _displayAccepterMaxHp)%"></div>
+                    </div>
+                    <div class="battle-hp-text">@_displayAccepterHp / @_displayAccepterMaxHp</div>
+                    <div class="battle-result-companion">@Result.AccepterCompanionName</div>
+                    <div class="battle-result-player">@Result.AccepterName</div>
+                </div>
+            </div>
+
+            <div class="battle-result-log" id="battle-log">
+                @foreach (var ev in Result.Events.Take(_shownCount))
+                {
+                    @if (!string.IsNullOrEmpty(ev.Text))
+                    {
+                        <div class="battle-log-line @GetLogLineClass(ev.Text)">@ev.Text</div>
+                    }
+                }
+            </div>
+
+            <div class="battle-result-footer">
+                @if (_battleAnimating)
+                {
+                    <button class="battle-skip-btn" @onclick="SkipAnimation">Skip</button>
+                }
+                else
+                {
+                    <button class="battle-close-btn" @onclick="OnClose">Close</button>
+                }
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public CompanionBattleChallenge? Challenge { get; set; }
+    [Parameter] public CompanionBattleResult? Result { get; set; }
+    [Parameter] public bool? IsVictory { get; set; }
+    [Parameter] public EventCallback OnAccept { get; set; }
+    [Parameter] public EventCallback OnDecline { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    // Challenge countdown
+    private double _remaining;
+    private System.Threading.Timer? _timer;
+
+    // Battle animation
+    private int _shownCount;
+    private bool _battleAnimating;
+    private string _challengerAnim = "";
+    private string _accepterAnim   = "";
+    private int _displayChallengerHp, _displayChallengerMaxHp;
+    private int _displayAccepterHp,   _displayAccepterMaxHp;
+    private CompanionBattleResult? _lastResult;
+    private CancellationTokenSource? _animCts;
+
+    protected override void OnParametersSet()
+    {
+        if (Challenge != null && Result == null)
+        {
+            _timer ??= new System.Threading.Timer(Tick, null, 100, 250);
+            UpdateRemaining();
+        }
+        else
+        {
+            _timer?.Dispose();
+            _timer = null;
+        }
+
+        if (Result != null && !ReferenceEquals(Result, _lastResult))
+        {
+            _lastResult = Result;
+            _shownCount = 0;
+            _challengerAnim = "";
+            _accepterAnim   = "";
+
+            if (Result.Events.Count > 0)
+            {
+                _displayChallengerMaxHp = Result.Events[0].ChallengerMaxHp;
+                _displayAccepterMaxHp   = Result.Events[0].AccepterMaxHp;
+                _displayChallengerHp    = Result.Events[0].ChallengerHp;
+                _displayAccepterHp      = Result.Events[0].AccepterHp;
+            }
+
+            _battleAnimating = Result.Events.Count > 0;
+            _animCts?.Cancel();
+            _animCts = new CancellationTokenSource();
+            _ = RunAnimation(_animCts.Token);
+        }
+        else if (Result == null)
+        {
+            _lastResult = null;
+            _animCts?.Cancel();
+            _animCts = null;
+            _battleAnimating = false;
+            _shownCount = 0;
+        }
+    }
+
+    private async Task RunAnimation(CancellationToken ct)
+    {
+        if (Result == null) return;
+        try
+        {
+            for (int i = 0; i < Result.Events.Count; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                var ev = Result.Events[i];
+
+                await InvokeAsync(async () =>
+                {
+                    if (ct.IsCancellationRequested) return;
+                    _shownCount = i + 1;
+                    _displayChallengerHp = ev.ChallengerHp;
+                    _displayAccepterHp   = ev.AccepterHp;
+                    ApplyAnims(ev);
+                    StateHasChanged();
+                    try { await JS.InvokeVoidAsync("gameJs.scrollBattleLog", ct); } catch { }
+                });
+
+                int animMs = GetAnimMs(ev.Kind);
+                if (animMs > 0) await Task.Delay(animMs, ct);
+                ct.ThrowIfCancellationRequested();
+
+                await InvokeAsync(() =>
+                {
+                    if (ct.IsCancellationRequested) return;
+                    _challengerAnim = "";
+                    _accepterAnim   = "";
+                    StateHasChanged();
+                });
+
+                await Task.Delay(GetPauseMs(ev.Kind), ct);
+            }
+
+            await InvokeAsync(() =>
+            {
+                _battleAnimating = false;
+                _challengerAnim  = "";
+                _accepterAnim    = "";
+                StateHasChanged();
+            });
+        }
+        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException)    { }
+        catch (Exception)                  { }
+    }
+
+    private void ApplyAnims(BattleEvent ev)
+    {
+        _challengerAnim = "";
+        _accepterAnim   = "";
+        if (Result == null) return;
+
+        bool actorIsChallenger  = ev.ActorId  == Result.ChallengerId;
+        bool targetIsChallenger = ev.TargetId == Result.ChallengerId;
+
+        switch (ev.Kind)
+        {
+            case BattleEventKind.Attack:
+                if (actorIsChallenger) { _challengerAnim = "anim-lunge-right"; _accepterAnim = "anim-hit"; }
+                else                   { _accepterAnim   = "anim-lunge-left";  _challengerAnim = "anim-hit"; }
+                break;
+            case BattleEventKind.Dodge:
+                if (actorIsChallenger) { _challengerAnim = "anim-lunge-right"; _accepterAnim = "anim-dodge"; }
+                else                   { _accepterAnim   = "anim-lunge-left";  _challengerAnim = "anim-dodge"; }
+                break;
+            case BattleEventKind.Heal:
+                if (actorIsChallenger) _challengerAnim = "anim-heal"; else _accepterAnim = "anim-heal";
+                break;
+            case BattleEventKind.Buff:
+                if (actorIsChallenger) _challengerAnim = "anim-buff"; else _accepterAnim = "anim-buff";
+                break;
+            case BattleEventKind.Debuff:
+                if (targetIsChallenger) _challengerAnim = "anim-debuff"; else _accepterAnim = "anim-debuff";
+                break;
+            case BattleEventKind.Stun:
+                if (actorIsChallenger) _challengerAnim = "anim-stun"; else _accepterAnim = "anim-stun";
+                break;
+            case BattleEventKind.Rally:
+                if (actorIsChallenger) _challengerAnim = "anim-rally"; else _accepterAnim = "anim-rally";
+                break;
+            case BattleEventKind.Outcome when ev.ActorId != null:
+                if (actorIsChallenger) _challengerAnim = "anim-win"; else _accepterAnim = "anim-win";
+                break;
+        }
+    }
+
+    private void SkipAnimation()
+    {
+        _animCts?.Cancel();
+        _battleAnimating = false;
+        _challengerAnim  = "";
+        _accepterAnim    = "";
+        if (Result != null && Result.Events.Count > 0)
+        {
+            _shownCount          = Result.Events.Count;
+            var last             = Result.Events[^1];
+            _displayChallengerHp = last.ChallengerHp;
+            _displayAccepterHp   = last.AccepterHp;
+        }
+    }
+
+    private static int GetAnimMs(BattleEventKind kind) => kind switch
+    {
+        BattleEventKind.Attack  => 480,
+        BattleEventKind.Dodge   => 440,
+        BattleEventKind.Heal    => 440,
+        BattleEventKind.Buff    => 440,
+        BattleEventKind.Debuff  => 440,
+        BattleEventKind.Stun    => 440,
+        BattleEventKind.Rally   => 440,
+        BattleEventKind.Outcome => 650,
+        _                       => 0,
+    };
+
+    private static int GetPauseMs(BattleEventKind kind) => kind switch
+    {
+        BattleEventKind.Intro      => 400,
+        BattleEventKind.RoundStart => 280,
+        BattleEventKind.TurnBreak  => 500,
+        BattleEventKind.Outcome    => 1000,
+        _                          => 220,
+    };
+
+    private static string HpPct(int hp, int maxHp) =>
+        maxHp <= 0 ? "0" : Math.Clamp((float)hp / maxHp * 100f, 0f, 100f).ToString("F1");
+
+    private static string GetHpClass(int hp, int maxHp)
+    {
+        if (maxHp <= 0) return "hp-low";
+        float pct = (float)hp / maxHp;
+        return pct switch { > 0.6f => "hp-high", > 0.25f => "hp-mid", _ => "hp-low" };
+    }
+
+    private void UpdateRemaining() =>
+        _remaining = Math.Max(0, (Challenge!.ExpiresAt - DateTimeOffset.UtcNow).TotalSeconds);
+
+    private void Tick(object? _)
+    {
+        UpdateRemaining();
+        if (_remaining <= 0) { _timer?.Dispose(); _timer = null; }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static string GetLogLineClass(string line)
+    {
+        if (line.StartsWith("⚔") || line.StartsWith("──")) return "log-header";
+        if (line.Contains("wins") || line.Contains("🏆"))  return "log-win";
+        if (line.Contains("Draw") || line.Contains("⚖"))  return "log-draw";
+        if (line.Contains("[CRIT]"))                        return "log-crit";
+        if (line.Contains("[Super effective!]"))            return "log-super";
+        if (line.Contains("rallies"))                       return "log-rally";
+        if (line.Contains("stunned") || line.Contains("dodges")) return "log-status";
+        return "log-action";
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+        _animCts?.Cancel();
+        _animCts?.Dispose();
+    }
+}

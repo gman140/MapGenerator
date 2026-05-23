@@ -104,5 +104,10 @@ window.gameJs = (() => {
         _playerR = playerR;
     }
 
-    return { getBrowserId, clearBrowserId, drawMinimap, updateMinimapPlayer, openMinimapPopup, initMinimap };
+    function scrollBattleLog() {
+        const el = document.getElementById('battle-log');
+        if (el) el.scrollTop = el.scrollHeight;
+    }
+
+    return { getBrowserId, clearBrowserId, drawMinimap, updateMinimapPlayer, openMinimapPopup, initMinimap, scrollBattleLog };
 })();

@@ -40,6 +40,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly ICompanionRepository _companionRepo;
     private readonly ICompanionDefinitionProvider _companionDefProvider;
     private readonly ICompanionMoveProvider _companionMoveProvider;
+    private readonly CompanionBattleService _battleSvc;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -77,7 +78,8 @@ public class GameSessionService : IAsyncDisposable
         ITileInventoryRepository tileInventoryRepo,
         ICompanionRepository companionRepo,
         ICompanionDefinitionProvider companionDefProvider,
-        ICompanionMoveProvider companionMoveProvider)
+        ICompanionMoveProvider companionMoveProvider,
+        CompanionBattleService battleSvc)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -109,6 +111,7 @@ public class GameSessionService : IAsyncDisposable
         _companionRepo        = companionRepo;
         _companionDefProvider = companionDefProvider;
         _companionMoveProvider = companionMoveProvider;
+        _battleSvc            = battleSvc;
     }
 
     public async Task InitAsync(string browserId)
@@ -121,7 +124,7 @@ public class GameSessionService : IAsyncDisposable
                 Player.SpritePixels = GenerateDefaultSprite(Player.Color);
                 await _playerRepo.UpdateAsync(Player);
             }
-            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
+            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed, Player.CompanionId != null);
 
             if (Player.CompanionId != null)
                 await LoadCompanionAsync(Player.CompanionId);
@@ -492,6 +495,7 @@ public class GameSessionService : IAsyncDisposable
 
         Companion           = companion;
         CompanionDefinition = def;
+        _broadcast.UpdatePlayerCompanionStatus(Player.Id, true);
 
         return (true, $"The egg stirs and cracks open. A {def.Name} emerges, blinks at you once, and decides to follow.");
     }
@@ -524,6 +528,56 @@ public class GameSessionService : IAsyncDisposable
         return null;
     }
 
+    public (bool ok, string? error) ChallengeCompanionBattle(string targetId, string targetName)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (Companion == null || CompanionDefinition == null) return (false, "You don't have a companion.");
+        if (targetId == Player.Id) return (false, "You can't challenge yourself.");
+
+        var challenge = new CompanionBattleChallenge(
+            Player.Id, Player.Username, targetId,
+            Companion.Nickname, Companion.SpritePixels,
+            CompanionDefinition.BaseAttack, CompanionDefinition.ElementTypes,
+            [.. Companion.MoveIds],
+            DateTimeOffset.UtcNow.AddSeconds(30));
+
+        var (ok, error) = _battleSvc.TryCreateChallenge(challenge);
+        if (!ok) return (false, error);
+
+        _broadcast.NotifyCompanionChallengeReceived(targetId, challenge);
+        return (true, null);
+    }
+
+    public (bool ok, string? error) AcceptCompanionBattle(string challengerId)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (Companion == null || CompanionDefinition == null) return (false, "You don't have a companion.");
+
+        var challenge = _battleSvc.TakeChallenge(Player.Id);
+        if (challenge == null) return (false, "Challenge has expired.");
+        if (challenge.ChallengerId != challengerId) return (false, "Challenge mismatch.");
+
+        var result = _battleSvc.SimulateBattle(
+            challenge,
+            Player.Id, Player.Username, Companion.Nickname, Companion.SpritePixels,
+            CompanionDefinition.BaseAttack, CompanionDefinition.ElementTypes,
+            [.. Companion.MoveIds]);
+
+        // Notify both participants
+        _broadcast.NotifyCompanionBattleCompleted(challenge.ChallengerId, result);
+        _broadcast.NotifyCompanionBattleCompleted(Player.Id, result);
+
+        return (true, null);
+    }
+
+    public void DeclineCompanionBattle()
+    {
+        if (Player == null) return;
+        var challenge = _battleSvc.TakeChallenge(Player.Id);
+        if (challenge != null)
+            _broadcast.NotifyCompanionChallengeDeclined(challenge.ChallengerId);
+    }
+
     public async Task<(bool success, string message)> ReleaseCompanionAsync()
     {
         if (Player == null) return (false, "Not logged in.");
@@ -537,6 +591,7 @@ public class GameSessionService : IAsyncDisposable
 
         Companion           = null;
         CompanionDefinition = null;
+        _broadcast.UpdatePlayerCompanionStatus(Player.Id, false);
 
         return (true, $"You bid farewell. Your {name} wanders off into the world.");
     }
