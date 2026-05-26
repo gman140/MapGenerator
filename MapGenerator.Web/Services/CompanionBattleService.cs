@@ -427,11 +427,11 @@ public class CompanionBattleService
 
             var tDef = TemperamentRegistry.Get(temperament);
 
-            MaxHp = 80 + Math.Max(0, baseVit + allocVit + tDef.VitBonus) * 10;
+            MaxHp = 10 + Math.Max(0, baseVit + allocVit + tDef.VitBonus) * 5;
             Hp    = MaxHp;
 
             EffSpd   = baseSpd + allocSpd + tDef.SpdBonus;
-            _baseAtk = Math.Max(0f, baseAttack * 3f + allocAtk + tDef.AtkBonus);
+            _baseAtk = Math.Max(0f, baseAttack + allocAtk + tDef.AtkBonus);
             _baseDef = Math.Max(0f, baseDef + allocDef + tDef.DefBonus);
             _effFoc  = Math.Clamp(0.05f + (baseFoc + allocFoc + tDef.FocBonus) * 0.025f, 0.05f, 0.45f);
             _effRes  = Math.Clamp((baseRes + allocRes + tDef.ResBonus) * 0.06f, 0f, 0.55f);

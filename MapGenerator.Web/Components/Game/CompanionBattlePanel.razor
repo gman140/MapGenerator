@@ -83,7 +83,7 @@
                     <div class="battle-sprite-anim @_accepterAnim">
                         @if (Result.AccepterCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
                         {
-                            <SpriteView Pixels="@Result.AccepterCompanionSprite" Size="@CompanionDisplaySize(Result.AccepterCompanionSprite, 64)" />
+                            <SpriteView Pixels="@Result.AccepterCompanionSprite" Size="@CompanionDisplaySize(Result.AccepterCompanionSprite, 64)" Class="battle-result-defending-sprite" />
                         }
                         else
                         {

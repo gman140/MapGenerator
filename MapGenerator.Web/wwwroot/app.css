@@ -1148,6 +1148,10 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
     display: flex; align-items: center; justify-content: center;
 }
 
+.battle-result-defending-sprite {
+    transform: scaleX(-1);
+}
+
 /* Per-action battle animations (applied to .battle-sprite-anim only) */
 .anim-lunge-right { animation: lunge-right 0.48s ease-in-out; }
 @keyframes lunge-right {
@@ -1220,7 +1224,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .battle-result-log {
     flex: 1; overflow-y: auto; background: rgba(0,0,0,.3); border-radius: 6px;
     padding: 10px 12px; font-family: monospace; font-size: .74rem; line-height: 1.55;
-    max-height: 220px; display: flex; flex-direction: column; gap: 1px;
+    min-height: 220px; max-height: 220px; display: flex; flex-direction: column; gap: 1px;
 }
 .battle-log-line { color: var(--text-dim); }
 .battle-log-line:last-child { animation: log-line-in 0.15s ease-out; }
