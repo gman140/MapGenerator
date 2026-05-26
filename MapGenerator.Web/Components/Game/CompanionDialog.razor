@@ -268,20 +268,19 @@
         else
         {
             int gridCols = TierRegistry.Get(Companion.Tier).GridCols;
-            int cellPx   = Companion.Tier == CompanionTier.T3 ? 22 : Companion.Tier == CompanionTier.T2 ? 24 : 28;
-
+            int cellPx   = Companion.Tier == CompanionTier.T1 ? 24 : Companion.Tier == CompanionTier.T2 ? 20 : 16;
+            string gridSizeClass = Companion.Tier == CompanionTier.T1 ? "" : Companion.Tier == CompanionTier.T2 ? "medium-grid" : "large-grid";
             <div class="sprite-editor-body"
                  @onmouseleave="() => _isPainting = false">
                 <div class="sprite-grid-wrap">
-                    <div class="sprite-grid"
-                         style="grid-template-columns: repeat(@gridCols, @(cellPx)px);"
+                    <div class="sprite-grid @(gridSizeClass)"
                          @onmouseup="() => _isPainting = false">
                         @for (int i = 0; i < _pixels.Length; i++)
                         {
                             int idx = i;
                             string fill = string.IsNullOrEmpty(_pixels[idx]) ? "transparent" : _pixels[idx];
                             <div class="sprite-cell @(string.IsNullOrEmpty(_pixels[idx]) ? "transparent" : "")"
-                                 style="background: @fill; width: @(cellPx)px; height: @(cellPx)px;"
+                                 style="background: @fill;"
                                  @onmousedown="(e) => HandleMouseDown(idx, e)"
                                  @onmouseenter="() => { if (_isPainting) ApplyPaint(idx); }"
                                  @oncontextmenu:preventDefault>

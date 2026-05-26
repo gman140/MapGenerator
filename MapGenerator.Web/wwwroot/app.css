@@ -980,7 +980,11 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .sprite-editor-body { display: flex; gap: 1rem; align-items: flex-start; }
 .sprite-grid-wrap { flex: 0 0 auto; }
 .sprite-grid { display: grid; grid-template-columns: repeat(16, 24px); grid-template-rows: repeat(16, 24px); border: 1px solid var(--border); cursor: crosshair; user-select: none; }
+.sprite-grid.medium-grid { grid-template-columns: repeat(20, 20px); grid-template-rows: repeat(20, 20px); }
+.sprite-grid.large-grid { grid-template-columns: repeat(24, 16px); grid-template-rows: repeat(24, 16px); }
 .sprite-cell { width: 24px; height: 24px; box-sizing: border-box; border: 1px solid rgba(255,255,255,.06); }
+.sprite-grid.medium-grid .sprite-cell { width: 20px; height: 20px; }
+.sprite-grid.large-grid .sprite-cell { width: 16px; height: 16px; }
 .sprite-cell.transparent { background-image: repeating-conic-gradient(#333 0% 25%, #555 0% 50%); background-size: 8px 8px; }
 .sprite-cell:hover { outline: 1px solid rgba(255,255,255,.4); outline-offset: -1px; }
 .sprite-preview-wrap { display: flex; flex-direction: column; gap: .35rem; align-items: center; }
