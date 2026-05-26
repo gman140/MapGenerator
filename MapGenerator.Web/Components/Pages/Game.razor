@@ -59,7 +59,6 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnEditSprite="() => _showSpriteEditor = true"
                         Companion="Session.Companion"
-                        CompanionDefinition="Session.CompanionDefinition"
                         OnOpenCompanion="() => _showCompanionDialog = true"
                         HasCompanion="Session.Companion != null"
                         OnKissPlayer="HandleKissPlayerAsync"
@@ -210,13 +209,16 @@ OnDance="HandleDanceAsync"
                            OnCancel="() => _showSpriteEditor = false" />
     }
 
-    @if (_showCompanionDialog && Session.Companion != null && Session.CompanionDefinition != null)
+    @if (_showCompanionDialog && Session.Companion != null)
     {
         <CompanionDialog Companion="Session.Companion"
-                         Definition="Session.CompanionDefinition"
+                         PlayerInventory="Session.Player?.Inventory ?? []"
                          OnSaveSprite="HandleCompanionSpriteAsync"
                          OnSaveNickname="HandleCompanionNicknameAsync"
                          OnSaveMoves="HandleCompanionMovesAsync"
+                         OnAllocateStat="HandleAllocateStatAsync"
+                         OnUseElementalCore="HandleUseElementalCoreAsync"
+                         OnUseEvolutionStone="HandleUseEvolutionStoneAsync"
                          OnCancel="() => _showCompanionDialog = false"
                          OnRelease="HandleReleaseAsync" />
     }
@@ -1007,6 +1009,27 @@ OnDance="HandleDanceAsync"
         StateHasChanged();
     }
 
+    private async Task HandleAllocateStatAsync(string stat)
+    {
+        var (ok, err) = await Session.AllocateStatAsync(stat);
+        if (!ok) ShowToast(err ?? "Could not allocate stat.");
+        StateHasChanged();
+    }
+
+    private async Task HandleUseElementalCoreAsync(MapGenerator.Domain.Enums.DamageType element)
+    {
+        var (ok, msg) = await Session.UseElementalCoreAsync(element);
+        ShowToast(ok ? (msg ?? "Done.") : (msg ?? "Failed."));
+        StateHasChanged();
+    }
+
+    private async Task HandleUseEvolutionStoneAsync()
+    {
+        var (ok, msg) = await Session.UseEvolutionStoneAsync();
+        ShowToast(ok ? (msg ?? "Evolved!") : (msg ?? "Failed."));
+        StateHasChanged();
+    }
+
     private async Task SendLocalAsync(string content) =>
         await Session.SendLocalMessageAsync(content);
 
@@ -1117,7 +1140,7 @@ OnDance="HandleDanceAsync"
         var challengerId = _pendingBattleChallenge.ChallengerId;
         _pendingBattleChallenge = null;
 
-        var (ok, error) = Session.AcceptCompanionBattle(challengerId);
+        var (ok, error) = await Session.AcceptCompanionBattleAsync(challengerId);
         if (!ok)
         {
             ShowToast(error ?? "Could not start battle.");

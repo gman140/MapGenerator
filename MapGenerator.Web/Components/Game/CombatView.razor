@@ -107,9 +107,10 @@
                     }
                     @if (Session.CompanionPresent && CompanionSpritePixels != null && CompanionSpritePixels.Any(p => !string.IsNullOrEmpty(p)))
                     {
+                        var (cx, cy, cw, ch) = CompanionSvgLayout(CompanionSpritePixels);
                         <div class="combat-companion-mini">
                             <svg width="72" height="72" class="combat-companion-svg @(_companionAttacking ? "combat-strike" : _companionBouncing ? "combat-bounce" : "")">
-                                <image href="@SpriteHelper.ToSvgDataUri(CompanionSpritePixels)" x="20" y="16" width="40" height="40" image-rendering="pixelated" />
+                                <image href="@SpriteHelper.ToSvgDataUri(CompanionSpritePixels)" x="@cx" y="@cy" width="@cw" height="@ch" image-rendering="pixelated" />
                             </svg>
                         </div>
                     }
@@ -494,6 +495,17 @@
         var alive = Session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList();
         if (alive.Count == 1) return alive[0].InstanceId;
         return _targetEnemyId;
+    }
+
+    private static (int x, int y, int w, int h) CompanionSvgLayout(string[] pixels)
+    {
+        int cols = (int)Math.Round(Math.Sqrt(pixels.Length));
+        return cols switch
+        {
+            24 => (4,  0, 64, 64),
+            20 => (8,  4, 56, 56),
+            _  => (20, 16, 40, 40),
+        };
     }
 
 }

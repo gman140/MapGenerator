@@ -8,7 +8,7 @@
         <div class="battle-challenge-portrait">
             @if (Challenge.ChallengerCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
             {
-                <SpriteView Pixels="@Challenge.ChallengerCompanionSprite" Size="48" />
+                <SpriteView Pixels="@Challenge.ChallengerCompanionSprite" Size="@CompanionDisplaySize(Challenge.ChallengerCompanionSprite, 48)" />
             }
             else
             {
@@ -61,7 +61,7 @@
                     <div class="battle-sprite-anim @_challengerAnim">
                         @if (Result.ChallengerCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
                         {
-                            <SpriteView Pixels="@Result.ChallengerCompanionSprite" Size="64" />
+                            <SpriteView Pixels="@Result.ChallengerCompanionSprite" Size="@CompanionDisplaySize(Result.ChallengerCompanionSprite, 64)" />
                         }
                         else
                         {
@@ -83,7 +83,7 @@
                     <div class="battle-sprite-anim @_accepterAnim">
                         @if (Result.AccepterCompanionSprite.Any(p => !string.IsNullOrEmpty(p)))
                         {
-                            <SpriteView Pixels="@Result.AccepterCompanionSprite" Size="64" />
+                            <SpriteView Pixels="@Result.AccepterCompanionSprite" Size="@CompanionDisplaySize(Result.AccepterCompanionSprite, 64)" />
                         }
                         else
                         {
@@ -346,6 +346,12 @@
         if (line.Contains("rallies"))                       return "log-rally";
         if (line.Contains("stunned") || line.Contains("dodges")) return "log-status";
         return "log-action";
+    }
+
+    private static int CompanionDisplaySize(string[] pixels, int baseSize)
+    {
+        int cols = (int)Math.Round(Math.Sqrt(pixels.Length));
+        return cols switch { 20 => baseSize * 5 / 4, 24 => baseSize * 3 / 2, _ => baseSize };
     }
 
     public void Dispose()

@@ -7,6 +7,7 @@ public class GatherResult
     public string? Message { get; init; }
     public List<GatheredItem> Gathered { get; init; } = [];
     public long CooldownUntil { get; init; }
+    public string? CompanionBonusMessage { get; set; }
 
     public static GatherResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };
 }

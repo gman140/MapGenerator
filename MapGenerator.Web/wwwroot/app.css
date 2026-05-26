@@ -1249,3 +1249,60 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
     background: rgba(60, 60, 60, .4); border: 1px solid rgba(140,140,140,.3); color: var(--text-dim);
 }
 .battle-skip-btn:hover { background: rgba(80, 80, 80, .55); color: var(--text); }
+
+/* ── Companion Tier Badge ─────────────────────────────────────────────────── */
+.companion-tier-badge { font-size: .65rem; font-weight: 700; padding: .15rem .5rem; border-radius: 8px; white-space: nowrap; margin-left: auto; }
+.companion-tier-badge.tier-t1 { background: rgba(120,120,120,.2); color: #a0a0a0; border: 1px solid rgba(140,140,140,.35); }
+.companion-tier-badge.tier-t2 { background: rgba(80,160,220,.18); color: #70b8ff; border: 1px solid rgba(80,160,220,.4); }
+.companion-tier-badge.tier-t3 { background: rgba(200,150,30,.18); color: #f0c040; border: 1px solid rgba(200,150,30,.45); }
+
+/* ── Level & XP Row ──────────────────────────────────────────────────────── */
+.companion-level-row { display: flex; align-items: center; gap: .5rem; }
+.companion-level-label { font-size: .82rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+.companion-xp-bar { flex: 1; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.companion-xp-fill { height: 100%; background: linear-gradient(90deg, #4060d0, #70a0ff); border-radius: 4px; transition: width .3s ease; }
+.companion-xp-text { font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
+
+/* ── Temperament Badge ───────────────────────────────────────────────────── */
+.companion-temperament-badge { font-size: .7rem; font-weight: 700; padding: .1rem .45rem; border-radius: 8px; white-space: nowrap; }
+.companion-temp-hint { font-size: .68rem; color: var(--text-dim); margin-left: .25rem; }
+.temp-bold     { background: rgba(220,100,50,.18); color: #e07840; border: 1px solid rgba(220,100,50,.35); }
+.temp-timid    { background: rgba(80,160,220,.18); color: #6090e0; border: 1px solid rgba(80,160,220,.35); }
+.temp-reckless { background: rgba(220,50,50,.18);  color: #e05050; border: 1px solid rgba(220,50,50,.35); }
+.temp-careful  { background: rgba(60,180,100,.18); color: #50c870; border: 1px solid rgba(60,180,100,.35); }
+.temp-cunning  { background: rgba(180,80,220,.18); color: #c060e0; border: 1px solid rgba(180,80,220,.35); }
+.temp-stoic    { background: rgba(140,140,140,.18); color: #b0b0b0; border: 1px solid rgba(140,140,140,.35); }
+.temp-playful  { background: rgba(220,180,40,.18); color: #e0c040; border: 1px solid rgba(220,180,40,.35); }
+.temp-fierce   { background: rgba(200,40,40,.22);  color: #e03030; border: 1px solid rgba(200,40,40,.45); font-style: italic; }
+
+/* ── Battle Record ───────────────────────────────────────────────────────── */
+.companion-battle-record { display: flex; gap: .5rem; font-size: .82rem; }
+.record-win  { color: #50c870; font-weight: 600; }
+.record-loss { color: #e05050; font-weight: 600; }
+
+/* ── Stat Allocation Grid ────────────────────────────────────────────────── */
+.companion-stat-points-row { font-size: .78rem; color: #f0c040; font-weight: 600; text-align: center; padding: .2rem; background: rgba(200,150,30,.08); border-radius: 4px; }
+.companion-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem .6rem; padding: .1rem 0; }
+.companion-stat-item { display: flex; align-items: center; gap: .35rem; background: var(--bg); border-radius: 4px; padding: .25rem .5rem; font-size: .82rem; }
+.companion-stat-item .companion-stat-label { color: var(--text-dim); width: 2.8rem; flex-shrink: 0; }
+.companion-stat-value { flex: 1; font-weight: 600; color: var(--text); }
+.companion-alloc-btn { width: 18px; height: 18px; padding: 0; border-radius: 50%; background: rgba(80,120,220,.25); border: 1px solid rgba(80,120,220,.5); color: #80a8ff; font-size: .75rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .12s; }
+.companion-alloc-btn:hover { background: rgba(80,120,220,.5); }
+.companion-alloc-spacer { width: 18px; flex-shrink: 0; }
+
+/* ── Items Section ───────────────────────────────────────────────────────── */
+.companion-items-section { display: flex; flex-direction: column; gap: .4rem; padding: .5rem; background: rgba(80,80,80,.08); border-radius: 6px; border: 1px solid var(--border); }
+.companion-items-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
+.companion-item-btn { font-size: .8rem; padding: .35rem .75rem; border-radius: 5px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); transition: background .12s; }
+.companion-item-btn:hover { background: var(--surface); }
+.companion-item-btn.core-btn { background: rgba(80,160,220,.12); color: #70b8ff; border-color: rgba(80,160,220,.4); }
+.companion-item-btn.core-btn:hover { background: rgba(80,160,220,.25); }
+.companion-item-btn.evolve-btn { background: rgba(200,150,30,.12); color: #f0c040; border-color: rgba(200,150,30,.4); }
+.companion-item-btn.evolve-btn:hover { background: rgba(200,150,30,.28); }
+.companion-core-picker { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.companion-core-picker-label { font-size: .75rem; color: var(--text-dim); }
+.companion-core-choice { cursor: pointer; transition: transform .1s; }
+.companion-core-choice:hover { transform: scale(1.1); }
+
+/* ── Status move chip ────────────────────────────────────────────────────── */
+.companion-move-status { font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 8px; background: rgba(120,60,60,.2); color: #e08080; border: 1px solid rgba(160,60,60,.35); white-space: nowrap; }

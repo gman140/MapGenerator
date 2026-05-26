@@ -16,6 +16,7 @@ builder.Services.AddApplication();
 
 builder.Services.AddSingleton<GameBroadcastService>();
 builder.Services.AddSingleton<CompanionBattleService>();
+builder.Services.AddScoped<CompanionService>();
 builder.Services.AddScoped<GameSessionService>();
 
 var app = builder.Build();

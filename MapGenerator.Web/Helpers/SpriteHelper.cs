@@ -4,8 +4,10 @@ namespace MapGenerator.Web.Helpers;
 
 public static class SpriteHelper
 {
-    public static string ToSvgDataUri(string[] pixels, int cols = 16)
+    public static string ToSvgDataUri(string[] pixels, int cols = 0)
     {
+        if (cols <= 0) cols = (int)Math.Round(Math.Sqrt(pixels.Length));
+        if (cols <= 0) cols = 16;
         int rows = pixels.Length / cols;
         var sb = new StringBuilder();
         sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {cols} {rows}'>");

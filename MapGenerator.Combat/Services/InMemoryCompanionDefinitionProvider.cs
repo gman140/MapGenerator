@@ -126,38 +126,43 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
     [
         new()
         {
-            Id = "slimeling", Name = "Slimeling", Emoji = "🟢",
+            Id = "slimeling", Name = "Slimeling",
             Description = "A cheerful blob of animated slime. Not threatening, but surprisingly loyal.",
             ElementTypes = [DamageType.Nature], BaseAttack = 4,
             DefaultSprite = _slimelingSprite,
+            BaseVitality = 7, BaseDefense = 2, BaseSpeed = 4, BaseFocus = 2, BaseResist = 2,
         },
         new()
         {
-            Id = "emberhatch", Name = "Emberhatch", Emoji = "🔥",
+            Id = "emberhatch", Name = "Emberhatch",
             Description = "A fierce hatchling wreathed in fire. Its enthusiasm exceeds its caution.",
             ElementTypes = [DamageType.Fire], BaseAttack = 5,
             DefaultSprite = _emberHatchSprite,
+            BaseVitality = 5, BaseDefense = 1, BaseSpeed = 6, BaseFocus = 3, BaseResist = 1,
         },
         new()
         {
-            Id = "frostling", Name = "Frostling", Emoji = "❄️",
+            Id = "frostling", Name = "Frostling",
             Description = "A delicate creature of living ice. It prefers cold places and cool company.",
             ElementTypes = [DamageType.Frost], BaseAttack = 4,
             DefaultSprite = _frostlingSprite,
+            BaseVitality = 6, BaseDefense = 4, BaseSpeed = 3, BaseFocus = 2, BaseResist = 3,
         },
         new()
         {
-            Id = "sparkling", Name = "Sparkling", Emoji = "⚡",
+            Id = "sparkling", Name = "Sparkling",
             Description = "A crackling ball of storm energy. It is very excitable and will not sit still.",
             ElementTypes = [DamageType.Storm], BaseAttack = 5,
             DefaultSprite = _sparklingSprite,
+            BaseVitality = 4, BaseDefense = 1, BaseSpeed = 8, BaseFocus = 4, BaseResist = 1,
         },
         new()
         {
-            Id = "shadelurk", Name = "Shadelurk", Emoji = "🌑",
+            Id = "shadelurk", Name = "Shadelurk",
             Description = "A creature born from shed darkness. It follows at the edge of your shadow, barely visible.",
             ElementTypes = [DamageType.Dark], BaseAttack = 4,
             DefaultSprite = _shadelurkSprite,
+            BaseVitality = 5, BaseDefense = 3, BaseSpeed = 5, BaseFocus = 5, BaseResist = 2,
         }
     ];
 

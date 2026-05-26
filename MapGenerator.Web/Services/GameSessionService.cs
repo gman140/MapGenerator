@@ -41,12 +41,12 @@ public class GameSessionService : IAsyncDisposable
     private readonly ICompanionDefinitionProvider _companionDefProvider;
     private readonly ICompanionMoveProvider _companionMoveProvider;
     private readonly CompanionBattleService _battleSvc;
+    private readonly CompanionService _companionSvc;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
     public bool IsStunned => Player != null && DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < Player.StunnedUntil;
     public PlayerCompanion? Companion { get; private set; }
-    public CompanionDefinition? CompanionDefinition { get; private set; }
 
     public GameSessionService(
         PlayerService playerSvc,
@@ -79,7 +79,8 @@ public class GameSessionService : IAsyncDisposable
         ICompanionRepository companionRepo,
         ICompanionDefinitionProvider companionDefProvider,
         ICompanionMoveProvider companionMoveProvider,
-        CompanionBattleService battleSvc)
+        CompanionBattleService battleSvc,
+        CompanionService companionSvc)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -112,6 +113,7 @@ public class GameSessionService : IAsyncDisposable
         _companionDefProvider = companionDefProvider;
         _companionMoveProvider = companionMoveProvider;
         _battleSvc            = battleSvc;
+        _companionSvc         = companionSvc;
     }
 
     public async Task InitAsync(string browserId)
@@ -135,7 +137,6 @@ public class GameSessionService : IAsyncDisposable
     private async Task LoadCompanionAsync(string companionId)
     {
         Companion = await _companionRepo.GetByIdAsync(companionId);
-        CompanionDefinition = Companion != null ? _companionDefProvider.GetById(Companion.DefinitionId) : null;
     }
 
     public async Task<(bool ok, string? error)> CreatePlayerAsync(string username, string browserId)
@@ -374,7 +375,9 @@ public class GameSessionService : IAsyncDisposable
             var msg = await _dungeonSvc.InvestigateAsync(Player);
             return (msg, [], null, null);
         }
-        return await _investigateSvc.InvestigateAsync(Player);
+
+        var (flavor, notes, beacon, reveal) = await _investigateSvc.InvestigateAsync(Player);
+        return (flavor, notes, beacon, reveal);
     }
 
     public async Task<GatherResult> GatherAsync()
@@ -390,7 +393,26 @@ public class GameSessionService : IAsyncDisposable
         }
         var surfaceResult = await _gatherSvc.TryGatherAsync(Player, permissions);
         if (surfaceResult.Success)
+        {
             Player.GatherCooldownUntil = surfaceResult.CooldownUntil;
+
+            if (Companion != null)
+            {
+                var (bonusText, itemId) = _companionSvc.RollGatherBonus(Companion, Random.Shared);
+                if (bonusText != null)
+                {
+                    surfaceResult.CompanionBonusMessage = bonusText;
+                    if (itemId != null)
+                    {
+                        Player.Inventory.TryGetValue(itemId, out int qty);
+                        Player.Inventory[itemId] = qty + 1;
+                        surfaceResult.CompanionBonusMessage += $" (Found: {itemId})";
+                        Player.LastSeen = DateTime.UtcNow;
+                        await _playerRepo.UpdateAsync(Player);
+                    }
+                }
+            }
+        }
         return surfaceResult;
     }
 
@@ -475,6 +497,7 @@ public class GameSessionService : IAsyncDisposable
                                         .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
         var selectedMoves = new[] { attackId, buffId, debuffId }.Where(id => id != null).Select(id => id!).ToList();
 
+        var temperaments = Enum.GetValues<Domain.Enums.CompanionTemperament>();
         var companion = new PlayerCompanion
         {
             Id           = Guid.NewGuid().ToString("N"),
@@ -483,6 +506,18 @@ public class GameSessionService : IAsyncDisposable
             Nickname     = def.Name,
             MoveIds      = selectedMoves,
             SpritePixels = (string[])def.DefaultSprite.Clone(),
+            ElementTypes = [.. def.ElementTypes],
+            Description  = def.Description,
+            Stats        = new Dictionary<string, int>
+            {
+                ["ATK"] = def.BaseAttack,
+                ["VIT"] = def.BaseVitality,
+                ["DEF"] = def.BaseDefense,
+                ["SPD"] = def.BaseSpeed,
+                ["FOC"] = def.BaseFocus,
+                ["RES"] = def.BaseResist,
+            },
+            Temperament  = temperaments[rng.Next(temperaments.Length)],
         };
 
         await _companionRepo.SaveAsync(companion);
@@ -493,8 +528,7 @@ public class GameSessionService : IAsyncDisposable
         var newEggCount = await _mapRepo.DecrementEggCountAsync(tile.Q, tile.R);
         _mapCache.UpdateCachedEggCount(tile.Q, tile.R, newEggCount);
 
-        Companion           = companion;
-        CompanionDefinition = def;
+        Companion = companion;
         _broadcast.UpdatePlayerCompanionStatus(Player.Id, true);
 
         return (true, $"The egg stirs and cracks open. A {def.Name} emerges, blinks at you once, and decides to follow.");
@@ -516,9 +550,10 @@ public class GameSessionService : IAsyncDisposable
 
     public async Task<string?> UpdateCompanionMovesAsync(List<string> moveIds)
     {
-        if (Companion == null || CompanionDefinition == null) return "No companion.";
-        if (moveIds.Count > 4) return "A companion can have at most 4 moves.";
-        var eligible = _companionMoveProvider.GetEligibleFor(CompanionDefinition.ElementTypes).Select(m => m.Id).ToHashSet();
+        if (Companion == null) return "No companion.";
+        int maxMoves = TierRegistry.Get(Companion.Tier).MaxMoves;
+        if (moveIds.Count > maxMoves) return $"A {Companion.Tier} companion can have at most {maxMoves} moves.";
+        var eligible = _companionMoveProvider.GetEligibleFor(Companion.ElementTypes).Select(m => m.Id).ToHashSet();
         foreach (var id in moveIds)
         {
             if (!eligible.Contains(id)) return $"Move '{id}' is not eligible for this companion.";
@@ -528,17 +563,30 @@ public class GameSessionService : IAsyncDisposable
         return null;
     }
 
+    // Helper: build the battle stats record for the current player's companion
+    private CompanionBattleStats BuildBattleStats()
+    {
+        var c = Companion!;
+        return new CompanionBattleStats(
+            c.Stats.GetValueOrDefault("ATK"),
+            c.Stats.GetValueOrDefault("VIT"), c.Stats.GetValueOrDefault("DEF"),
+            c.Stats.GetValueOrDefault("SPD"), c.Stats.GetValueOrDefault("FOC"),
+            c.Stats.GetValueOrDefault("RES"),
+            c.GetAllocated("ATK"), c.GetAllocated("VIT"), c.GetAllocated("DEF"),
+            c.GetAllocated("SPD"), c.GetAllocated("FOC"), c.GetAllocated("RES"),
+            c.Temperament, c.ElementTypes, [.. c.MoveIds]);
+    }
+
     public (bool ok, string? error) ChallengeCompanionBattle(string targetId, string targetName)
     {
         if (Player == null) return (false, "Not logged in.");
-        if (Companion == null || CompanionDefinition == null) return (false, "You don't have a companion.");
+        if (Companion == null) return (false, "You don't have a companion.");
         if (targetId == Player.Id) return (false, "You can't challenge yourself.");
 
         var challenge = new CompanionBattleChallenge(
             Player.Id, Player.Username, targetId,
             Companion.Nickname, Companion.SpritePixels,
-            CompanionDefinition.BaseAttack, CompanionDefinition.ElementTypes,
-            [.. Companion.MoveIds],
+            BuildBattleStats(),
             DateTimeOffset.UtcNow.AddSeconds(30));
 
         var (ok, error) = _battleSvc.TryCreateChallenge(challenge);
@@ -548,10 +596,10 @@ public class GameSessionService : IAsyncDisposable
         return (true, null);
     }
 
-    public (bool ok, string? error) AcceptCompanionBattle(string challengerId)
+    public async Task<(bool ok, string? error)> AcceptCompanionBattleAsync(string challengerId)
     {
         if (Player == null) return (false, "Not logged in.");
-        if (Companion == null || CompanionDefinition == null) return (false, "You don't have a companion.");
+        if (Companion == null) return (false, "You don't have a companion.");
 
         var challenge = _battleSvc.TakeChallenge(Player.Id);
         if (challenge == null) return (false, "Challenge has expired.");
@@ -560,14 +608,59 @@ public class GameSessionService : IAsyncDisposable
         var result = _battleSvc.SimulateBattle(
             challenge,
             Player.Id, Player.Username, Companion.Nickname, Companion.SpritePixels,
-            CompanionDefinition.BaseAttack, CompanionDefinition.ElementTypes,
-            [.. Companion.MoveIds]);
+            BuildBattleStats());
 
-        // Notify both participants
+        bool won = result.WinnerId == Player.Id;
+        bool draw = result.WinnerId == null;
+        if (won) Companion.BattleWins++;
+        else if (!draw) Companion.BattleLosses++;
+        await _companionRepo.SaveAsync(Companion);
+
         _broadcast.NotifyCompanionBattleCompleted(challenge.ChallengerId, result);
         _broadcast.NotifyCompanionBattleCompleted(Player.Id, result);
-
         return (true, null);
+    }
+
+    public async Task<(bool ok, string? error)> UseElementalCoreAsync(DamageType newElement)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (Companion == null) return (false, "You don't have a companion.");
+        Player.Inventory.TryGetValue("ElementalCore", out int coreQty);
+        if (coreQty <= 0) return (false, "You don't have an Elemental Core.");
+
+        var err = await _companionSvc.UseElementalCoreAsync(Companion, newElement);
+        if (err != null) return (false, err);
+
+        if (coreQty == 1) Player.Inventory.Remove("ElementalCore");
+        else Player.Inventory["ElementalCore"] = coreQty - 1;
+        Player.LastSeen = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+        return (true, $"{Companion.Nickname} now has the {newElement} element!");
+    }
+
+    public async Task<(bool ok, string? error)> UseEvolutionStoneAsync()
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (Companion == null) return (false, "You don't have a companion.");
+        Player.Inventory.TryGetValue("EvolutionStone", out int stoneQty);
+        if (stoneQty <= 0) return (false, "You don't have an Evolution Stone.");
+
+        var err = await _companionSvc.UseEvolutionStoneAsync(Companion);
+        if (err != null) return (false, err);
+
+        if (stoneQty == 1) Player.Inventory.Remove("EvolutionStone");
+        else Player.Inventory["EvolutionStone"] = stoneQty - 1;
+        Player.LastSeen = DateTime.UtcNow;
+        await _playerRepo.UpdateAsync(Player);
+        return (true, $"{Companion.Nickname} evolved to {TierRegistry.Get(Companion.Tier).DisplayName} tier!");
+    }
+
+    public async Task<(bool ok, string? error)> AllocateStatAsync(string stat)
+    {
+        if (Player == null) return (false, "Not logged in.");
+        if (Companion == null) return (false, "You don't have a companion.");
+        var err = await _companionSvc.AllocateStatAsync(Companion, stat);
+        return err == null ? (true, null) : (false, err);
     }
 
     public void DeclineCompanionBattle()
@@ -589,8 +682,7 @@ public class GameSessionService : IAsyncDisposable
         Player.LastSeen    = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(Player);
 
-        Companion           = null;
-        CompanionDefinition = null;
+        Companion = null;
         _broadcast.UpdatePlayerCompanionStatus(Player.Id, false);
 
         return (true, $"You bid farewell. Your {name} wanders off into the world.");
@@ -762,12 +854,12 @@ public class GameSessionService : IAsyncDisposable
             return null;
         }
 
-        if (Companion != null && CompanionDefinition != null && !session.CompanionPresent)
+        if (Companion != null && !session.CompanionPresent)
         {
             session.CompanionPresent       = true;
             session.CompanionDefinitionId  = Companion.DefinitionId;
             session.CompanionMoveIds       = [.. Companion.MoveIds];
-            session.CompanionBaseAttack    = CompanionDefinition.BaseAttack;
+            session.CompanionBaseAttack    = Companion.Stats.GetValueOrDefault("ATK");
             session.CompanionName          = Companion.Nickname;
             await _combatRepo.SaveAsync(session);
         }
