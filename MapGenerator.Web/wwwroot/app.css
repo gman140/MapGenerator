@@ -920,10 +920,8 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-btn:hover:not(:disabled) { background: rgba(255,255,255,.12); }
 .combat-btn:disabled { opacity: .4; cursor: default; }
 .combat-btn .cost { font-size: .68rem; color: var(--text-dim); }
-.combat-btn.attack  { border-color: rgba(200,80,60,.5);  color: #e09080; }
-.combat-btn.attack:hover:not(:disabled)  { background: rgba(200,80,60,.15); }
-.combat-btn.heavy   { border-color: rgba(200,60,60,.5);  color: #e07060; }
-.combat-btn.heavy:hover:not(:disabled)   { background: rgba(200,60,60,.15); }
+.combat-btn.attack  { border-color: rgba(190,120,40,.6); color: #e0a050; }
+.combat-btn.attack:hover:not(:disabled)  { background: rgba(190,120,40,.18); }
 .combat-btn.steady  { border-color: rgba(80,180,200,.5); color: #60cce0; }
 .combat-btn.steady:hover:not(:disabled)  { background: rgba(80,180,200,.15); }
 .combat-btn.defend  { border-color: rgba(80,120,200,.5); color: #80a0e0; }
@@ -944,6 +942,14 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-spell-btn .spell-cost { font-size: .7rem; color: #9060d0; min-width: 3rem; }
 .combat-spell-btn .spell-desc { font-size: .7rem; color: var(--text-dim); opacity: .85; }
 .combat-spell-btn.spell-insufficient { opacity: .5; }
+.combat-attack-picker { display: flex; flex-direction: column; gap: .3rem; padding: .3rem 0 0; }
+.combat-attack-btn { display: flex; align-items: baseline; gap: .4rem; font-size: .75rem; padding: .3rem .6rem; border-radius: 4px; border: 1px solid rgba(190,120,40,.4); background: rgba(190,120,40,.1); color: #e0a050; cursor: pointer; text-align: left; }
+.combat-attack-btn:hover:not(:disabled) { background: rgba(190,120,40,.2); }
+.combat-attack-btn:disabled { opacity: .4; cursor: default; }
+.combat-attack-btn .attack-name { font-weight: 600; color: #f0c070; min-width: 9rem; }
+.combat-attack-btn .attack-cost { font-size: .7rem; color: #b07030; min-width: 3rem; }
+.combat-attack-btn .attack-desc { font-size: .7rem; color: var(--text-dim); opacity: .85; }
+.combat-attack-btn.attack-insufficient { opacity: .5; }
 .combat-item-picker { display: flex; flex-wrap: wrap; gap: .3rem; padding: .3rem 0 0; }
 .combat-item-btn { display: flex; align-items: center; gap: .3rem; font-size: .75rem; padding: .2rem .5rem; border-radius: 4px; border: 1px solid rgba(80,180,80,.4); background: rgba(80,180,80,.1); color: #80d080; cursor: pointer; }
 .combat-item-btn:hover { background: rgba(80,180,80,.2); }

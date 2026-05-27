@@ -2,8 +2,10 @@
 @using MapGenerator.Combat.Interfaces
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Models
 @inject MapGenerator.Domain.Interfaces.IConsumableDefinitionProvider ConsumableProvider
 @inject ISpellDefinitionProvider SpellProvider
+@inject IWeaponAttackProvider AttackProvider
 
 
 <div class="combat-view">
@@ -205,13 +207,9 @@
         @if (Session.Phase == CombatPhase.PlayerTurn)
         {
             <div class="combat-actions">
-                <button class="combat-btn attack" disabled="@(Session.PlayerStamina < 2 || CannotTakeAction())"
-                        @onclick="() => TakeTurn(CombatActionType.Attack)">
-                    ⚔ Attack <span class="cost">(2)</span>
-                </button>
-                <button class="combat-btn heavy" disabled="@(Session.PlayerStamina < 4 || CannotTakeAction())"
-                        @onclick="() => TakeTurn(CombatActionType.HeavyAttack)">
-                    🗡 Heavy <span class="cost">(4)</span>
+                <button class="combat-btn attack" disabled="@CannotTakeAction()"
+                        @onclick="() => { _showAttackPicker = !_showAttackPicker; _showSpellPicker = false; _showItemPicker = false; }">
+                    ⚔ Attack
                 </button>
                 <button class="combat-btn steady" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
                         @onclick="() => TakeTurn(CombatActionType.Steady)">
@@ -241,6 +239,24 @@
                     🏃 Flee
                 </button>
             </div>
+
+            @if (_showAttackPicker)
+            {
+                <div class="combat-attack-picker">
+                    @foreach (var atk in AvailableAttacks)
+                    {
+                        var capturedAtk = atk;
+                        <button class="combat-attack-btn @(Session.PlayerStamina < capturedAtk.StaminaCost ? "attack-insufficient" : "")"
+                                disabled="@(Session.PlayerStamina < capturedAtk.StaminaCost || CannotTakeAction())"
+                                title="@capturedAtk.Description"
+                                @onclick="() => UseAttack(capturedAtk.Id)">
+                            <span class="attack-name">@capturedAtk.Name</span>
+                            <span class="attack-cost">⚡@capturedAtk.StaminaCost</span>
+                            <span class="attack-desc">@capturedAtk.Description</span>
+                        </button>
+                    }
+                </div>
+            }
 
             @if (_showSpellPicker)
             {
@@ -303,6 +319,7 @@
     private string? _targetEnemyId;
     private bool _showItemPicker;
     private bool _showSpellPicker;
+    private bool _showAttackPicker;
     private bool _waitingForResult;
     private string? _shakingEnemyId;
     private string? _bouncingEnemyId;
@@ -319,6 +336,12 @@
     private HashSet<string> _fleeingEnemyIds   = [];
     private HashSet<string> _completedDeathIds = [];
 
+    private IReadOnlyList<WeaponAttackDefinition> AvailableAttacks =>
+        Session.PlayerWeaponAttackIds
+            .Select(id => AttackProvider.GetById(id))
+            .OfType<WeaponAttackDefinition>()
+            .ToList();
+
     private IEnumerable<(string Id, int Qty)> CombatItems =>
         PlayerInventory
             .Concat(PlayerCraftedItems)
@@ -334,6 +357,8 @@
     private async Task TakeTurn(CombatActionType type)
     {
         _showItemPicker   = false;
+        _showSpellPicker  = false;
+        _showAttackPicker = false;
         _waitingForResult = true;
         await OnAction.InvokeAsync(new CombatAction { Type = type, TargetEnemyId = GetTarget() });
         _waitingForResult = false;
@@ -344,6 +369,14 @@
         _showItemPicker   = false;
         _waitingForResult = true;
         await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.UseItem, ItemId = itemId });
+        _waitingForResult = false;
+    }
+
+    private async Task UseAttack(string attackId)
+    {
+        _showAttackPicker = false;
+        _waitingForResult = true;
+        await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.Attack, WeaponAttackId = attackId, TargetEnemyId = GetTarget() });
         _waitingForResult = false;
     }
 

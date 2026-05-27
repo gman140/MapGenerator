@@ -13,6 +13,7 @@ public class CombatEngine : ICombatEngine
     private readonly IEquipmentDefinitionProvider _equipmentProvider;
     private readonly IConsumableDefinitionProvider _consumableProvider;
     private readonly ISpellDefinitionProvider _spellProvider;
+    private readonly IWeaponAttackProvider _weaponAttackProvider;
     private readonly ICompanionDefinitionProvider _companionProvider;
     private readonly ICompanionMoveProvider _companionMoveProvider;
     private readonly EnemySpawner _spawner;
@@ -20,14 +21,12 @@ public class CombatEngine : ICombatEngine
 
     private static readonly Dictionary<CombatActionType, int> StaminaCosts = new()
     {
-        [CombatActionType.Attack]      = 2,
-        [CombatActionType.HeavyAttack] = 4,
-        [CombatActionType.Steady]      = 1,
-        [CombatActionType.Defend]      = 0,
-        [CombatActionType.UseItem]     = 1,
-        [CombatActionType.Flee]        = 0,
-        [CombatActionType.Spell]       = 0,  // mana cost handled separately
-        [CombatActionType.Refocus]     = 0,
+        [CombatActionType.Steady]  = 1,
+        [CombatActionType.Defend]  = 0,
+        [CombatActionType.UseItem] = 1,
+        [CombatActionType.Flee]    = 0,
+        [CombatActionType.Spell]   = 0,  // mana cost handled separately
+        [CombatActionType.Refocus] = 0,
     };
 
     public CombatEngine(
@@ -35,17 +34,19 @@ public class CombatEngine : ICombatEngine
         IEquipmentDefinitionProvider equipmentProvider,
         IConsumableDefinitionProvider consumableProvider,
         ISpellDefinitionProvider spellProvider,
+        IWeaponAttackProvider weaponAttackProvider,
         ICompanionDefinitionProvider companionProvider,
         ICompanionMoveProvider companionMoveProvider,
         EnemySpawner spawner)
     {
-        _enemyProvider      = enemyProvider;
-        _equipmentProvider  = equipmentProvider;
-        _consumableProvider = consumableProvider;
-        _spellProvider      = spellProvider;
-        _companionProvider  = companionProvider;
+        _enemyProvider         = enemyProvider;
+        _equipmentProvider     = equipmentProvider;
+        _consumableProvider    = consumableProvider;
+        _spellProvider         = spellProvider;
+        _weaponAttackProvider  = weaponAttackProvider;
+        _companionProvider     = companionProvider;
         _companionMoveProvider = companionMoveProvider;
-        _spawner            = spawner;
+        _spawner               = spawner;
     }
 
     // ── StartCombat ──────────────────────────────────────────────────────────
@@ -82,7 +83,21 @@ public class CombatEngine : ICombatEngine
         {
             var weaponDef = _equipmentProvider.GetById(player.EquippedWeaponId);
             if (weaponDef != null)
+            {
+                session.PlayerEquippedWeaponId = player.EquippedWeaponId;
                 session.PlayerWeaponDamageType = weaponDef.WeaponDamageType;
+                session.PlayerWeaponAttackIds  = weaponDef.WeaponAttackIds.Count > 0
+                    ? weaponDef.WeaponAttackIds
+                    : ["light_attack", "heavy_attack"];
+            }
+            else
+            {
+                session.PlayerWeaponAttackIds = ["light_attack", "heavy_attack"];
+            }
+        }
+        else
+        {
+            session.PlayerWeaponAttackIds = ["light_attack", "heavy_attack"];
         }
 
         foreach (var enemy in enemies)
@@ -101,7 +116,33 @@ public class CombatEngine : ICombatEngine
     {
         var events = new List<CombatEvent>();
 
-        int cost = StaminaCosts.GetValueOrDefault(action.Type, 0);
+        WeaponAttackDefinition? resolvedAttack = null;
+        int cost;
+        if (action.Type == CombatActionType.Attack)
+        {
+            var id = action.WeaponAttackId ?? "light_attack";
+            if (!session.PlayerWeaponAttackIds.Contains(id))
+            {
+                string errMsg = "That attack is not available.";
+                session.Log.Add(errMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = errMsg, DelayMs = 200 });
+                return new CombatTurnResult { Session = session, Events = events };
+            }
+            resolvedAttack = _weaponAttackProvider.GetById(id);
+            if (resolvedAttack == null)
+            {
+                string errMsg = "Unknown attack.";
+                session.Log.Add(errMsg);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = errMsg, DelayMs = 200 });
+                return new CombatTurnResult { Session = session, Events = events };
+            }
+            cost = resolvedAttack.StaminaCost;
+        }
+        else
+        {
+            cost = StaminaCosts.GetValueOrDefault(action.Type, 0);
+        }
+
         if (session.PlayerStamina < cost)
         {
             string msg = "Not enough stamina for that.";
@@ -125,10 +166,7 @@ public class CombatEngine : ICombatEngine
         switch (action.Type)
         {
             case CombatActionType.Attack:
-                ExecutePlayerAttack(session, action.TargetEnemyId, isHeavy: false, events);
-                break;
-            case CombatActionType.HeavyAttack:
-                ExecutePlayerAttack(session, action.TargetEnemyId, isHeavy: true, events);
+                ExecutePlayerWeaponAttack(session, resolvedAttack!, action.TargetEnemyId, events);
                 break;
             case CombatActionType.Defend:
                 session.PlayerDefending = true;
@@ -406,12 +444,17 @@ public class CombatEngine : ICombatEngine
         return session.Enemies.Count > 0 ? session : null;
     }
 
-    // ── Player attack ────────────────────────────────────────────────────────
+    // ── Player weapon attack ─────────────────────────────────────────────────
 
-    private void ExecutePlayerAttack(CombatSession session, string? targetId, bool isHeavy, List<CombatEvent> events)
+    private void ExecutePlayerWeaponAttack(CombatSession session, WeaponAttackDefinition attack, string? targetId, List<CombatEvent> events)
     {
-        var target = GetTargetEnemy(session, targetId);
-        if (target == null)
+
+        var targets = attack.HitsAll
+            ? session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList()
+            : [GetTargetEnemy(session, targetId)!];
+        targets = targets.Where(t => t != null).ToList();
+
+        if (targets.Count == 0)
         {
             string noTarget = "No valid target.";
             session.Log.Add(noTarget);
@@ -419,61 +462,84 @@ public class CombatEngine : ICombatEngine
             return;
         }
 
-        float power = isHeavy ? 1.5f : 1.0f;
         float accuracyMod = EffectivePlayerAccuracy(session);
-        if (session.PlayerSteady && !target.IgnoresSteady)
-        {
-            accuracyMod += 0.10f;
-            session.PlayerSteady = false;
-        }
-
+        if (session.PlayerSteady) { accuracyMod += 0.10f; session.PlayerSteady = false; }
         events.Add(new CombatEvent { Kind = CombatEventKind.PlayerAttack });
 
-        var outcome = CombatMath.RollHit(EffectivePlayerSpeed(session), EffectiveEnemySpeed(target), power, accuracyMod, _rng);
-        if (outcome == HitOutcome.Miss)
+        int totalDrain = 0;
+
+        foreach (var target in targets)
         {
-            string missLog = $"You swing at the {target.Name} but miss entirely!";
-            session.Log.Add(missLog);
-            events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = missLog, DelayMs = 300 });
-            return;
+            var enemyDef = _enemyProvider.GetById(target.DefinitionId);
+            var outcome = CombatMath.RollHit(EffectivePlayerSpeed(session), EffectiveEnemySpeed(target), attack.Power, accuracyMod, _rng);
+
+            if (outcome == HitOutcome.Miss)
+            {
+                string missLog = $"You swing {attack.Name} at the {target.Name} but miss entirely!";
+                session.Log.Add(missLog);
+                events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = missLog, DelayMs = 300 });
+                continue;
+            }
+
+            double nearMult = outcome == HitOutcome.NearMiss ? 0.5 : 1.0;
+            double variance  = 0.85 + _rng.NextDouble() * 0.30;
+
+            int baseStat = attack.UsesMagic ? EffectivePlayerMagic(session) : EffectivePlayerAttack(session);
+            int effDef   = attack.UsesMagic ? 0 : EffectiveEnemyDefense(target);
+            int rawDamage = attack.UsesMagic
+                ? (int)Math.Max(1, baseStat * attack.Power * variance * nearMult)
+                : (int)Math.Max(1, (baseStat - effDef) * attack.Power * variance * nearMult);
+
+            bool crit = outcome == HitOutcome.Hit && CombatMath.RollCrit(session.PlayerBaseCritChance, _rng);
+            if (crit) rawDamage = (int)(rawDamage * 1.5);
+
+            var (typeModifier, typeLog) = GetTypeEffectiveness(session.PlayerWeaponDamageType, enemyDef);
+            int damage = (int)Math.Max(1, rawDamage * typeModifier);
+
+            target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
+            bool killed = target.CurrentHp == 0;
+            totalDrain += damage;
+
+            string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
+            string critTag  = crit ? " [CRIT!]" : string.Empty;
+            string nearTag  = outcome == HitOutcome.NearMiss ? " [Glancing blow]" : string.Empty;
+            string fell     = killed ? $" The {target.Name} falls." : string.Empty;
+            string log      = $"You use {attack.Name} on the {target.Name} for {damage} {session.PlayerWeaponDamageType} damage.{critTag}{nearTag}{typeNote}{fell}";
+            session.Log.Add(log);
+
+            events.Add(new CombatEvent
+            {
+                Kind            = CombatEventKind.ShakeEnemy,
+                EnemyInstanceId = target.InstanceId,
+                Log             = log,
+                EnemyHp         = target.CurrentHp,
+                DelayMs         = 380,
+            });
+
+            if (killed)
+            {
+                events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+                continue;
+            }
+
+            foreach (var effect in attack.Effects)
+                ApplyCompanionStatus(effect.Status, effect.Duration, effect.Chance,
+                    target.ActiveModifiers, target.Attack, target.Defense, target.Speed,
+                    $"WeaponAttack:{attack.Id}", session, target, events, isPlayer: false);
         }
 
-        int effAtk = EffectivePlayerAttack(session);
-        int effDef = EffectiveEnemyDefense(target);
-        double variance = 0.85 + _rng.NextDouble() * 0.30;
-        double mult = isHeavy ? 1.5 : 1.0;
-        if (outcome == HitOutcome.NearMiss) mult *= 0.5;
-        int rawDamage = (int)Math.Max(1, (effAtk - effDef) * mult * variance);
-
-        bool crit = outcome == HitOutcome.Hit && CombatMath.RollCrit(session.PlayerBaseCritChance, _rng);
-        if (crit) rawDamage = (int)(rawDamage * 1.5);
-
-        var def = _enemyProvider.GetById(target.DefinitionId);
-        var (typeModifier, typeLog) = GetTypeEffectiveness(session.PlayerWeaponDamageType, def);
-        int damage = (int)Math.Max(1, rawDamage * typeModifier);
-
-        target.CurrentHp = Math.Max(0, target.CurrentHp - damage);
-
-        string verb = isHeavy ? "drive a heavy blow into" : "strike";
-        bool killed = target.CurrentHp == 0;
-        string fell = killed ? $" The {target.Name} falls." : string.Empty;
-        string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
-        string critTag = crit ? " [CRIT!]" : string.Empty;
-        string nearTag = outcome == HitOutcome.NearMiss ? " [Glancing blow]" : string.Empty;
-        string log = $"You {verb} the {target.Name} for {damage} damage.{critTag}{nearTag}{typeNote}{fell}";
-        session.Log.Add(log);
-
-        events.Add(new CombatEvent
+        // Lifesteal
+        if (attack.LifestealRatio > 0 && totalDrain > 0)
         {
-            Kind = CombatEventKind.ShakeEnemy,
-            EnemyInstanceId = target.InstanceId,
-            Log = log,
-            EnemyHp = target.CurrentHp,
-            DelayMs = 380,
-        });
-
-        if (killed)
-            events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+            int healed = (int)Math.Max(1, totalDrain * attack.LifestealRatio);
+            int before = session.PlayerHp;
+            session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + healed);
+            int actualHeal = session.PlayerHp - before;
+            string drainLog = $"You drain {actualHeal} HP from the attack. ({session.PlayerHp}/{session.PlayerMaxHp})";
+            session.Log.Add(drainLog);
+            events.Add(new CombatEvent { Kind = CombatEventKind.PlayerMagicHeal });
+            events.Add(new CombatEvent { Kind = CombatEventKind.PlayerUpdate, Log = drainLog, PlayerHp = session.PlayerHp, DelayMs = 280 });
+        }
     }
 
     // ── Player use item ──────────────────────────────────────────────────────
@@ -748,7 +814,8 @@ public class CombatEngine : ICombatEngine
                 string critTag = crit ? " [CRIT!]" : string.Empty;
                 string nearTag = outcome == HitOutcome.NearMiss ? " [Glancing]" : string.Empty;
                 string fell = killed ? $" The {target.Name} falls." : string.Empty;
-                string log = $"It strikes the {target.Name} for {damage} damage.{critTag}{nearTag}{typeNote}{fell}";
+                string dmgTypeNote = spell.DamageType.HasValue ? $" {spell.DamageType.Value}" : string.Empty;
+                string log = $"It strikes the {target.Name} for {damage}{dmgTypeNote} damage.{critTag}{nearTag}{typeNote}{fell}";
                 session.Log.Add(log);
 
                 events.Add(new CombatEvent
@@ -762,6 +829,18 @@ public class CombatEngine : ICombatEngine
 
                 if (killed)
                     events.Add(new CombatEvent { Kind = CombatEventKind.EnemyDied, EnemyInstanceId = target.InstanceId });
+
+                if (!killed && spell.DrainRatio > 0)
+                {
+                    int healed = (int)Math.Max(1, damage * spell.DrainRatio);
+                    int before = session.PlayerHp;
+                    session.PlayerHp = Math.Min(session.PlayerMaxHp, session.PlayerHp + healed);
+                    int actualHeal = session.PlayerHp - before;
+                    string drainLog = $"You drain {actualHeal} HP from the {target.Name}. ({session.PlayerHp}/{session.PlayerMaxHp})";
+                    session.Log.Add(drainLog);
+                    events.Add(new CombatEvent { Kind = CombatEventKind.PlayerMagicHeal });
+                    events.Add(new CombatEvent { Kind = CombatEventKind.PlayerUpdate, Log = drainLog, PlayerHp = session.PlayerHp, DelayMs = 200 });
+                }
             }
             else
             {
@@ -844,7 +923,7 @@ public class CombatEngine : ICombatEngine
                 string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
                 string critTag = crit ? " [CRIT!]" : string.Empty;
                 string fell = killed ? $" The {t.Name} falls." : string.Empty;
-                string hitLog = $"It strikes the {t.Name} for {damage} damage.{critTag}{typeNote}{fell}";
+                string hitLog = $"It strikes the {t.Name} for {damage} {move.DamageType} damage.{critTag}{typeNote}{fell}";
                 session.Log.Add(hitLog);
 
                 events.Add(new CombatEvent
@@ -1004,7 +1083,7 @@ public class CombatEngine : ICombatEngine
 
         string critTag = crit ? " [CRIT!]" : "";
         string nearTag = outcome == HitOutcome.NearMiss ? " [Glancing]" : "";
-        string log = $"{flavorText}{critTag}{nearTag} [{damage} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]";
+        string log = $"{flavorText}{critTag}{nearTag} [{damage} {atkType} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]";
         session.Log.Add(log);
 
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = log, DelayMs = 380 });

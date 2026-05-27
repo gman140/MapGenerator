@@ -23,6 +23,8 @@ public class CombatSession
     public int   PlayerBaseSpeed       { get; set; }
     public float PlayerBaseCritChance  { get; set; }
     public DamageType PlayerWeaponDamageType { get; set; } = DamageType.Bludgeoning;
+    public string? PlayerEquippedWeaponId { get; set; }
+    public IReadOnlyList<string> PlayerWeaponAttackIds { get; set; } = [];
 
     // Mana
     public int PlayerMana    { get; set; }

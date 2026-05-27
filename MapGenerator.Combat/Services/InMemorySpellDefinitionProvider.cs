@@ -169,6 +169,60 @@ public class InMemorySpellDefinitionProvider : ISpellDefinitionProvider
             ],
         },
 
+        // ── Dark — expanded ──────────────────────────────────────────────────
+        new()
+        {
+            Id          = "dark_ritual",
+            Name        = "Dark Ritual",
+            Description = "A focused dark invocation that deals solid damage and curses the target's aim.",
+            DamageType  = DamageType.Dark,
+            ManaCost    = 4,
+            Power       = 1.2f,
+            TargetType  = TargetType.Single,
+            OnHits      = [new() { StatusType = ModifierStat.Accuracy, Chance = 0.80f, Value = -0.20f, Turns = 3 }],
+        },
+        new()
+        {
+            Id          = "soul_drain",
+            Name        = "Soul Drain",
+            Description = "Draw the life force out of a target and into yourself. Deals dark damage and heals for a portion dealt.",
+            DamageType  = DamageType.Dark,
+            ManaCost    = 5,
+            Power       = 1.5f,
+            TargetType  = TargetType.Single,
+            DrainRatio  = 0.40f,
+        },
+
+        // ── Nature — expanded ─────────────────────────────────────────────────
+        new()
+        {
+            Id          = "wither",
+            Name        = "Wither",
+            Description = "A draining curse that leaves the target weakened and exposed. Deals minimal damage.",
+            DamageType  = DamageType.Nature,
+            ManaCost    = 3,
+            Power       = 0.3f,
+            TargetType  = TargetType.Single,
+            OnHits      =
+            [
+                new() { StatusType = ModifierStat.Attack,  Chance = 1.0f, Value = -4f, Turns = 3 },
+                new() { StatusType = ModifierStat.Defense, Chance = 1.0f, Value = -4f, Turns = 3 },
+            ],
+        },
+
+        // ── Frost — expanded ─────────────────────────────────────────────────
+        new()
+        {
+            Id          = "frost_nova",
+            Name        = "Frost Nova",
+            Description = "An eruption of frost energy that washes over all enemies, chilling each one.",
+            DamageType  = DamageType.Frost,
+            ManaCost    = 4,
+            Power       = 0.5f,
+            TargetType  = TargetType.AllEnemies,
+            OnHits      = [new() { StatusType = ModifierStat.Speed, Chance = 0.80f, Value = -3f, Turns = 2 }],
+        },
+
         // ── Ultimate ─────────────────────────────────────────────────────────
         new()
         {

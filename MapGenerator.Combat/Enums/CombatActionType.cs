@@ -2,9 +2,8 @@ namespace MapGenerator.Combat.Enums;
 
 public enum CombatActionType
 {
-    Attack,
-    HeavyAttack,
-    Steady,     // replaces Dodge; improves accuracy of next attack/spell
+    Attack,        // dispatched via CombatAction.WeaponAttackId; stamina cost from WeaponAttackDefinition
+    Steady,        // improves accuracy of next attack/spell
     Defend,
     UseItem,
     Flee,

@@ -292,6 +292,9 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { ItemId = "Stone",        Chance = 0.60f },
                 new() { ItemId = "DeepOre",      Chance = 0.30f },
                 new() { ItemId = "Spyglass",     Chance = 0.02f },
+                new() { ItemId = "QuartzFang",   Chance = 1.00f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -874,6 +877,9 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { ItemId = "RiverGlass",    Chance = 0.40f },
                 new() { ItemId = "HollowStone",   Chance = 0.30f },
                 new() { ItemId = "Amber",         Chance = 0.25f },
+                new() { ItemId = "GlacialMaul",   Chance = 1.00f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -944,6 +950,9 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { ItemId = "BoneFragment",Chance = 0.55f },
                 new() { ItemId = "Fiber",       Chance = 0.45f },
                 new() { ItemId = "Stone",       Chance = 0.30f },
+                new() { ItemId = "Thornwhip",   Chance = 1.00f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -1262,11 +1271,13 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             RegenerateAmount = 8,
             LootTable =
             [
-                new() { ItemId = "RottenSilks", Chance = 0.60f },
-                new() { ItemId = "CrackedOrb",  Chance = 0.50f },
-                new() { ItemId = "PaleMushroom",Chance = 0.30f },
-                new() { ItemId = "Amber",       Chance = 0.25f },
-                new() { ItemId = "Spyglass",    Chance = 0.03f },
+                new() { ItemId = "RottenSilks",   Chance = 0.60f },
+                new() { ItemId = "CrackedOrb",    Chance = 0.50f },
+                new() { ItemId = "PaleMushroom",  Chance = 0.30f },
+                new() { ItemId = "Amber",         Chance = 0.25f },
+                new() { ItemId = "Spyglass",      Chance = 0.03f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -1526,6 +1537,8 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { ItemId = "TarnishedRing", Chance = 0.40f },
                 new() { ItemId = "Amber",         Chance = 0.25f },
                 new() { ItemId = "Compass",       Chance = 0.04f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -1782,11 +1795,13 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             RegenerateAmount = 10,
             LootTable =
             [
-                new() { ItemId = "TarnishedRelic", Chance = 0.60f },
-                new() { ItemId = "BoneFragment",   Chance = 0.50f },
-                new() { ItemId = "Peat",           Chance = 0.40f },
-                new() { ItemId = "RiverGlass",     Chance = 0.30f },
-                new() { ItemId = "Lantern",        Chance = 0.03f },
+                new() { ItemId = "TarnishedRelic",  Chance = 0.60f },
+                new() { ItemId = "BoneFragment",    Chance = 0.50f },
+                new() { ItemId = "Peat",            Chance = 0.40f },
+                new() { ItemId = "RiverGlass",      Chance = 0.30f },
+                new() { ItemId = "Lantern",         Chance = 0.03f },
+                new() { ItemId = "EvolutionStone",  Chance = 0.75f },
+                new() { ItemId = "ElementalCore",   Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -1990,6 +2005,9 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
                 new() { ItemId = "AncientShard",   Chance = 0.50f },
                 new() { ItemId = "TarnishedRelic", Chance = 0.30f },
                 new() { ItemId = "Compass",        Chance = 0.03f },
+                new() { ItemId = "WardensBrand",   Chance = 1.00f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
@@ -2194,11 +2212,13 @@ public class InMemoryEnemyDefinitionProvider : IEnemyDefinitionProvider
             BuffStat = ModifierStat.Speed, BuffValue = 2f, BuffTurns = 3,
             LootTable =
             [
-                new() { ItemId = "RiverGlass",  Chance = 0.60f },
-                new() { ItemId = "Driftwood",   Chance = 0.50f },
-                new() { ItemId = "TidalCoin",   Chance = 0.40f },
-                new() { ItemId = "BoneFragment",Chance = 0.30f },
-                new() { ItemId = "Spyglass",    Chance = 0.04f },
+                new() { ItemId = "RiverGlass",    Chance = 0.60f },
+                new() { ItemId = "Driftwood",     Chance = 0.50f },
+                new() { ItemId = "TidalCoin",     Chance = 0.40f },
+                new() { ItemId = "BoneFragment",  Chance = 0.30f },
+                new() { ItemId = "Spyglass",      Chance = 0.04f },
+                new() { ItemId = "EvolutionStone", Chance = 0.75f },
+                new() { ItemId = "ElementalCore",  Chance = 0.50f },
             ],
             AppearTexts =
             [
