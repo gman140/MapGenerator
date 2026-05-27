@@ -72,43 +72,43 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
     );
 
     private static readonly string[] _frostlingSprite = Spr(
-        new() { ['A'] = "#5abfca8c", ['B'] = "#3a4f2cff", ['C'] = "#5abfcaff", ['D'] = "#d4dcf2ff", ['E'] = "#92c7cdff", ['F'] = "#537e60ff" },
-        "................" +
-        "................" +
-        "................" +
-        "................" +
-        "................" +
-        ".....A.........." +
-        "...A......BCB..." +
-        "......A...DBDB.." +
-        ".........ECDBEBB" +
-        ".EBECEEECDCEDEF." +
-        "FCBBBBBBBBDE...." +
-        "EFFDDDDDDDBE...." +
-        "..ECDEEEECEF...." +
-        ".BFFFF..FECB...." +
-        ".BB.BB....BBB..." +
-        "................"
+        new() { ['A'] = "#1b141eff", ['B'] = "#759da9ff", ['C'] = "#fdf5f1ff", ['D'] = "#b8d8d1ff", ['E'] = "#eb8a06ff", ['F'] = "#be5340ff" },
+        "...A.AAAAAA....." +
+        "..AAAAAAAAAAA..." +
+        "...AABCCDADCBA.." +
+        "..AAACCACCCACA.." +
+        "..AAACCACCCACA.." +
+        "..AAACCCEEECCA.." +
+        "..AAACCCFACCCA.." +
+        ".AAAABCCCCCCBAA." +
+        "ABDCAAADCCCDAABA" +
+        "ADCCDADCCCCCDABA" +
+        "AADCBACCCCCCCAAA" +
+        ".AAAAADCCCCEEEA." +
+        "..AAAABDCCEEFFA." +
+        "..AFAAAAAFEFFA.." +
+        "..AFFFAAAAAAA..." +
+        "...AAAA........."
     );
 
     private static readonly string[] _sparklingSprite = Spr(
-        new() { ['A'] = "#ffe400be", ['B'] = "#ffe872ff", ['C'] = "#f3c73fff", ['D'] = "#dec6bfff", ['E'] = "#ffffffff", ['F'] = "#fff6b6ff", ['G'] = "#d18d0eff", ['H'] = "#a7744aff", ['I'] = "#2d2929ff", ['J'] = "#7c5c44ff" },
-        ".A..A.A..BBCCC.." +
-        "..A.A...CBCDEED." +
-        "A.A...BBCCEDEED." +
-        ".A.A.BFFBCEDDED." +
-        "....CFFBBCEEDED." +
-        ".A.BFCBBCGCCDDG." +
-        ".A.BFBBCCCGGGG.." +
-        "A.BFFBCGCG......" +
-        "..BFBBCCG......." +
-        "..BFBCCCG......." +
-        ".CCCBGGG........" +
-        ".BFBBCCG........" +
-        ".BFBBCCCGG......" +
-        "..BFBBCGCCG....." +
-        "HHHBBBBBCGGIIHH." +
-        "IHHJJJJIIHJIIIHH"
+        new() { ['A'] = "#38aa91ff", ['B'] = "#7becbfff", ['C'] = "#fdf5f1ff" },
+        "...AA.....AA...." +
+        "..ABBAAAAABBA..." +
+        ".ABCCCBBBCCCBA.." +
+        ".ABBCCCCCCCBBBA." +
+        ".ABBBBBBBBBBBBA." +
+        ".ABBBBCCCCBBBBBA" +
+        "ABBBCCCCCCCCBBBA" +
+        "ABBBCCCCCCCCBBBA" +
+        "ABBCCCCCCCACCBBA" +
+        "ABBCCCCACCACCBBA" +
+        "ABBCCCCACCACCBBA" +
+        ".ABCCCCACCCCCBA." +
+        ".ABBCCCCCCCCBBA." +
+        "..ABBBCCCCBBBA.." +
+        "...AABBBBBBAA..." +
+        ".....AAAAAA....."
     );
 
     private static readonly string[] _shadelurkSprite = Spr(
@@ -135,127 +135,127 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
 
     // Nature — larger slimeling with leaf crown and defined face
     private static readonly string[] _slimelingSprite20 = Spr20(
-        new() { ['A'] = "#78ae79ff", ['B'] = "#95cb84ff", ['C'] = "#5d9074ff", ['D'] = "#426d62ff", ['E'] = "#b9ba57ff", ['F'] = "#292b3aff", ['G'] = "#bcde94ff", ['H'] = "#f9ebd8ff", ['I'] = "#d6c5b8ff", ['J'] = "#924e64ff", ['K'] = "#f2a198ff", ['L'] = "#cf6e84ff", ['M'] = "#444f54ff" },
-        "...................." +
-        "........EE..EE......" +
-        "......EEBBBBBE......" +
-        ".....BBBBBBBBBBB...." +
-        "....BBBABBBBBABBB..." +
-        "...CBBBAAABBBAABC..." +
-        "..CBBBGAAABBBAABC..." +
-        "..CBBBAHHHHHAABC...." +
-        ".ACBBAAHHHHHHAABC..." +
-        ".ACBBAHFHHHHFHABC..." +
-        ".ACBBAAHHHHHHAABC..." +
-        ".ACBBAAHKHHKHABC...." +
-        ".ACBBAAAAAAAAABC...." +
-        "..CBBBBAAAABBBBCC..." +
-        "..DCBBBBBBBBBCCD...." +
-        "...DCCBBBBBBBCDD...." +
-        "....DCCBBBBCCD......" +
-        ".....MDDCCCDDM......" +
-        "......MMMMMMM......." +
-        "...................."
+        new() { ['A'] = "#1b141eff", ['B'] = "#68b229ff", ['C'] = "#ea6d9dff", ['D'] = "#af407fff", ['E'] = "#75224aff", ['F'] = "#fdf5f1ff", ['G'] = "#ffb2b2ff", ['H'] = "#cde042ff" },
+        "...........AAA......" +
+        "...........ABBA....." +
+        "............ABA....." +
+        "...........ABA......" +
+        "...AAA.....ABA......" +
+        "..ABBBAAAAABA......." +
+        "..ABAABBBBBBA......." +
+        "..AA..AACCDCA......." +
+        ".......ACCCCA......." +
+        ".....AAACCCCAAA....." +
+        "....ADCCDDDDCCDA...." +
+        "...ADCDDCCCCDDCDA..." +
+        "..ADDDCCCCECCCDDDA.." +
+        "..ADCCCCCCCCCCCCDA.." +
+        "..ADCCCDAACAADCCDA.." +
+        "..ADCCAAAACAAAACDA.." +
+        "..ACACDAFDCDFADACA.." +
+        "..ACACCCCCCCCCCACA.." +
+        ".ACCADCCCGGCCCDACCA." +
+        "ACCDHCCDAAAADCHCDCCA"
     );
 
     // Fire — winged emberhatch with fuller flame body
     private static readonly string[] _emberHatchSprite20 = Spr20(
-        new() { ['A'] = "#673452ff", ['B'] = "#e64863ff", ['C'] = "#b0335eff", ['D'] = "#f2bc74ff", ['E'] = "#ce8b51ff", ['F'] = "#ac4a52ff", ['G'] = "#bf6c52ff", ['H'] = "#4f5474ff", ['I'] = "#f3ffe1ff" },
-        "...................." +
-        ".........AA........." +
-        "......AABBBA........" +
-        ".....ABBBCBA........" +
-        "....ABBBDCBA........" +
-        "....ABBDDDCBA......." +
-        "...ABBBDDDECBA......" +
-        "...ABCBBDDDDECBA...." +
-        "..AFGGEDDDDDEEGBA..." +
-        "..AFIIDDDDDDDIIGBA.." +
-        ".AFIIAADDDDDIIAAGBA." +
-        ".AGIIAADDDDDIIAAGGA." +
-        ".AGEIIDDDDDDDIIDEGA." +
-        ".AGEDDDDDDDDDDDDEGA." +
-        ".AGGGGGDDDDGGGGGA..." +
-        "..AFGGDDDDDDGGFA...." +
-        "..AGFGGGGGGGGFA....." +
-        "...AFGGGGGGGGFA....." +
-        "....AAAAAAAAAA......" +
-        "...................."
+        new() { ['A'] = "#1b141eff", ['B'] = "#eb8a06ff", ['C'] = "#ffc95cff", ['D'] = "#b1415cff", ['E'] = "#eb7171ff", ['F'] = "#b8d8d1ff", ['G'] = "#788ddeff", ['H'] = "#fdf5f1ff", ['I'] = "#5458c0ff", ['J'] = "#be5340ff", ['K'] = "#526a98ff", ['L'] = "#759da9ff" },
+        ".......AAAAA.AAA...." +
+        "......ABCCCBADEEA..." +
+        ".....ABCCCCCCEEEAA.." +
+        "....AACAAACCCCDDCBA." +
+        "....ADCFAGACCCCCCCBA" +
+        "....ADCHIABCCBJCJBCA" +
+        "...AAACCCCCCCCCCCCCA" +
+        "...ADBCCCCCCCCCCCCCA" +
+        "...ADCCCCJFHFJJJJJJA" +
+        ".AAAACCCCCBHBCCCCCA." +
+        "ACCABCCCCCBBJAAAAA.." +
+        "ACCCBBCCCBKKKJA....." +
+        ".ACCBBCCCCJLLLJA...." +
+        ".ABCCBCCCCCJKKJJA..." +
+        "..ABCBCBBCBHLJJFA..." +
+        "...ABBBCJHJJJFAA...." +
+        "....ABBBJJBBBJA....." +
+        ".....AABBBAAJBA....." +
+        ".....ABCCA.ABBBA...." +
+        ".....ABHBHAABBJFA..."
     );
 
     // Frost — elaborate ice crystal creature with crystal arms
     private static readonly string[] _frostlingSprite20 = Spr20(
-        new() { ['A'] = "#5abfca8c", ['B'] = "#3a4f2cff", ['C'] = "#5abfcaff", ['D'] = "#d4dcf2ff", ['E'] = "#92c7cdff", ['F'] = "#537e60ff" },
-        "...................." +
-        ".........D.........." +
-        "........DDD........." +
-        "..D....DDDDD....D..." +
-        "...D..DDCDDDD..D...." +
-        "....DDDCCCDDDD......" +
-        "....DDDCCCCCDD......" +
-        "...DDDECCCCCCED....." +
-        "..DDEECCCCCCEEEDD..." +
-        ".ADEEEECCCCCCEEEEDA." +
-        "ADEEEBCCCCCCCBEEEDA." +
-        "ADEEEECCCCCCCEEEEEA." +
-        "ADEEEECCCCCCCEEEEEA." +
-        ".ADEEEECCCCCCEEED..." +
-        "..ADEEECCCCCEEEDA..." +
-        "...BEEECCEEEEBB....." +
-        "....BEECCEEBB......." +
-        ".....BBBBBBB........" +
-        "......BBBBBB........" +
-        "...................."
+        new() { ['A'] = "#293a49ff", ['B'] = "#15161aff", ['C'] = "#3b4f62ff", ['D'] = "#64669fff", ['E'] = "#546c6aff", ['F'] = "#698f80ff", ['G'] = "#8c0099ff", ['H'] = "#e0bcc5ff" },
+        "...AA..............." +
+        "...BCAA............." +
+        "..BBDDCA............" +
+        "...BAEDCA..........." +
+        "....BAADCA.........." +
+        "....BAAADDA........." +
+        "...BAACCACC........." +
+        "...BCCAAACCA........" +
+        "....BBAAACCAAA......" +
+        ".....BAACACBCFAA...." +
+        ".....BACAAABCCFFA..." +
+        "....BAACAAAABCEFBA.." +
+        "....BAAACAABBEFBGFA." +
+        ".....BABACBEBEFFFEB." +
+        ".....BBBBAABFBEEHB.." +
+        "......BCCBABCEBBB..." +
+        ".....AFCCCBBEEFB...." +
+        "....ACEEEEEFFCB....." +
+        "...ABAAFFFCCB......." +
+        "...B.BBBBBB........."
     );
 
     // Storm — energetic sparkling with defined lightning body
     private static readonly string[] _sparklingSprite20 = Spr20(
-        new() { ['A'] = "#ffe400be", ['B'] = "#ffe872ff", ['C'] = "#f3c73fff", ['D'] = "#dec6bfff", ['E'] = "#ffffffff", ['F'] = "#fff6b6ff", ['G'] = "#d18d0eff", ['H'] = "#a7744aff", ['I'] = "#2d2929ff", ['J'] = "#7c5c44ff" },
-        "A.A..A.A..BBBCCC...." +
-        "..A.A..ACBCDEEED...." +
-        "A.A...BBBCCEDEEED..." +
-        "..A.BBCFFBBCEDDED..." +
-        "...BCFFBBCEEDEDED..." +
-        "..BBFCBBCGCCCGDDG..." +
-        ".BBFBBBCEGCGGGG....." +
-        "BBBFFBCEEGCG........" +
-        ".BBFBBCCGE.........." +
-        ".BCCFBCCCGE........." +
-        "BBBCFBBCGGE........." +
-        "BBCBCBBCGGGE........" +
-        "BBFBBCCCGGE........." +
-        "BBFBBCCCGGE........." +
-        ".BFBBBCGCGGE........" +
-        "HHHHBBBCGCGIIIHHH..." +
-        "IHHHIJJJIIIJJJIIIH.." +
-        ".IIHJJJJJJJJJHIIH..." +
-        "..IIHHHHHHHHII......" +
-        "...................."
+        new() { ['A'] = "#e0b571ff", ['B'] = "#c79546ff", ['C'] = "#e0cca7ff", ['D'] = "#a8631cff", ['E'] = "#c1acabff", ['F'] = "#e0e0e0ff", ['G'] = "#a7744aff", ['H'] = "#2d2929ff", ['I'] = "#7c5c44ff" },
+        ".......AAABAA......." +
+        ".....AACCABAAAB....." +
+        "...AABCAAABAABBBB..." +
+        "..ACAABAAAABBBBBBB.." +
+        ".ACCAABDBBDBBBEFBB.." +
+        ".ACAABBBDDDBBEFFEBD." +
+        ".BBAABBD...DBFFEFFD." +
+        ".AABBDD.....DEEFFFE." +
+        ".ACABBD.....DDFEFE.." +
+        ".ACABBD......DDEE..." +
+        "..ACBBD............." +
+        "..ACABBD............" +
+        "...AABDBD..........." +
+        "...BBABBD..........." +
+        "....AAABBD.........." +
+        "....ACAABBD........." +
+        ".....ACABBB........." +
+        ".GG..AAABDD........." +
+        "GGGGGAABBBDHH.GG...." +
+        "GGGIIIIHHGGIHHHGGI.."
     );
 
     // Dark — large cloaked shadelurk with flowing shadow tendrils
     private static readonly string[] _shadelurkSprite20 = Spr20(
-        new() { ['A'] = "#978ed9ee", ['B'] = "#beb0f3ee", ['C'] = "#815bd7ee", ['D'] = "#472cb3ee", ['E'] = "#c4c9d9ee", ['F'] = "#444444ee", ['G'] = "#7e4854ee", ['H'] = "#ffffffee", ['I'] = "#262626ee", ['J'] = "#d992a1ee", ['K'] = "#ac6d7aee", ['L'] = "#372680ee" },
-        "...................." +
-        "......ABBBBBB......." +
-        "....AAAAAABBBBBB...." +
-        "...AAAAABBBBBBBBB..." +
-        "..AAAAAACCCCCCCBB..." +
-        "..AAACDDDDDDDDCCB..." +
-        ".AACDDDDEEFGGGFEDC.." +
-        ".DCDCEHHIJIFHHHEDC.." +
-        ".DDCHHHHIKIIKGHEC..." +
-        ".DDDCBEHIKJKJGHEC..." +
-        ".DCCDDCCEIIFFEEC...." +
-        "DDLLCDDDDDDDDCCC...." +
-        "DDLLCCCCCCCCAAAB...." +
-        ".DLLCCCCAAAAAB......" +
-        ".DLL..CCCCCCA......." +
-        ".DLL.............L.." +
-        ".DL...........L..L.." +
-        "..L........LL.LL...." +
-        "...L.....LL..L......" +
-        "...................."
+        new() { ['A'] = "#1b141eff", ['B'] = "#ccc1beff", ['C'] = "#fdf5f1ff", ['D'] = "#918692ff", ['E'] = "#e25322ff", ['F'] = "#ffffffff" },
+        "...........AAAAA...." +
+        ".........AABCCCCAA.." +
+        "........ADBBBCCCCBA." +
+        ".......ABBBBBCCCCCBA" +
+        ".......ABBBDBCCCCCCA" +
+        ".......ABBDDAACCCCCA" +
+        ".......ADBDAAAABBCBA" +
+        "........ABCAAEACAAAA" +
+        ".......ADABCAACDEAA." +
+        ".......AADBBCCBDAAA." +
+        ".....AADADBCCCCCCCA." +
+        "...AACBCCAAADCDCBA.." +
+        "..ABCAABCCDCAABCA..." +
+        ".ACAA..ADADA..AAAA.." +
+        ".ABA..ACDBDCA..ADA.." +
+        "ACCCA.ABCACBA.ABBBA." +
+        "ACCDAADAA.AADAABBDA." +
+        "ACBA.ACA...ABAABDA.." +
+        ".AA..ABFA..ADBAAA..." +
+        "......AAA...AAA....."
     );
 
     // ── Companion definitions ────────────────────────────────────────────────
