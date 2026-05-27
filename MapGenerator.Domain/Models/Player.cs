@@ -40,7 +40,8 @@ public class Player
     public int BaseAttack { get; set; } = 10;
     public int BaseDefense { get; set; } = 5;
     public int BaseResistance { get; set; } = 0;
-    public float BaseDodgeChance { get; set; } = 0.10f;
+    public int BaseSpeed { get; set; } = 6;
+    public float BaseCritChance { get; set; } = 0.05f;
     public int MaxMana { get; set; } = 10;
     public int CurrentMana { get; set; } = 10;
     public int BaseMagic { get; set; } = 8;

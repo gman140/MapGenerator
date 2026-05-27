@@ -4,7 +4,7 @@ public enum CombatActionType
 {
     Attack,
     HeavyAttack,
-    Dodge,
+    Steady,     // replaces Dodge; improves accuracy of next attack/spell
     Defend,
     UseItem,
     Flee,

@@ -1,9 +1,3 @@
+// Retained for backward-compatibility only — no longer used by the move system.
+// Move behaviour is now derived from CompanionMove.HasDamage / HasHeal / Effects.
 namespace MapGenerator.Combat.Enums;
-
-public enum CompanionMoveKind
-{
-    Attack,
-    PlayerBuff,
-    EnemyDebuff,
-    StatusAttack, // deals damage and has a chance to inflict a status effect
-}

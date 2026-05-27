@@ -705,7 +705,7 @@ OnDance="HandleDanceAsync"
             if (evt.PlayerStamina >= 0)   _combatSession.PlayerStamina  = evt.PlayerStamina;
             if (evt.PlayerMana >= 0)      _combatSession.PlayerMana     = evt.PlayerMana;
             if (evt.PlayerDefending != null) _combatSession.PlayerDefending = evt.PlayerDefending.Value;
-            if (evt.PlayerDodging   != null) _combatSession.PlayerDodging   = evt.PlayerDodging.Value;
+            if (evt.PlayerSteady    != null) _combatSession.PlayerSteady    = evt.PlayerSteady.Value;
             if (evt.EnemyHp >= 0 && evt.EnemyInstanceId != null)
             {
                 var e = _combatSession.Enemies.FirstOrDefault(e => e.InstanceId == evt.EnemyInstanceId);

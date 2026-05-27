@@ -163,17 +163,22 @@
                             {
                                 <div class="companion-move-slot-header">
                                     <span class="companion-move-name">@slotMove.Name</span>
-                                    @if (slotMove.Kind == CompanionMoveKind.Attack || slotMove.Kind == CompanionMoveKind.StatusAttack)
+                                    @if (slotMove.HasDamage)
                                     {
                                         <span class="companion-element companion-element-@slotMove.DamageType.ToString().ToLower()">@slotMove.DamageType</span>
                                         <span class="companion-move-power">~@((int)(EffectiveAttack * slotMove.Power)) dmg</span>
                                         @if (slotMove.HitsAll) { <span class="companion-move-aoe">AOE</span> }
-                                        @if (slotMove.Kind == CompanionMoveKind.StatusAttack)
+                                        @if (slotMove.HasEnemyEffect)
                                         {
-                                            <span class="companion-move-status">@slotMove.InflictStatus @((int)(slotMove.StatusChance * 100))%</span>
+                                            <span class="companion-move-status">@FormatEffect(slotMove)</span>
                                         }
                                     }
-                                    else if (slotMove.Kind == CompanionMoveKind.PlayerBuff)
+                                    else if (slotMove.HasHeal)
+                                    {
+                                        <span class="companion-move-kind buff">Heal</span>
+                                        <span class="companion-move-power">+@((int)slotMove.HealAmount) HP</span>
+                                    }
+                                    else if (slotMove.HasSelfBuff)
                                     {
                                         <span class="companion-move-kind buff">Buff</span>
                                         <span class="companion-move-power">@FormatEffect(slotMove)</span>
@@ -200,17 +205,10 @@
                         @if (isOpen)
                         {
                             <div class="companion-move-picker">
-                                @foreach (var group in eligibleMoves.GroupBy(m => m.Kind).OrderBy(g => g.Key))
+                                @foreach (var group in eligibleMoves.GroupBy(GetMoveCategory).OrderBy(g => g.Key))
                                 {
-                                    string kindLabel = group.Key switch
-                                    {
-                                        CompanionMoveKind.Attack       => "Attacks",
-                                        CompanionMoveKind.StatusAttack => "Status Attacks",
-                                        CompanionMoveKind.PlayerBuff   => "Buffs",
-                                        _                              => "Debuffs",
-                                    };
                                     <div class="companion-picker-group">
-                                        <div class="companion-picker-group-label">@kindLabel</div>
+                                        <div class="companion-picker-group-label">@group.Key</div>
                                         @foreach (var m in group)
                                         {
                                             bool inUse = _editMoveIds.Contains(m.Id);
@@ -218,16 +216,21 @@
                                                  @onclick="() => { if (!inUse) AssignMove(s, m.Id); }">
                                                 <div class="companion-picker-option-header">
                                                     <span class="companion-move-name">@m.Name</span>
-                                                    @if (m.Kind is CompanionMoveKind.Attack or CompanionMoveKind.StatusAttack)
+                                                    @if (m.HasDamage)
                                                     {
                                                         <span class="companion-element companion-element-@m.DamageType.ToString().ToLower()">@m.DamageType</span>
                                                         <span class="companion-move-power">~@((int)(EffectiveAttack * m.Power)) dmg</span>
-                                                        @if (m.Kind == CompanionMoveKind.StatusAttack)
+                                                        @if (m.HasEnemyEffect)
                                                         {
-                                                            <span class="companion-move-status">@m.InflictStatus @((int)(m.StatusChance * 100))%</span>
+                                                            <span class="companion-move-status">@FormatEffect(m)</span>
                                                         }
                                                     }
-                                                    else if (m.Kind == CompanionMoveKind.PlayerBuff)
+                                                    else if (m.HasHeal)
+                                                    {
+                                                        <span class="companion-move-kind buff">Heal</span>
+                                                        <span class="companion-move-power">+@((int)m.HealAmount) HP</span>
+                                                    }
+                                                    else if (m.HasSelfBuff)
                                                     {
                                                         <span class="companion-move-kind buff">Buff</span>
                                                         <span class="companion-move-power">@FormatEffect(m)</span>
@@ -576,24 +579,20 @@
         await OnSaveSprite.InvokeAsync([.. _pixels]);
     }
 
+    private static string GetMoveCategory(CompanionMove m) =>
+        m.HasDamage ? "Attacks" :
+        m.HasHeal   ? "Heals" :
+        m.HasSelfBuff ? "Buffs" :
+        "Debuffs";
+
     private static string FormatEffect(CompanionMove move)
     {
-        if (move.Kind == CompanionMoveKind.PlayerBuff)
+        var parts = move.Effects.Select(e =>
         {
-            if (move.EffectStat == null)
-                return $"Heal +{(int)move.EffectValue} HP";
-            string statLabel = move.EffectStat == ModifierStat.DodgeChance
-                ? $"Dodge +{move.EffectValue * 100:F0}%"
-                : $"{move.EffectStat} +{(int)move.EffectValue}";
-            return $"{statLabel} · {move.EffectTurns}t";
-        }
-        else
-        {
-            string statLabel = move.EffectStat == ModifierStat.DodgeChance
-                ? $"Dodge {move.EffectValue * 100:F0}%"
-                : $"{move.EffectStat} {(int)move.EffectValue}";
-            return $"{statLabel} · {move.EffectTurns}t";
-        }
+            string chancePart = e.Chance < 1f ? $" ({(int)(e.Chance * 100)}%)" : "";
+            return $"{e.Status} {e.Duration}t{chancePart}";
+        });
+        return string.Join(", ", parts);
     }
 
     private async Task HandleCancel() => await OnCancel.InvokeAsync();

@@ -16,7 +16,9 @@ public class EnemyDefinition
     public List<EnemyActionEntry> ActionTable { get; set; } = [];
 
     // XP awarded when this enemy is defeated
-    public int BaseXp { get; init; }
+    public int   BaseXp     { get; init; }
+    public int   BaseSpeed  { get; init; } = 5;
+    public float CritChance { get; init; } = 0f;
 
     // Damage type for this enemy's attacks
     public DamageType AttackDamageType { get; init; } = DamageType.Bludgeoning;

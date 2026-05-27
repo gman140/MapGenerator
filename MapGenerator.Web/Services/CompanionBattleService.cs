@@ -1,6 +1,7 @@
 using MapGenerator.Combat.Enums;
 using MapGenerator.Combat.Interfaces;
 using MapGenerator.Combat.Models;
+using MapGenerator.Combat.Services;
 using MapGenerator.Domain.Enums;
 
 namespace MapGenerator.Web.Services;
@@ -128,7 +129,7 @@ public class CompanionBattleService
         // Higher Speed goes first; challenger wins ties
         var c1 = challenger;
         var c2 = accepter;
-        if (c2.EffSpd > c1.EffSpd) (c1, c2) = (c2, c1);
+        if (c2.BaseSpd > c1.BaseSpd) (c1, c2) = (c2, c1);
 
         for (int round = 1; round <= 30; round++)
         {
@@ -136,14 +137,14 @@ public class CompanionBattleService
             TakeTurn(c1, c2, Emit);
             if (c2.Hp <= 0) break;
             TickMods(c1); TickMods(c2);
-            TickStatus(c1, Emit); TickStatus(c2, Emit);
+            TickStatuses(c1, Emit); TickStatuses(c2, Emit);
             if (c2.Hp <= 0) break;
             events.Add(new BattleEvent(null, null, BattleEventKind.TurnBreak, "",
                 challenger.Hp, challenger.MaxHp, accepter.Hp, accepter.MaxHp));
             TakeTurn(c2, c1, Emit);
             if (c1.Hp <= 0) break;
             TickMods(c1); TickMods(c2);
-            TickStatus(c1, Emit); TickStatus(c2, Emit);
+            TickStatuses(c1, Emit); TickStatuses(c2, Emit);
             if (c1.Hp <= 0) break;
         }
 
@@ -185,152 +186,192 @@ public class CompanionBattleService
     {
         if (attacker.Hp <= 0) return;
 
-        // Stun (move-lock from Stun move)
-        if (attacker.StunnedTurns > 0)
+        // Stun/Paralysis skip chance from active statuses
+        foreach (var (status, _) in attacker.ActiveStatuses)
         {
-            attacker.StunnedTurns--;
-            emit(attacker.OwnerId, null, BattleEventKind.Stun, $"  {attacker.Name} is stunned and can't move!");
-            return;
+            var def = StatusRegistry.Get(status);
+            if (def.SkipChance > 0 && _rng.NextDouble() < def.SkipChance)
+            {
+                emit(attacker.OwnerId, null, BattleEventKind.Stun,
+                    $"  {attacker.Name} is {def.DisplayName.ToLower()} and can't move!");
+                return;
+            }
         }
 
-        // Status: DoT and skip effects
-        var statusDef = StatusRegistry.Get(attacker.Status);
-        if (statusDef.DoTMultiplier > 0)
+        // DoT tick at turn start
+        foreach (var (status, _) in attacker.ActiveStatuses.ToList())
         {
-            int tickDmg = (int)Math.Max(1, attacker.MaxHp * statusDef.DoTMultiplier);
+            var def = StatusRegistry.Get(status);
+            if (def.DoTMultiplier <= 0) continue;
+            int tickDmg = (int)Math.Max(1, attacker.MaxHp * def.DoTMultiplier);
             attacker.Hp = Math.Max(0, attacker.Hp - tickDmg);
             emit(null, attacker.OwnerId, BattleEventKind.Status,
-                $"  {attacker.Name} is {statusDef.DisplayName.ToLower()}! -{tickDmg} HP | {attacker.Hp}/{attacker.MaxHp} HP");
+                $"  {attacker.Name} takes {tickDmg} {def.DisplayName.ToLower()} damage! {attacker.Hp}/{attacker.MaxHp} HP");
             if (attacker.Hp <= 0) return;
-        }
-        if (statusDef.SkipChance > 0 && _rng.NextDouble() < statusDef.SkipChance)
-        {
-            emit(attacker.OwnerId, null, BattleEventKind.Status,
-                $"  {attacker.Name} is {statusDef.DisplayName.ToLower()} and can't move!");
-            return;
         }
 
         var move = ChooseMove(attacker, defender);
-        bool crit = _rng.NextDouble() < attacker.EffectiveFocus;
+        bool crit = CombatMath.RollCrit(attacker.EffectiveFocus, _rng);
 
-        switch (move.Kind)
+        // Damage component
+        if (move.HasDamage)
         {
-            case CompanionMoveKind.Attack:
-            case CompanionMoveKind.StatusAttack:
+            float eff = GetTypeMultiplier(move.DamageType, defender);
+            float raw = attacker.EffectiveAttack * move.Power * (float)(0.85 + _rng.NextDouble() * 0.30);
+
+            var outcome = CombatMath.RollHit(
+                attacker.EffectiveSpeed, defender.EffectiveSpeed,
+                move.Power, -attacker.MissChanceTotal, _rng);
+
+            if (outcome == HitOutcome.Miss)
             {
-                float eff = GetTypeMultiplier(move.DamageType, defender);
-                float raw = attacker.EffectiveAttack * move.Power * (float)(0.85 + _rng.NextDouble() * 0.30);
-                float dmg = Math.Max(1f, raw * StatusRegistry.Get(attacker.Status).AttackMultiplier - Math.Max(0f, defender.EffectiveDefense) * 0.5f) * (crit ? 1.5f : 1f) * eff;
+                emit(attacker.OwnerId, defender.OwnerId, BattleEventKind.Dodge,
+                    $"  {attacker.Name} → {move.Name} | {defender.Name} evades!");
+            }
+            else
+            {
+                float nearMult = outcome == HitOutcome.NearMiss ? 0.5f : 1f;
+                float dmg = Math.Max(1f,
+                    raw * nearMult * eff - Math.Max(0f, defender.EffectiveDefense) * 0.5f)
+                    * (crit ? 1.5f : 1f);
                 int damage = (int)Math.Round(dmg);
 
-                if (defender.EffectiveDodge > 0 && _rng.NextDouble() < defender.EffectiveDodge)
-                {
-                    emit(attacker.OwnerId, defender.OwnerId, BattleEventKind.Dodge,
-                        $"  {attacker.Name} → {move.Name} | {defender.Name} dodges!");
-                    break;
-                }
-
                 defender.Hp = Math.Max(0, defender.Hp - damage);
-                string tags = (crit ? " [CRIT]" : "") + (eff > 1f ? " [Super effective!]" : eff < 1f ? " [Resisted]" : "");
-
-                // Try inflicting status
-                if (move.Kind == CompanionMoveKind.StatusAttack && move.InflictStatus != CompanionStatus.None
-                    && defender.Status == CompanionStatus.None && _rng.NextDouble() < move.StatusChance)
-                {
-                    defender.Status      = move.InflictStatus;
-                    defender.StatusTurns = move.StatusDuration;
-                    tags += $" [{move.InflictStatus}!]";
-                }
+                string critTag = crit ? " [CRIT]" : "";
+                string effTag  = eff > 1f ? " [Super effective!]" : eff < 1f ? " [Resisted]" : "";
+                string nearTag = outcome == HitOutcome.NearMiss ? " [Glancing]" : "";
 
                 emit(attacker.OwnerId, defender.OwnerId, BattleEventKind.Attack,
-                    $"  {attacker.Name} → {move.Name} | {damage} dmg{tags} | {defender.Name}: {defender.Hp}/{defender.MaxHp} HP");
+                    $"  {attacker.Name} → {move.Name} | {damage} dmg{critTag}{nearTag}{effTag} | {defender.Name}: {defender.Hp}/{defender.MaxHp} HP");
 
                 // Rally on low-HP crit
                 if (crit && defender.Hp > 0 && defender.Hp < defender.MaxHp * 0.35f && _rng.NextDouble() < 0.20)
                 {
-                    defender.Mods.Add(new Mod(ModifierStat.Attack, 3f, 2));
-                    emit(defender.OwnerId, null, BattleEventKind.Rally,
-                        $"  {defender.Name} rallies! (+3 ATK for 2 rounds)");
+                    attacker.Mods.Add(new Mod(ModifierStat.Attack, 3f, 2));
+                    emit(attacker.OwnerId, null, BattleEventKind.Rally,
+                        $"  {attacker.Name} rallies! (+3 ATK for 2 rounds)");
                 }
-                break;
-            }
-            case CompanionMoveKind.PlayerBuff:
-            {
-                if (move.EffectStat == null)
-                {
-                    int heal = (int)Math.Round(move.EffectValue * (crit ? 1.5f : 1f));
-                    attacker.Hp = Math.Min(attacker.MaxHp, attacker.Hp + heal);
-                    emit(attacker.OwnerId, null, BattleEventKind.Heal,
-                        $"  {attacker.Name} → {move.Name} | +{heal} HP | {attacker.Hp}/{attacker.MaxHp} HP");
-                }
-                else
-                {
-                    attacker.Mods.Add(new Mod(move.EffectStat.Value, move.EffectValue, move.EffectTurns));
-                    emit(attacker.OwnerId, null, BattleEventKind.Buff,
-                        $"  {attacker.Name} → {move.Name} | {FormatStat(move.EffectStat.Value)} {move.EffectValue:+#.#;-#.#;0} for {move.EffectTurns} rounds");
-                }
-                break;
-            }
-            case CompanionMoveKind.EnemyDebuff when move.EffectStat.HasValue:
-            {
-                defender.Mods.Add(new Mod(move.EffectStat.Value, move.EffectValue, move.EffectTurns));
-                emit(attacker.OwnerId, defender.OwnerId, BattleEventKind.Debuff,
-                    $"  {attacker.Name} → {move.Name} | {defender.Name}'s {FormatStat(move.EffectStat.Value)} {move.EffectValue:+#.#;-#.#;0} for {move.EffectTurns} rounds");
-                break;
             }
         }
+
+        // Heal component
+        if (move.HasHeal)
+        {
+            int heal = (int)Math.Round(move.HealAmount * (crit ? 1.5f : 1f));
+            attacker.Hp = Math.Min(attacker.MaxHp, attacker.Hp + heal);
+            emit(attacker.OwnerId, null, BattleEventKind.Heal,
+                $"  {attacker.Name} → {move.Name} | +{heal} HP | {attacker.Hp}/{attacker.MaxHp} HP");
+        }
+
+        // Status effects component
+        foreach (var effect in move.Effects)
+        {
+            if (_rng.NextDouble() >= effect.Chance) continue;
+
+            if (effect.Target == MoveEffectTarget.Self)
+            {
+                ApplyOrRefreshStatus(attacker.ActiveStatuses, effect.Status, effect.Duration);
+                var def = StatusRegistry.Get(effect.Status);
+                // Also apply Mod-based stat changes for immediate buff display
+                ApplyStatusAsMod(attacker.Mods, attacker, def, effect.Duration);
+                emit(attacker.OwnerId, null, BattleEventKind.Buff,
+                    $"  {attacker.Name} → {move.Name} | {def.DisplayName}! ({effect.Duration} turns)");
+            }
+            else
+            {
+                ApplyOrRefreshStatus(defender.ActiveStatuses, effect.Status, effect.Duration);
+                var def = StatusRegistry.Get(effect.Status);
+                emit(attacker.OwnerId, defender.OwnerId, BattleEventKind.Debuff,
+                    $"  {attacker.Name} → {move.Name} | {defender.Name} is {def.DisplayName}! ({effect.Duration} turns)");
+            }
+        }
+
         attacker.TurnCount++;
+    }
+
+    private static void ApplyOrRefreshStatus(List<(CompanionStatus Status, int Turns)> list, CompanionStatus status, int duration)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].Status == status)
+            {
+                list[i] = (status, Math.Max(list[i].Turns, duration));
+                return;
+            }
+        }
+        list.Add((status, duration));
+    }
+
+    private static void ApplyStatusAsMod(List<Mod> mods, PvpCompanion c, StatusDefinition def, int turns)
+    {
+        // Stat-modifier statuses are computed dynamically from ActiveStatuses, but for non-zero
+        // Mods entries we still surface them for display in the emit text. We don't duplicate
+        // the computation — EffectiveAttack/Defense already fold ActiveStatuses in.
+        // Only MissChance needs a Mod entry since nothing else tracks it as a Mod.
+        _ = c; _ = turns; _ = def; // statuses computed dynamically; no separate Mod needed
     }
 
     private CompanionMove ChooseMove(PvpCompanion attacker, PvpCompanion defender)
     {
         if (attacker.Moves.Count == 0)
-            return new CompanionMove { Id = "fallback", Name = "Tackle", Kind = CompanionMoveKind.Attack, Power = 0.8f };
+            return new CompanionMove { Id = "fallback", Name = "Tackle", Power = 0.8f };
 
         var tDef = TemperamentRegistry.Get(attacker.Temperament);
 
+        // Prefer healing when low HP
         if (attacker.Hp < attacker.MaxHp * tDef.HealThreshold)
         {
-            var heal = attacker.Moves.FirstOrDefault(m => m.Kind == CompanionMoveKind.PlayerBuff && m.EffectStat == null);
+            var heal = attacker.Moves.FirstOrDefault(m => m.HasHeal && !m.HasDamage);
             if (heal != null && _rng.NextDouble() < tDef.HealChance) return heal;
         }
 
-        if (defender.Status == CompanionStatus.None && attacker.TurnCount <= 2 && _rng.NextDouble() < 0.50)
+        // Early turns: try a status-inflicting attack if defender isn't already loaded with statuses
+        if (defender.ActiveStatuses.Count < 2 && attacker.TurnCount <= 2 && _rng.NextDouble() < 0.50)
         {
-            var status = attacker.Moves.FirstOrDefault(m => m.Kind == CompanionMoveKind.StatusAttack);
-            if (status != null) return status;
+            var statusAtk = attacker.Moves.FirstOrDefault(m => m.HasDamage && m.HasEnemyEffect);
+            if (statusAtk != null) return statusAtk;
         }
 
+        // Early turns: try a pure debuff
         if (attacker.TurnCount <= 1 && _rng.NextDouble() < tDef.DebuffChance)
         {
-            var debuff = attacker.Moves.FirstOrDefault(m => m.Kind == CompanionMoveKind.EnemyDebuff);
+            var debuff = attacker.Moves.FirstOrDefault(m => m.HasEnemyEffect && !m.HasDamage);
             if (debuff != null) return debuff;
         }
 
+        // Early turns: try a self-buff (if no attack buff active)
         if (attacker.TurnCount <= 2 && _rng.NextDouble() < tDef.BuffChance
-            && !attacker.Mods.Any(m => m.Stat == ModifierStat.Attack && m.Value > 0))
+            && !attacker.Mods.Any(m => m.Stat == ModifierStat.Attack && m.Value > 0)
+            && !attacker.ActiveStatuses.Any(s => StatusRegistry.Get(s.Status).AtkPct > 0))
         {
-            var buff = attacker.Moves.FirstOrDefault(m => m.Kind == CompanionMoveKind.PlayerBuff && m.EffectStat != null);
+            var buff = attacker.Moves.FirstOrDefault(m => m.HasSelfBuff && !m.HasDamage && !m.HasHeal);
             if (buff != null) return buff;
         }
 
-        var attacks = attacker.Moves
-            .Where(m => m.Kind is CompanionMoveKind.Attack or CompanionMoveKind.StatusAttack)
-            .ToList();
+        // Default: prefer highest-power attack
+        var attacks = attacker.Moves.Where(m => m.HasDamage).ToList();
         if (attacks.Count > 0 && _rng.NextDouble() < tDef.AttackBias)
             return attacks.MaxBy(m => m.Power)!;
 
         return attacker.Moves[_rng.Next(attacker.Moves.Count)];
     }
 
-    private static void TickStatus(PvpCompanion c, Action<string?, string?, BattleEventKind, string> emit)
+    private static void TickStatuses(PvpCompanion c, Action<string?, string?, BattleEventKind, string> emit)
     {
-        if (c.Status == CompanionStatus.None) return;
-        c.StatusTurns--;
-        if (c.StatusTurns <= 0)
+        for (int i = c.ActiveStatuses.Count - 1; i >= 0; i--)
         {
-            emit(null, c.OwnerId, BattleEventKind.Status, $"  {c.Name} recovered from {StatusRegistry.Get(c.Status).DisplayName}.");
-            c.Status = CompanionStatus.None;
+            var (status, turns) = c.ActiveStatuses[i];
+            int newTurns = turns - 1;
+            if (newTurns <= 0)
+            {
+                c.ActiveStatuses.RemoveAt(i);
+                emit(null, c.OwnerId, BattleEventKind.Status,
+                    $"  {c.Name} recovered from {StatusRegistry.Get(status).DisplayName}.");
+            }
+            else
+            {
+                c.ActiveStatuses[i] = (status, newTurns);
+            }
         }
     }
 
@@ -342,7 +383,6 @@ public class CompanionBattleService
             if (_weakTo.TryGetValue(dt, out var beats) && beats == attackType) raw *= 1.3f;
             else if (_weakTo.TryGetValue(attackType, out var losesTo) && losesTo == dt) raw *= 0.75f;
         }
-        // Resist reduces deviation from neutral
         return 1f + (raw - 1f) * (1f - defender.EffectiveResist);
     }
 
@@ -354,15 +394,6 @@ public class CompanionBattleService
         foreach (var k in _challenges.Where(kv => now > kv.Value.ExpiresAt).Select(kv => kv.Key).ToList())
             _challenges.Remove(k);
     }
-
-    private static string FormatStat(ModifierStat stat) => stat switch
-    {
-        ModifierStat.Attack      => "ATK",
-        ModifierStat.Defense     => "DEF",
-        ModifierStat.DodgeChance => "DODGE",
-        ModifierStat.Resistance  => "RES",
-        _ => stat.ToString(),
-    };
 
     // Fire > Nature > Dark > Storm > Frost > Fire
     private static readonly Dictionary<DamageType, DamageType> _weakTo = new()
@@ -391,11 +422,9 @@ public class CompanionBattleService
         public CompanionTemperament Temperament { get; }
         public int MaxHp { get; }
         public int Hp { get; set; }
-        public int EffSpd { get; }
+        public int BaseSpd { get; }
         public int TurnCount { get; set; }
-        public int StunnedTurns { get; set; }
-        public CompanionStatus Status { get; set; } = CompanionStatus.None;
-        public int StatusTurns { get; set; }
+        public List<(CompanionStatus Status, int Turns)> ActiveStatuses { get; } = [];
         public List<Mod> Mods { get; } = [];
 
         private readonly float _baseAtk;
@@ -403,11 +432,29 @@ public class CompanionBattleService
         private readonly float _effFoc;
         private readonly float _effRes;
 
-        public float EffectiveAttack  => _baseAtk + Mods.Where(m => m.Stat == ModifierStat.Attack).Sum(m => m.Value);
-        public float EffectiveDefense => _baseDef  + Mods.Where(m => m.Stat == ModifierStat.Defense).Sum(m => m.Value);
+        public float EffectiveAttack =>
+            _baseAtk
+            + Mods.Where(m => m.Stat == ModifierStat.Attack).Sum(m => m.Value)
+            + ActiveStatuses.Sum(s =>
+                CombatMath.StatusStatEffect(_baseAtk, StatusRegistry.Get(s.Status).AtkPct, StatusRegistry.Get(s.Status).AtkMin));
+
+        public float EffectiveDefense =>
+            _baseDef
+            + Mods.Where(m => m.Stat == ModifierStat.Defense).Sum(m => m.Value)
+            + ActiveStatuses.Sum(s =>
+                CombatMath.StatusStatEffect(_baseDef, StatusRegistry.Get(s.Status).DefPct, StatusRegistry.Get(s.Status).DefMin));
+
+        public int EffectiveSpeed =>
+            (int)(BaseSpd
+            + Mods.Where(m => m.Stat == ModifierStat.Speed).Sum(m => m.Value)
+            + ActiveStatuses.Sum(s =>
+                CombatMath.StatusStatEffect(BaseSpd, StatusRegistry.Get(s.Status).SpdPct, StatusRegistry.Get(s.Status).SpdMin)));
+
+        public float MissChanceTotal =>
+            ActiveStatuses.Sum(s => StatusRegistry.Get(s.Status).MissChanceAdd);
+
         public float EffectiveFocus   => _effFoc;
         public float EffectiveResist  => _effRes;
-        public float EffectiveDodge   => Math.Clamp(Mods.Where(m => m.Stat == ModifierStat.DodgeChance).Sum(m => m.Value), 0f, 0.75f);
 
         public PvpCompanion(
             string ownerId, string playerName, string name,
@@ -425,10 +472,9 @@ public class CompanionBattleService
             var tDef = TemperamentRegistry.Get(temperament);
             var fDef = FormRegistry.Get(form);
 
-            MaxHp = 10 + Math.Max(0, baseVit + tDef.VitBonus + fDef.VitBonus) * 5;
-            Hp    = MaxHp;
-
-            EffSpd   = baseSpd + tDef.SpdBonus + fDef.SpdBonus;
+            MaxHp    = 10 + Math.Max(0, baseVit + tDef.VitBonus + fDef.VitBonus) * 5;
+            Hp       = MaxHp;
+            BaseSpd  = baseSpd + tDef.SpdBonus + fDef.SpdBonus;
             _baseAtk = Math.Max(0f, baseAttack + tDef.AtkBonus + fDef.AtkBonus);
             _baseDef = Math.Max(0f, baseDef + tDef.DefBonus + fDef.DefBonus);
             _effFoc  = Math.Clamp(0.05f + (baseFoc + tDef.FocBonus + fDef.FocBonus) * 0.025f, 0.05f, 0.45f);

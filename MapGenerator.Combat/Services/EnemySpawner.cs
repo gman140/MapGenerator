@@ -232,18 +232,20 @@ public class EnemySpawner
 
         return new Enemy
         {
-            InstanceId          = Guid.NewGuid().ToString("N"),
-            DefinitionId        = def.Id,
-            Name                = name,
-            CurrentHp           = hp,
-            MaxHp               = hp,
-            Attack              = atk,
-            Defense             = def2,
-            ActionTable         = actionTable,
-            AffixId             = affixId,
-            AffixLabel          = affixLabel,
-            OnHitEffect         = onHit,
-            ActionsCantBeDodged = cantBeDodged,
+            InstanceId     = Guid.NewGuid().ToString("N"),
+            DefinitionId   = def.Id,
+            Name           = name,
+            CurrentHp      = hp,
+            MaxHp          = hp,
+            Attack         = atk,
+            Defense        = def2,
+            Speed          = def.BaseSpeed,
+            CritChance     = def.CritChance,
+            ActionTable    = actionTable,
+            AffixId        = affixId,
+            AffixLabel     = affixLabel,
+            OnHitEffect    = onHit,
+            IgnoresSteady  = cantBeDodged,
         };
     }
 }

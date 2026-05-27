@@ -14,7 +14,7 @@ public class InMemoryEquipmentDefinitionProvider : IEquipmentDefinitionProvider
             Id = "FlintKnife", Name = "Flint Knife", EquipmentSlot = "Weapon",
             Description    = "Flint knapped to a point and wrapped in fiber. Sharp enough to matter.",
             WeaponDamageType = DamageType.Piercing,
-            Affixes        = [new(ModifierStat.Attack, 1)],
+            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Accuracy, 0.06f)],
         },
         new()
         {
@@ -28,21 +28,21 @@ public class InMemoryEquipmentDefinitionProvider : IEquipmentDefinitionProvider
             Id = "IronDagger", Name = "Iron Dagger", EquipmentSlot = "Weapon",
             Description    = "Short, direct, and faster than it looks.",
             WeaponDamageType = DamageType.Piercing,
-            Affixes        = [new(ModifierStat.Attack, 2)],
+            Affixes        = [new(ModifierStat.Attack, 2), new(ModifierStat.Accuracy, 0.04f)],
         },
         new()
         {
             Id = "IronSword", Name = "Iron Sword", EquipmentSlot = "Weapon",
             Description    = "A dull but reliable iron blade. It has seen better years but none worse.",
             WeaponDamageType = DamageType.Slashing,
-            Affixes        = [new(ModifierStat.Attack, 3)],
+            Affixes        = [new(ModifierStat.Attack, 4), new(ModifierStat.Accuracy, -0.04f)],
         },
         new()
         {
             Id = "IronMace", Name = "Iron Mace", EquipmentSlot = "Weapon",
             Description    = "A flanged iron head on a wrapped grip. It does not negotiate.",
             WeaponDamageType = DamageType.Bludgeoning,
-            Affixes        = [new(ModifierStat.Attack, 3)],
+            Affixes        = [new(ModifierStat.Attack, 5), new(ModifierStat.Accuracy, -0.07f)],
         },
 
         // ── Weapons — staves ──────────────────────────────────────────────────
@@ -51,35 +51,35 @@ public class InMemoryEquipmentDefinitionProvider : IEquipmentDefinitionProvider
             Id = "EmberStaff", Name = "Ember Staff", EquipmentSlot = "Weapon",
             Description    = "Char-blackened wood with a coal core. Warm to the touch. Your spells carry more heat.",
             WeaponDamageType = DamageType.Fire,
-            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1)],
+            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1), new(ModifierStat.Accuracy, 0.03f)],
         },
         new()
         {
             Id = "FrostStaff", Name = "Frost Staff", EquipmentSlot = "Weapon",
             Description    = "A branch that never thawed. The air around it is still. Your spells cut colder.",
             WeaponDamageType = DamageType.Frost,
-            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1)],
+            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1), new(ModifierStat.Accuracy, 0.03f)],
         },
         new()
         {
             Id = "StormStaff", Name = "Storm Staff", EquipmentSlot = "Weapon",
             Description    = "Quartz-tipped and faintly humming. It remembers the lightning that made it.",
             WeaponDamageType = DamageType.Storm,
-            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1)],
+            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1), new(ModifierStat.Accuracy, 0.03f)],
         },
         new()
         {
             Id = "VineStaff", Name = "Vine Staff", EquipmentSlot = "Weapon",
             Description    = "Still growing, faintly. The bark is warm and the wood is alive. Your spells carry that.",
             WeaponDamageType = DamageType.Nature,
-            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1)],
+            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1), new(ModifierStat.Accuracy, 0.03f)],
         },
         new()
         {
             Id = "ShadowStaff", Name = "Shadow Staff", EquipmentSlot = "Weapon",
             Description    = "Wood that absorbed something it shouldn't have. Dark to the core. Your spells follow.",
             WeaponDamageType = DamageType.Dark,
-            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1)],
+            Affixes        = [new(ModifierStat.Attack, 1), new(ModifierStat.Magic, 1), new(ModifierStat.Accuracy, 0.03f)],
         },
 
         // ── Armor ─────────────────────────────────────────────────────────────

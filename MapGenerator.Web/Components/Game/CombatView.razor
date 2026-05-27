@@ -121,9 +121,9 @@
                     {
                         <div class="combat-status-badge defend">🛡 Defending</div>
                     }
-                    @if (Session.PlayerDodging)
+                    @if (Session.PlayerSteady)
                     {
-                        <div class="combat-status-badge dodge">🌀 Dodging</div>
+                        <div class="combat-status-badge steady">🎯 Steady</div>
                     }
                     @foreach (var mod in Session.ActiveModifiers.Where(m => m.TurnsRemaining.HasValue))
                     {
@@ -213,9 +213,9 @@
                         @onclick="() => TakeTurn(CombatActionType.HeavyAttack)">
                     🗡 Heavy <span class="cost">(4)</span>
                 </button>
-                <button class="combat-btn dodge" disabled="@(Session.PlayerStamina < 2 || CannotTakeAction())"
-                        @onclick="() => TakeTurn(CombatActionType.Dodge)">
-                    🌀 Dodge <span class="cost">(2)</span>
+                <button class="combat-btn steady" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
+                        @onclick="() => TakeTurn(CombatActionType.Steady)">
+                    🎯 Steady <span class="cost">(1)</span>
                 </button>
                 <button class="combat-btn defend" disabled="@CannotTakeAction()"
                         @onclick="() => TakeTurn(CombatActionType.Defend)">
@@ -477,15 +477,16 @@
         {
             ModifierStat.Attack           => "⚔",
             ModifierStat.Defense          => "🛡",
-            ModifierStat.DodgeChance      => "💨",
+            ModifierStat.Speed            => "💨",
+            ModifierStat.Accuracy         => mod.Value >= 0 ? "🎯" : "🌀",
             ModifierStat.StaminaRegen     => "⚡",
             ModifierStat.DamageMultiplier => "💥",
             ModifierStat.Magic            => "✦",
             ModifierStat.Resistance       => "🔮",
             _                             => "✦",
         };
-        string val = mod.Stat == ModifierStat.DodgeChance
-            ? $"{(mod.Value >= 0 ? "+" : "")}{mod.Value * 100:0}%"
+        string val = mod.Stat is ModifierStat.Accuracy
+            ? $"{mod.Value * 100:+0;-0}%"
             : $"{(mod.Value >= 0 ? "+" : "")}{mod.Value:0}";
         return $"{icon} {val} ({mod.TurnsRemaining}t)";
     }

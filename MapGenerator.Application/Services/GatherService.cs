@@ -70,7 +70,7 @@ public class GatherService
         }
 
         double hungerDrainMult = BuffService.ConsumeHungerDrainMultiplier(player);
-        player.Satiety = Math.Max(0, player.Satiety - 2.0 * hungerDrainMult);
+        player.Satiety = Math.Max(0, player.Satiety - 1.0 * hungerDrainMult);
 
         long effectiveCooldown = CooldownMs;
         if (tile.Structure?.Type == StructureType.MineShaft) effectiveCooldown /= 2;

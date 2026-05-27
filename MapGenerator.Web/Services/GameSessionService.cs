@@ -489,11 +489,11 @@ public class GameSessionService : IAsyncDisposable
 
         var rng = Random.Shared;
         var eligibleMoves = _companionMoveProvider.GetEligibleFor(def.ElementTypes);
-        string? attackId = eligibleMoves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.Attack)
+        string? attackId = eligibleMoves.Where(m => m.HasDamage && !m.HasEnemyEffect)
                                         .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
-        string? buffId   = eligibleMoves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.PlayerBuff)
+        string? buffId   = eligibleMoves.Where(m => (m.HasSelfBuff || m.HasHeal) && !m.HasDamage)
                                         .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
-        string? debuffId = eligibleMoves.Where(m => m.Kind == Combat.Enums.CompanionMoveKind.EnemyDebuff)
+        string? debuffId = eligibleMoves.Where(m => m.HasEnemyEffect && !m.HasDamage)
                                         .OrderBy(_ => rng.Next()).Select(m => m.Id).FirstOrDefault();
         var selectedMoves = new[] { attackId, buffId, debuffId }.Where(id => id != null).Select(id => id!).ToList();
 
@@ -850,6 +850,7 @@ public class GameSessionService : IAsyncDisposable
             session.CompanionDefinitionId  = Companion.DefinitionId;
             session.CompanionMoveIds       = [.. Companion.MoveIds];
             session.CompanionBaseAttack    = Companion.Stats.GetValueOrDefault("ATK");
+            session.CompanionBaseSpeed     = Companion.Stats.GetValueOrDefault("SPD");
             session.CompanionName          = Companion.Nickname;
             await _combatRepo.SaveAsync(session);
         }
@@ -1002,7 +1003,7 @@ public class GameSessionService : IAsyncDisposable
 
     // ── Stat Point Allocation ────────────────────────────────────────────────
 
-    private static readonly string[] TieredStats = ["BaseAttack", "BaseDefense", "BaseResistance", "BaseMagic", "BaseDodgeChance"];
+    private static readonly string[] TieredStats = ["BaseAttack", "BaseDefense", "BaseResistance", "BaseMagic", "BaseSpeed", "BaseCritChance"];
 
     public static int GetStatPointCost(string stat, int currentPurchases) => stat switch
     {
@@ -1030,7 +1031,8 @@ public class GameSessionService : IAsyncDisposable
             case "BaseDefense":       Player.BaseDefense++;       break;
             case "BaseResistance":    Player.BaseResistance++;    break;
             case "BaseMagic":         Player.BaseMagic++;         break;
-            case "BaseDodgeChance":   Player.BaseDodgeChance += 0.02f; break;
+            case "BaseSpeed":         Player.BaseSpeed++;         break;
+            case "BaseCritChance":    Player.BaseCritChance += 0.01f; break;
             default: return "Unknown stat.";
         }
 

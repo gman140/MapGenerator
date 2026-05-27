@@ -58,7 +58,8 @@
                 @StatRow("BaseDefense", "Defense", Player.BaseDefense.ToString(), null)
                 @StatRow("BaseResistance", "Resistance", Player.BaseResistance.ToString(), "vs energy attacks")
                 @StatRow("BaseMagic", "Magic", Player.BaseMagic.ToString(), null)
-                @StatRow("BaseDodgeChance", "Dodge", $"{Player.BaseDodgeChance * 100:F0}%", null)
+                @StatRow("BaseSpeed", "Speed", Player.BaseSpeed.ToString(), null)
+                @StatRow("BaseCritChance", "Crit", $"{Player.BaseCritChance * 100:F0}%", null)
             </div>
 
             @if (Player.EquippedWeaponId != null || Player.EquippedArmorId != null || Player.EquippedHatId != null)
@@ -358,7 +359,8 @@
                 ModifierStat.Magic       => $"+{(int)affix.Value} Mag",
                 ModifierStat.Defense     => $"+{(int)affix.Value} Def",
                 ModifierStat.Resistance  => $"+{(int)affix.Value} Res",
-                ModifierStat.DodgeChance => $"+{affix.Value * 100:F0}% Dodge",
+                ModifierStat.Accuracy    => $"{affix.Value * 100:+0;-0}% Accuracy",
+                ModifierStat.Speed       => $"+{(int)affix.Value} Speed",
                 ModifierStat.StaminaRegen=> $"+{(int)affix.Value} Stam/turn",
                 ModifierStat.ManaRegen   => $"+{(int)affix.Value} Mana/turn",
                 ModifierStat.HpRegen     => $"+{(int)affix.Value} HP/turn",
