@@ -155,9 +155,10 @@ public class EnemySpawner
         string[] pool = ResolvePool(context);
         if (pool.Length == 0) return enemies;
 
+        int roll = rng.Next(100);
         int count = context.DungeonFloor.HasValue
-            ? (rng.Next(2) == 0 ? 1 : Math.Min(2, context.DungeonFloor.Value))
-            : 1;
+            ? (roll < 20 ? 1 : roll < 70 ? 2 : 3)   // dungeon: 20% / 50% / 30%
+            : (roll < 45 ? 1 : roll < 80 ? 2 : 3);   // overworld: 45% / 35% / 20%
 
         bool isDungeon = context.DungeonTheme != null;
         float affixChance = isDungeon

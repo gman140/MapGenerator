@@ -923,7 +923,7 @@ public class CombatEngine : ICombatEngine
                 string typeNote = typeLog != null ? $" {typeLog}" : string.Empty;
                 string critTag = crit ? " [CRIT!]" : string.Empty;
                 string fell = killed ? $" The {t.Name} falls." : string.Empty;
-                string hitLog = $"It strikes the {t.Name} for {damage} {move.DamageType} damage.{critTag}{typeNote}{fell}";
+                string hitLog = $"{name} strikes the {t.Name} for {damage} {move.DamageType} damage.{critTag}{typeNote}{fell}";
                 session.Log.Add(hitLog);
 
                 events.Add(new CombatEvent
@@ -1083,7 +1083,7 @@ public class CombatEngine : ICombatEngine
 
         string critTag = crit ? " [CRIT!]" : "";
         string nearTag = outcome == HitOutcome.NearMiss ? " [Glancing]" : "";
-        string log = $"{flavorText}{critTag}{nearTag} [{damage} {atkType} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]";
+        string log = $"{flavorText}{critTag}{nearTag} [{enemy.Name} — {damage} {atkType} damage, {session.PlayerHp}/{session.PlayerMaxHp} HP]";
         session.Log.Add(log);
 
         events.Add(new CombatEvent { Kind = CombatEventKind.Pause, Log = log, DelayMs = 380 });
