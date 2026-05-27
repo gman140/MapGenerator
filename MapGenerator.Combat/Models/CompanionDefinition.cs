@@ -9,7 +9,8 @@ public class CompanionDefinition
     public string Description { get; init; } = string.Empty;
     public IReadOnlyList<DamageType> ElementTypes { get; init; } = [];
     public int BaseAttack { get; init; }
-    public string[] DefaultSprite { get; init; } = [];
+    public string[] DefaultSprite        { get; init; } = [];
+    public string[] DefaultSpriteEvolved { get; init; } = [];
 
     // Base stats — contribute to derived battle values alongside allocation and temperament
     public int BaseVitality { get; init; } = 5;  // HP pool

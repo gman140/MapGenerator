@@ -551,8 +551,8 @@ public class GameSessionService : IAsyncDisposable
     public async Task<string?> UpdateCompanionMovesAsync(List<string> moveIds)
     {
         if (Companion == null) return "No companion.";
-        int maxMoves = TierRegistry.Get(Companion.Tier).MaxMoves;
-        if (moveIds.Count > maxMoves) return $"A {Companion.Tier} companion can have at most {maxMoves} moves.";
+        int maxMoves = FormRegistry.Get(Companion.Form).MaxMoves;
+        if (moveIds.Count > maxMoves) return $"This companion can have at most {maxMoves} moves.";
         var eligible = _companionMoveProvider.GetEligibleFor(Companion.ElementTypes).Select(m => m.Id).ToHashSet();
         foreach (var id in moveIds)
         {
@@ -572,9 +572,7 @@ public class GameSessionService : IAsyncDisposable
             c.Stats.GetValueOrDefault("VIT"), c.Stats.GetValueOrDefault("DEF"),
             c.Stats.GetValueOrDefault("SPD"), c.Stats.GetValueOrDefault("FOC"),
             c.Stats.GetValueOrDefault("RES"),
-            c.GetAllocated("ATK"), c.GetAllocated("VIT"), c.GetAllocated("DEF"),
-            c.GetAllocated("SPD"), c.GetAllocated("FOC"), c.GetAllocated("RES"),
-            c.Temperament, c.ElementTypes, [.. c.MoveIds]);
+            c.Temperament, c.Form, c.ElementTypes, [.. c.MoveIds]);
     }
 
     public (bool ok, string? error) ChallengeCompanionBattle(string targetId, string targetName)
@@ -652,15 +650,7 @@ public class GameSessionService : IAsyncDisposable
         else Player.Inventory["EvolutionStone"] = stoneQty - 1;
         Player.LastSeen = DateTime.UtcNow;
         await _playerRepo.UpdateAsync(Player);
-        return (true, $"{Companion.Nickname} evolved to {TierRegistry.Get(Companion.Tier).DisplayName} tier!");
-    }
-
-    public async Task<(bool ok, string? error)> AllocateStatAsync(string stat)
-    {
-        if (Player == null) return (false, "Not logged in.");
-        if (Companion == null) return (false, "You don't have a companion.");
-        var err = await _companionSvc.AllocateStatAsync(Companion, stat);
-        return err == null ? (true, null) : (false, err);
+        return (true, $"{Companion.Nickname} became the {Companion.Form} form!");
     }
 
     public void DeclineCompanionBattle()

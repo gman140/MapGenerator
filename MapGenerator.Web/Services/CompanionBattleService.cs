@@ -14,8 +14,8 @@ public record CompanionBattleStats(
     int BaseSpeed,
     int BaseFocus,
     int BaseResist,
-    int AllocAtk, int AllocVit, int AllocDef, int AllocSpd, int AllocFoc, int AllocRes,
     CompanionTemperament Temperament,
+    CompanionForm Form,
     IReadOnlyList<DamageType> ElementTypes,
     List<string> MoveIds);
 
@@ -175,10 +175,9 @@ public class CompanionBattleService
     private PvpCompanion Build(string ownerId, string playerName, string name, CompanionBattleStats s)
     {
         var moves = s.MoveIds.Select(id => _moveProvider.GetById(id)).OfType<CompanionMove>().ToList();
-        return new PvpCompanion(ownerId, playerName, name, s.BaseAttack,
-            s.BaseVitality, s.BaseDefense, s.BaseSpeed, s.BaseFocus, s.BaseResist,
-            s.AllocAtk, s.AllocVit, s.AllocDef, s.AllocSpd, s.AllocFoc, s.AllocRes,
-            s.Temperament, s.ElementTypes, moves);
+        return new PvpCompanion(ownerId, playerName, name,
+            s.BaseAttack, s.BaseVitality, s.BaseDefense, s.BaseSpeed, s.BaseFocus, s.BaseResist,
+            s.Temperament, s.Form, s.ElementTypes, moves);
     }
 
     private void TakeTurn(PvpCompanion attacker, PvpCompanion defender,
@@ -412,10 +411,8 @@ public class CompanionBattleService
 
         public PvpCompanion(
             string ownerId, string playerName, string name,
-            int baseAttack,
-            int baseVit, int baseDef, int baseSpd, int baseFoc, int baseRes,
-            int allocAtk, int allocVit, int allocDef, int allocSpd, int allocFoc, int allocRes,
-            CompanionTemperament temperament,
+            int baseAttack, int baseVit, int baseDef, int baseSpd, int baseFoc, int baseRes,
+            CompanionTemperament temperament, CompanionForm form,
             IReadOnlyList<DamageType> elementTypes, IReadOnlyList<CompanionMove> moves)
         {
             OwnerId      = ownerId;
@@ -426,15 +423,16 @@ public class CompanionBattleService
             Temperament  = temperament;
 
             var tDef = TemperamentRegistry.Get(temperament);
+            var fDef = FormRegistry.Get(form);
 
-            MaxHp = 10 + Math.Max(0, baseVit + allocVit + tDef.VitBonus) * 5;
+            MaxHp = 10 + Math.Max(0, baseVit + tDef.VitBonus + fDef.VitBonus) * 5;
             Hp    = MaxHp;
 
-            EffSpd   = baseSpd + allocSpd + tDef.SpdBonus;
-            _baseAtk = Math.Max(0f, baseAttack + allocAtk + tDef.AtkBonus);
-            _baseDef = Math.Max(0f, baseDef + allocDef + tDef.DefBonus);
-            _effFoc  = Math.Clamp(0.05f + (baseFoc + allocFoc + tDef.FocBonus) * 0.025f, 0.05f, 0.45f);
-            _effRes  = Math.Clamp((baseRes + allocRes + tDef.ResBonus) * 0.06f, 0f, 0.55f);
+            EffSpd   = baseSpd + tDef.SpdBonus + fDef.SpdBonus;
+            _baseAtk = Math.Max(0f, baseAttack + tDef.AtkBonus + fDef.AtkBonus);
+            _baseDef = Math.Max(0f, baseDef + tDef.DefBonus + fDef.DefBonus);
+            _effFoc  = Math.Clamp(0.05f + (baseFoc + tDef.FocBonus + fDef.FocBonus) * 0.025f, 0.05f, 0.45f);
+            _effRes  = Math.Clamp((baseRes + tDef.ResBonus + fDef.ResBonus) * 0.06f, 0f, 0.55f);
         }
     }
 }

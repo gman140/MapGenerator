@@ -14,9 +14,12 @@
 
         <div class="companion-dialog-titlebar">
             <span class="companion-dialog-name">@Companion.Nickname</span>
-            <span class="companion-tier-badge tier-@Companion.Tier.ToString().ToLower()">
-                @Companion.Tier @TierRegistry.Get(Companion.Tier).DisplayName
-            </span>
+            @if (Companion.Form != CompanionForm.None)
+            {
+                <span class="companion-form-badge form-@Companion.Form.ToString().ToLower()">
+                    @FormDef.DisplayName
+                </span>
+            }
         </div>
 
         <div class="sprite-editor-tabs">
@@ -39,6 +42,18 @@
                     <span class="companion-temp-hint">@TemperamentHint</span>
                 </div>
 
+                @* Form (if evolved) *@
+                @if (Companion.Form != CompanionForm.None)
+                {
+                    <div class="companion-stat-row">
+                        <span class="companion-stat-label">Form</span>
+                        <span class="companion-form-badge form-@Companion.Form.ToString().ToLower()">
+                            @FormDef.DisplayName
+                        </span>
+                        <span class="companion-temp-hint">@FormDef.Hint</span>
+                    </div>
+                }
+
                 @* Element types *@
                 <div class="companion-stat-row">
                     <span class="companion-stat-label">Element</span>
@@ -60,34 +75,12 @@
                 </div>
 
                 @* ── Stat grid ── *@
-                @if (Companion.AvailableStatPoints > 0)
-                {
-                    <div class="companion-stat-points-row">
-                        @Companion.AvailableStatPoints stat point@(Companion.AvailableStatPoints != 1 ? "s" : "") available
-                    </div>
-                }
-
-                @if (_statError != null)
-                {
-                    <div class="companion-moves-error">@_statError</div>
-                }
-
                 <div class="companion-stat-grid">
-                    @foreach (var (key, label, fmt) in StatRows)
+                    @foreach (var (label, value) in StatRows)
                     {
-                        int allocated = Companion.GetAllocated(key);
                         <div class="companion-stat-item">
                             <span class="companion-stat-label">@label</span>
-                            <span class="companion-stat-value">@fmt(allocated)</span>
-                            @if (Companion.AvailableStatPoints > 0)
-                            {
-                                string k = key;
-                                <button class="companion-alloc-btn" @onclick="() => AllocateStat(k)">+</button>
-                            }
-                            else
-                            {
-                                <span class="companion-alloc-spacer"></span>
-                            }
+                            <span class="companion-stat-value">@value</span>
                         </div>
                     }
                 </div>
@@ -97,7 +90,7 @@
                     bool hasCore  = PlayerInventory.TryGetValue("ElementalCore",  out int coreQty)  && coreQty  > 0;
                     bool hasStone = PlayerInventory.TryGetValue("EvolutionStone", out int stoneQty) && stoneQty > 0;
                     bool canCore  = hasCore  && Companion.ElementTypes.Count < 2;
-                    bool canEvolve= hasStone && Companion.Tier < CompanionTier.T3;
+                    bool canEvolve= hasStone && Companion.Form == CompanionForm.None;
                 }
                 @if (canCore || canEvolve)
                 {
@@ -130,7 +123,7 @@
                         @if (canEvolve)
                         {
                             <button class="companion-item-btn evolve-btn" @onclick="UseEvolutionStone">
-                                Use Evolution Stone (@stoneQty) → @(Companion.Tier + 1)
+                                Use Evolution Stone (@stoneQty) → Evolve
                             </button>
                         }
                     </div>
@@ -146,7 +139,7 @@
         {
             var effectiveTypes = EffectiveElementTypes;
             var eligibleMoves  = MoveProvider.GetEligibleFor(effectiveTypes);
-            int maxMoves       = TierRegistry.Get(Companion.Tier).MaxMoves;
+            int maxMoves       = FormRegistry.Get(Companion.Form).MaxMoves;
 
             <div class="companion-moves-body">
                 <p class="companion-moves-hint">Select up to @maxMoves moves. Click a slot to change it.</p>
@@ -267,9 +260,9 @@
         }
         else
         {
-            int gridCols = TierRegistry.Get(Companion.Tier).GridCols;
-            int cellPx   = Companion.Tier == CompanionTier.T1 ? 24 : Companion.Tier == CompanionTier.T2 ? 20 : 16;
-            string gridSizeClass = Companion.Tier == CompanionTier.T1 ? "" : Companion.Tier == CompanionTier.T2 ? "medium-grid" : "large-grid";
+            int gridCols = FormDef.GridCols;
+            int cellPx   = Companion.Form == CompanionForm.None ? 28 : 24;
+            string gridSizeClass = Companion.Form == CompanionForm.None ? "" : "medium-grid";
             <div class="sprite-editor-body"
                  @onmouseleave="() => _isPainting = false">
                 <div class="sprite-grid-wrap">
@@ -342,7 +335,6 @@
     [Parameter] public EventCallback<string[]> OnSaveSprite { get; set; }
     [Parameter] public EventCallback<string> OnSaveNickname { get; set; }
     [Parameter] public EventCallback<List<string>> OnSaveMoves { get; set; }
-    [Parameter] public EventCallback<string> OnAllocateStat { get; set; }
     [Parameter] public EventCallback<DamageType> OnUseElementalCore { get; set; }
     [Parameter] public EventCallback OnUseEvolutionStone { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
@@ -357,7 +349,6 @@
     private bool _isPainting;
     private bool _paintingAsErase;
     private string? _moveError;
-    private string? _statError;
     private bool _showCorePicker;
 
     private List<string> _editMoveIds = [];
@@ -390,18 +381,21 @@
     private TemperamentDefinition TempDef =>
         TemperamentRegistry.Get(Companion.Temperament);
 
-    private IEnumerable<(string Key, string Label, Func<int, string> Fmt)> StatRows =>
+    private FormDefinition FormDef =>
+        FormRegistry.Get(Companion.Form);
+
+    private IEnumerable<(string Label, string Value)> StatRows =>
     [
-        ("ATK", "ATK",  alloc => $"{(int)(GetStat("ATK") * 3f + alloc + TempDef.AtkBonus)}"),
-        ("DEF", "DEF",  alloc => $"{Math.Max(0, GetStat("DEF") + alloc + TempDef.DefBonus)}"),
-        ("VIT", "HP",   alloc => $"{80 + Math.Max(0, GetStat("VIT") + alloc + TempDef.VitBonus) * 10}"),
-        ("SPD", "SPD",  alloc => $"{GetStat("SPD") + alloc + TempDef.SpdBonus}"),
-        ("FOC", "CRIT", alloc => $"{(int)Math.Clamp((0.05f + (GetStat("FOC") + alloc + TempDef.FocBonus) * 0.025f) * 100, 5, 45)}%"),
-        ("RES", "RES",  alloc => $"{(int)Math.Clamp((GetStat("RES") + alloc + TempDef.ResBonus) * 6, 0, 55)}%"),
+        ("ATK",  $"{GetStat("ATK") + TempDef.AtkBonus + FormDef.AtkBonus}"),
+        ("DEF",  $"{Math.Max(0, GetStat("DEF") + TempDef.DefBonus + FormDef.DefBonus)}"),
+        ("HP",   $"{10 + Math.Max(0, GetStat("VIT") + TempDef.VitBonus + FormDef.VitBonus) * 5}"),
+        ("SPD",  $"{GetStat("SPD") + TempDef.SpdBonus + FormDef.SpdBonus}"),
+        ("CRIT", $"{(int)Math.Clamp((0.05f + (GetStat("FOC") + TempDef.FocBonus + FormDef.FocBonus) * 0.025f) * 100, 5, 45)}%"),
+        ("RES",  $"{(int)Math.Clamp((GetStat("RES") + TempDef.ResBonus + FormDef.ResBonus) * 6, 0, 55)}%"),
     ];
 
     private int EffectiveAttack =>
-        (int)(GetStat("ATK") * 3f + Companion.GetAllocated("ATK") + TempDef.AtkBonus);
+        GetStat("ATK") + TempDef.AtkBonus + FormDef.AtkBonus;
 
     protected override void OnInitialized()
     {
@@ -412,7 +406,7 @@
 
     private void ResetSprite()
     {
-        int size = TierRegistry.Get(Companion.Tier).SpriteSize;
+        int size = FormDef.SpriteSize;
         _pixels  = new string[size];
         var src  = Companion.SpritePixels;
         for (int i = 0; i < size && i < src.Length; i++)
@@ -453,12 +447,6 @@
         await OnSaveMoves.InvokeAsync(cleanIds);
     }
 
-    private async Task AllocateStat(string stat)
-    {
-        _statError = null;
-        await OnAllocateStat.InvokeAsync(stat);
-    }
-
     private async Task UseElementalCore(DamageType element)
     {
         _showCorePicker = false;
@@ -487,19 +475,20 @@
 
     private void ApplyDefault()
     {
-        int size = TierRegistry.Get(Companion.Tier).SpriteSize;
+        int size = FormDef.SpriteSize;
         _pixels  = new string[size];
         var primaryElement = Companion.ElementTypes.FirstOrDefault();
-        var src = DefProvider.GetAll()
-            .FirstOrDefault(d => d.ElementTypes.Contains(primaryElement))
-            ?.DefaultSprite ?? [];
+        var def = DefProvider.GetAll().FirstOrDefault(d => d.ElementTypes.Contains(primaryElement));
+        var src = (Companion.Form != CompanionForm.None && def?.DefaultSpriteEvolved.Length > 0)
+            ? def.DefaultSpriteEvolved
+            : def?.DefaultSprite ?? [];
         for (int i = 0; i < size && i < src.Length; i++)
             _pixels[i] = src[i] ?? "";
     }
 
     private void ClearAll()
     {
-        int size = TierRegistry.Get(Companion.Tier).SpriteSize;
+        int size = FormDef.SpriteSize;
         _pixels  = new string[size];
     }
 

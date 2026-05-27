@@ -351,7 +351,7 @@
     private static int CompanionDisplaySize(string[] pixels, int baseSize)
     {
         int cols = (int)Math.Round(Math.Sqrt(pixels.Length));
-        return cols switch { 20 => baseSize * 5 / 4, 24 => baseSize * 3 / 2, _ => baseSize };
+        return cols == 20 ? baseSize * 5 / 4 : baseSize;
     }
 
     public void Dispose()

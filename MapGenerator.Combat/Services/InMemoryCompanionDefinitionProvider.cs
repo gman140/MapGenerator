@@ -6,11 +6,22 @@ namespace MapGenerator.Combat.Services;
 
 public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
 {
-    // ── Sprite helper ────────────────────────────────────────────────────────
+    // ── Sprite helpers ───────────────────────────────────────────────────────
     private static string[] Spr(Dictionary<char, string> pal, string rows)
     {
         var result = new string[256];
         for (int i = 0; i < 256 && i < rows.Length; i++)
+        {
+            char c = rows[i];
+            result[i] = c != '.' && pal.TryGetValue(c, out var col) ? col : "";
+        }
+        return result;
+    }
+
+    private static string[] Spr20(Dictionary<char, string> pal, string rows)
+    {
+        var result = new string[400];
+        for (int i = 0; i < 400 && i < rows.Length; i++)
         {
             char c = rows[i];
             result[i] = c != '.' && pal.TryGetValue(c, out var col) ? col : "";
@@ -120,6 +131,133 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
         ".L.............."
     );
 
+    // ── Evolved 20×20 sprites ────────────────────────────────────────────────
+
+    // Nature — larger slimeling with leaf crown and defined face
+    private static readonly string[] _slimelingSprite20 = Spr20(
+        new() { ['A'] = "#78ae79ff", ['B'] = "#95cb84ff", ['C'] = "#5d9074ff", ['D'] = "#426d62ff", ['E'] = "#b9ba57ff", ['F'] = "#292b3aff", ['G'] = "#bcde94ff", ['H'] = "#f9ebd8ff", ['I'] = "#d6c5b8ff", ['J'] = "#924e64ff", ['K'] = "#f2a198ff", ['L'] = "#cf6e84ff", ['M'] = "#444f54ff" },
+        "...................." +
+        "........EE..EE......" +
+        "......EEBBBBBE......" +
+        ".....BBBBBBBBBBB...." +
+        "....BBBABBBBBABBB..." +
+        "...CBBBAAABBBAABC..." +
+        "..CBBBGAAABBBAABC..." +
+        "..CBBBAHHHHHAABC...." +
+        ".ACBBAAHHHHHHAABC..." +
+        ".ACBBAHFHHHHFHABC..." +
+        ".ACBBAAHHHHHHAABC..." +
+        ".ACBBAAHKHHKHABC...." +
+        ".ACBBAAAAAAAAABC...." +
+        "..CBBBBAAAABBBBCC..." +
+        "..DCBBBBBBBBBCCD...." +
+        "...DCCBBBBBBBCDD...." +
+        "....DCCBBBBCCD......" +
+        ".....MDDCCCDDM......" +
+        "......MMMMMMM......." +
+        "...................."
+    );
+
+    // Fire — winged emberhatch with fuller flame body
+    private static readonly string[] _emberHatchSprite20 = Spr20(
+        new() { ['A'] = "#673452ff", ['B'] = "#e64863ff", ['C'] = "#b0335eff", ['D'] = "#f2bc74ff", ['E'] = "#ce8b51ff", ['F'] = "#ac4a52ff", ['G'] = "#bf6c52ff", ['H'] = "#4f5474ff", ['I'] = "#f3ffe1ff" },
+        "...................." +
+        ".........AA........." +
+        "......AABBBA........" +
+        ".....ABBBCBA........" +
+        "....ABBBDCBA........" +
+        "....ABBDDDCBA......." +
+        "...ABBBDDDECBA......" +
+        "...ABCBBDDDDECBA...." +
+        "..AFGGEDDDDDEEGBA..." +
+        "..AFIIDDDDDDDIIGBA.." +
+        ".AFIIAADDDDDIIAAGBA." +
+        ".AGIIAADDDDDIIAAGGA." +
+        ".AGEIIDDDDDDDIIDEGA." +
+        ".AGEDDDDDDDDDDDDEGA." +
+        ".AGGGGGDDDDGGGGGA..." +
+        "..AFGGDDDDDDGGFA...." +
+        "..AGFGGGGGGGGFA....." +
+        "...AFGGGGGGGGFA....." +
+        "....AAAAAAAAAA......" +
+        "...................."
+    );
+
+    // Frost — elaborate ice crystal creature with crystal arms
+    private static readonly string[] _frostlingSprite20 = Spr20(
+        new() { ['A'] = "#5abfca8c", ['B'] = "#3a4f2cff", ['C'] = "#5abfcaff", ['D'] = "#d4dcf2ff", ['E'] = "#92c7cdff", ['F'] = "#537e60ff" },
+        "...................." +
+        ".........D.........." +
+        "........DDD........." +
+        "..D....DDDDD....D..." +
+        "...D..DDCDDDD..D...." +
+        "....DDDCCCDDDD......" +
+        "....DDDCCCCCDD......" +
+        "...DDDECCCCCCED....." +
+        "..DDEECCCCCCEEEDD..." +
+        ".ADEEEECCCCCCEEEEDA." +
+        "ADEEEBCCCCCCCBEEEDA." +
+        "ADEEEECCCCCCCEEEEEA." +
+        "ADEEEECCCCCCCEEEEEA." +
+        ".ADEEEECCCCCCEEED..." +
+        "..ADEEECCCCCEEEDA..." +
+        "...BEEECCEEEEBB....." +
+        "....BEECCEEBB......." +
+        ".....BBBBBBB........" +
+        "......BBBBBB........" +
+        "...................."
+    );
+
+    // Storm — energetic sparkling with defined lightning body
+    private static readonly string[] _sparklingSprite20 = Spr20(
+        new() { ['A'] = "#ffe400be", ['B'] = "#ffe872ff", ['C'] = "#f3c73fff", ['D'] = "#dec6bfff", ['E'] = "#ffffffff", ['F'] = "#fff6b6ff", ['G'] = "#d18d0eff", ['H'] = "#a7744aff", ['I'] = "#2d2929ff", ['J'] = "#7c5c44ff" },
+        "A.A..A.A..BBBCCC...." +
+        "..A.A..ACBCDEEED...." +
+        "A.A...BBBCCEDEEED..." +
+        "..A.BBCFFBBCEDDED..." +
+        "...BCFFBBCEEDEDED..." +
+        "..BBFCBBCGCCCGDDG..." +
+        ".BBFBBBCEGCGGGG....." +
+        "BBBFFBCEEGCG........" +
+        ".BBFBBCCGE.........." +
+        ".BCCFBCCCGE........." +
+        "BBBCFBBCGGE........." +
+        "BBCBCBBCGGGE........" +
+        "BBFBBCCCGGE........." +
+        "BBFBBCCCGGE........." +
+        ".BFBBBCGCGGE........" +
+        "HHHHBBBCGCGIIIHHH..." +
+        "IHHHIJJJIIIJJJIIIH.." +
+        ".IIHJJJJJJJJJHIIH..." +
+        "..IIHHHHHHHHII......" +
+        "...................."
+    );
+
+    // Dark — large cloaked shadelurk with flowing shadow tendrils
+    private static readonly string[] _shadelurkSprite20 = Spr20(
+        new() { ['A'] = "#978ed9ee", ['B'] = "#beb0f3ee", ['C'] = "#815bd7ee", ['D'] = "#472cb3ee", ['E'] = "#c4c9d9ee", ['F'] = "#444444ee", ['G'] = "#7e4854ee", ['H'] = "#ffffffee", ['I'] = "#262626ee", ['J'] = "#d992a1ee", ['K'] = "#ac6d7aee", ['L'] = "#372680ee" },
+        "...................." +
+        "......ABBBBBB......." +
+        "....AAAAAABBBBBB...." +
+        "...AAAAABBBBBBBBB..." +
+        "..AAAAAACCCCCCCBB..." +
+        "..AAACDDDDDDDDCCB..." +
+        ".AACDDDDEEFGGGFEDC.." +
+        ".DCDCEHHIJIFHHHEDC.." +
+        ".DDCHHHHIKIIKGHEC..." +
+        ".DDDCBEHIKJKJGHEC..." +
+        ".DCCDDCCEIIFFEEC...." +
+        "DDLLCDDDDDDDDCCC...." +
+        "DDLLCCCCCCCCAAAB...." +
+        ".DLLCCCCAAAAAB......" +
+        ".DLL..CCCCCCA......." +
+        ".DLL.............L.." +
+        ".DL...........L..L.." +
+        "..L........LL.LL...." +
+        "...L.....LL..L......" +
+        "...................."
+    );
+
     // ── Companion definitions ────────────────────────────────────────────────
 
     private static readonly List<CompanionDefinition> _all =
@@ -129,7 +267,7 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
             Id = "slimeling", Name = "Slimeling",
             Description = "A cheerful blob of animated slime. Not threatening, but surprisingly loyal.",
             ElementTypes = [DamageType.Nature], BaseAttack = 4,
-            DefaultSprite = _slimelingSprite,
+            DefaultSprite = _slimelingSprite, DefaultSpriteEvolved = _slimelingSprite20,
             BaseVitality = 7, BaseDefense = 2, BaseSpeed = 4, BaseFocus = 2, BaseResist = 2,
         },
         new()
@@ -137,7 +275,7 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
             Id = "emberhatch", Name = "Emberhatch",
             Description = "A fierce hatchling wreathed in fire. Its enthusiasm exceeds its caution.",
             ElementTypes = [DamageType.Fire], BaseAttack = 5,
-            DefaultSprite = _emberHatchSprite,
+            DefaultSprite = _emberHatchSprite, DefaultSpriteEvolved = _emberHatchSprite20,
             BaseVitality = 5, BaseDefense = 1, BaseSpeed = 6, BaseFocus = 3, BaseResist = 1,
         },
         new()
@@ -145,7 +283,7 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
             Id = "frostling", Name = "Frostling",
             Description = "A delicate creature of living ice. It prefers cold places and cool company.",
             ElementTypes = [DamageType.Frost], BaseAttack = 4,
-            DefaultSprite = _frostlingSprite,
+            DefaultSprite = _frostlingSprite, DefaultSpriteEvolved = _frostlingSprite20,
             BaseVitality = 6, BaseDefense = 4, BaseSpeed = 3, BaseFocus = 2, BaseResist = 3,
         },
         new()
@@ -153,7 +291,7 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
             Id = "sparkling", Name = "Sparkling",
             Description = "A crackling ball of storm energy. It is very excitable and will not sit still.",
             ElementTypes = [DamageType.Storm], BaseAttack = 5,
-            DefaultSprite = _sparklingSprite,
+            DefaultSprite = _sparklingSprite, DefaultSpriteEvolved = _sparklingSprite20,
             BaseVitality = 4, BaseDefense = 1, BaseSpeed = 8, BaseFocus = 4, BaseResist = 1,
         },
         new()
@@ -161,7 +299,7 @@ public class InMemoryCompanionDefinitionProvider : ICompanionDefinitionProvider
             Id = "shadelurk", Name = "Shadelurk",
             Description = "A creature born from shed darkness. It follows at the edge of your shadow, barely visible.",
             ElementTypes = [DamageType.Dark], BaseAttack = 4,
-            DefaultSprite = _shadelurkSprite,
+            DefaultSprite = _shadelurkSprite, DefaultSpriteEvolved = _shadelurkSprite20,
             BaseVitality = 5, BaseDefense = 3, BaseSpeed = 5, BaseFocus = 5, BaseResist = 2,
         }
     ];

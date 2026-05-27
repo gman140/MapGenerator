@@ -500,12 +500,9 @@
     private static (int x, int y, int w, int h) CompanionSvgLayout(string[] pixels)
     {
         int cols = (int)Math.Round(Math.Sqrt(pixels.Length));
-        return cols switch
-        {
-            24 => (4,  0, 64, 64),
-            20 => (8,  4, 56, 56),
-            _  => (20, 16, 40, 40),
-        };
+        return cols == 20
+            ? (8, 4, 56, 56)
+            : (20, 16, 40, 40);
     }
 
 }
