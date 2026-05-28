@@ -7,7 +7,7 @@
 @inject GameBroadcastService Broadcast
 @implements IDisposable
 
-<button class="crafting-toggle" @onclick="OpenAsync">
+<button class="crafting-toggle ground-toggle" @onclick="OpenAsync">
     <span>📦 Ground Items@(_tileItems.Any() ? $" ({_tileItems.Values.Sum()})" : "")</span>
 </button>
 

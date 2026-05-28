@@ -29,6 +29,9 @@ else if (Session.Player == null)
 else
 {
     <div class="game-layout">
+        <div class="mobile-status-strip">
+            <PlayerStatusBars Player="Session.Player" CooldownUntil="_cooldownUntil" />
+        </div>
         <div class="map-area">
             @if (Session.Player.IsInDungeon && _dungeonFloor != null)
             {
@@ -68,7 +71,8 @@ else
                         OnKissPlayer="HandleKissPlayerAsync"
                         OnBattlePlayer="HandleBattlePlayerAsync" />
             <button class="tutorial-open-btn" @onclick="() => _showTutorial = true">? Guide</button>
-            <InventoryModal Inventory="Session.Player.Inventory"
+            <InventoryModal @ref="_inventoryModal"
+                            Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
                             EquippedArmorId="@Session.Player.EquippedArmorId"
@@ -76,7 +80,7 @@ else
                             OnUse="HandleUseAsync"
                             OnEquip="HandleEquipAsync"
                             OnUnequip="HandleUnequipAsync" />
-            <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
+            <CraftingPanel @ref="_craftingPanel" Player="Session.Player" OnCraft="HandleCraftAsync" />
             <FeedbackModal Username="@Session.Player.Username" IsAdmin="Session.Player.IsAdmin" />
             @if (!Session.Player.IsInDungeon)
             {
@@ -146,10 +150,15 @@ OnDance="HandleDanceAsync"
             <span class="mab-icon">⛏</span>
             <span class="mab-label">Gather</span>
         </button>
-        <button class="mobile-action-btn @(_showMobileMore ? "mab-active" : "")"
-                @onclick='() => _showMobileMore = !_showMobileMore'>
+        <button class="mobile-action-btn"
+                @onclick='() => _craftingPanel?.Open()'>
             <span class="mab-icon">⚒</span>
             <span class="mab-label">Craft</span>
+        </button>
+        <button class="mobile-action-btn"
+                @onclick='() => _inventoryModal?.Open()'>
+            <span class="mab-icon">📋</span>
+            <span class="mab-label">Inventory</span>
         </button>
         <button class="mobile-action-btn @(_showMobileMore ? "mab-active" : "")"
                 @onclick='() => _showMobileMore = !_showMobileMore'>
@@ -289,6 +298,8 @@ OnDance="HandleDanceAsync"
     private HashSet<(int, int)>? _revealedTiles;
 
     private bool _showMobileMore;
+    private CraftingPanel? _craftingPanel;
+    private InventoryModal? _inventoryModal;
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;

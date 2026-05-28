@@ -1,0 +1,122 @@
+@using MapGenerator.Application.Services
+@using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Interfaces
+@using MapGenerator.Domain.Models
+@using static MapGenerator.Application.Services.HungerService
+@inject MapGeneratorService MapCache
+@inject IFeatureDefinitionProvider FeatureProvider
+@inject SettlementCacheService SettlementCache
+@implements IDisposable
+
+@* display:contents makes this component transparent to parent flex layout *@
+<div class="player-status-bars">
+
+    @if (Player.ActiveBuffs.Count > 0)
+    {
+        <div class="active-buffs">
+            @foreach (var buff in Player.ActiveBuffs)
+            {
+                <span class="buff-chip buff-@buff.Type.ToString().ToLower()">
+                    @FormatActiveBuff(buff)
+                </span>
+            }
+        </div>
+    }
+
+    @{
+        var tile         = MapCache.GetCachedTile(Player.Q, Player.R);
+        var featureDef   = FeatureProvider.GetById(tile?.FeatureId);
+        var (settlement, _) = SettlementCache.GetSettlementTile(Player.Q, Player.R);
+        var band         = GetBand(Player.Satiety);
+        var hungerLabel  = band switch {
+            HungerBand.Stuffed  => "Stuffed",
+            HungerBand.Satiated => "Satiated",
+            HungerBand.Peckish  => "Peckish",
+            HungerBand.Hungry   => "Hungry",
+            _                   => "Starving",
+        };
+    }
+
+    <div class="tile-info">
+        <span class="biome-tag biome-@(tile?.Biome.ToString().ToLower() ?? "unknown")">
+            @(tile?.Biome.ToString() ?? "Unknown")
+        </span>
+        @if (featureDef != null)
+        {
+            <span class="feature-tag">@featureDef.GetDisplayName(Player.Q, Player.R)</span>
+        }
+        @if (settlement != null)
+        {
+            <span class="settlement-tag">@settlement</span>
+        }
+        <span class="coords">(@Player.Q, @Player.R)</span>
+    </div>
+
+    <div class="hunger-bar">
+        <div class="hunger-fill hunger-@band.ToString().ToLower()"
+             style="width: @Player.Satiety.ToString("F0")%"></div>
+        <span class="hunger-text">@hungerLabel</span>
+    </div>
+    @if (_stunnedMs > 0)
+    {
+        <div class="stun-bar">
+            <div class="stun-fill" style="width: @(_stunnedMs / 60000.0 * 100.0)%"></div>
+            <span class="stun-text">💥 Stunned @((_stunnedMs / 1000.0).ToString("F1"))s</span>
+        </div>
+    }
+
+    <div class="cooldown-bar">
+        <div class="cooldown-fill" style="width: @_fillPct%"></div>
+        @if (_cdMs > 0)
+        {
+            <span class="cooldown-text">@((_cdMs / 1000.0).ToString("F1"))s</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public long CooldownUntil { get; set; }
+
+    private long _cdMs;
+    private long _cdDuration;
+    private long _stunnedMs;
+    private double _fillPct;
+    private System.Threading.Timer? _timer;
+
+    protected override void OnParametersSet()
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _cdMs      = Math.Max(0, CooldownUntil - now);
+        _cdDuration = _cdMs > 0 ? _cdMs : _cdDuration;
+        _stunnedMs  = Math.Max(0, Player.StunnedUntil - now);
+        UpdateFill();
+
+        bool needs = _cdMs > 0 || _stunnedMs > 0;
+        if (needs && _timer == null)
+            _timer = new System.Threading.Timer(Tick, null, 100, 100);
+        else if (!needs) { _timer?.Dispose(); _timer = null; }
+    }
+
+    private void Tick(object? _)
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        _cdMs      = Math.Max(0, CooldownUntil - now);
+        _stunnedMs = Math.Max(0, Player.StunnedUntil - now);
+        UpdateFill();
+        if (_cdMs <= 0 && _stunnedMs <= 0) { _timer?.Dispose(); _timer = null; }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateFill() =>
+        _fillPct = _cdDuration > 0 ? _cdMs / (double)_cdDuration * 100.0 : 0;
+
+    private static string FormatActiveBuff(ActiveBuff buff) => buff.Type switch {
+        BuffType.CooldownReduction    => $"⚡ CD −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
+        BuffType.GatherBonus          => $"🎯 Gather +{(buff.Magnitude - 1) * 100:F0}% × {buff.RemainingCharges}",
+        BuffType.HungerDrainReduction => $"🌿 Hunger −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
+        _                             => buff.Type.ToString(),
+    };
+
+    public void Dispose() => _timer?.Dispose();
+}

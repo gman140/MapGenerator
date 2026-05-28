@@ -6,13 +6,13 @@
 <div class="actions-menu">
     @if (!Player.IsInCombat)
     {
-        <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
+        <button class="action-item action-investigate" @onclick="HandleInvestigate">🔍 Investigate</button>
         @if (!IsInDungeon)
         {
             <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
             <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
         }
-        <button class="action-item" @onclick="HandleGather"
+        <button class="action-item action-gather" @onclick="HandleGather"
                 disabled="@(!TileHasResources || GatherOnCooldown)">
             ⛏ Gather
             @if (GatherOnCooldown)
