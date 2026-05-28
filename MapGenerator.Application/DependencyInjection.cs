@@ -2,6 +2,8 @@ using MapGenerator.Application.Services;
 using MapGenerator.Combat.Interfaces;
 using MapGenerator.Combat.Services;
 using MapGenerator.Domain.Interfaces;
+using MapGenerator.Fishing.Interfaces;
+using MapGenerator.Fishing.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MapGenerator.Application;
@@ -11,6 +13,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddSingleton<IFeatureDefinitionProvider, InMemoryFeatureDefinitionProvider>();
+        services.AddSingleton<IFishDefinitionProvider, InMemoryFishDefinitionProvider>();
         services.AddSingleton<IBiomeDefinitionProvider, InMemoryBiomeDefinitionProvider>();
         services.AddSingleton<IResourceDefinitionProvider, InMemoryResourceDefinitionProvider>();
         services.AddSingleton<IEquipmentDefinitionProvider, InMemoryEquipmentDefinitionProvider>();

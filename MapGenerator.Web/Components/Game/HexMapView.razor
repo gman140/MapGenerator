@@ -112,6 +112,7 @@
                         {
                             bool isDungeon   = DungeonGenerationService.DungeonEntranceIds.Contains(featureDef.Id);
                             bool isChallenge = featureDef.Challenge != null;
+                            bool isFishing   = featureDef.FishingConfig != null;
                             string fdx = cx.ToString("F1");
                             string fdy = (cy + HexSize * 0.52).ToString("F1");
                             if (isDungeon)
@@ -122,8 +123,12 @@
                             {
                                 <circle cx="@fdx" cy="@fdy" r="5" class="feature-challenge-halo" />
                             }
+                            else if (isFishing)
+                            {
+                                <circle cx="@fdx" cy="@fdy" r="5" class="feature-fishing-halo" />
+                            }
                             <circle cx="@fdx" cy="@fdy" r="4"
-                                    class="feature-dot @(isDungeon ? "feature-dungeon" : isChallenge ? "feature-challenge" : "feature-" + featureDef.Category.ToString().ToLower())" />
+                                    class="feature-dot @(isDungeon ? "feature-dungeon" : isChallenge ? "feature-challenge" : isFishing ? "feature-fishing" : "feature-" + featureDef.Category.ToString().ToLower())" />
                         }
 
                         @{

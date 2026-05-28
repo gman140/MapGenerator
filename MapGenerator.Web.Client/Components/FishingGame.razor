@@ -1,0 +1,197 @@
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@using System.Text.Json
+@using MapGenerator.Fishing.Models
+@using MapGenerator.Fishing.Services
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<div class="runner-wrapper">
+    @if (!_showResult)
+    {
+        <div class="runner-label">@InitData.LocationLabel</div>
+        <canvas id="fishing-canvas" class="runner-canvas"
+                width="@((int)FishingRenderer.CanvasWidth)"
+                height="@((int)FishingRenderer.CanvasHeight)"></canvas>
+
+        <div class="runner-controls">
+            @if (_state.Phase == FishingPhase.Striking)
+            {
+                <button class="runner-btn runner-btn-jump" @onpointerdown="OnHook">
+                    ⚡ Hook!
+                </button>
+            }
+            else if (_state.Phase == FishingPhase.Reeling)
+            {
+                <button class="runner-btn runner-btn-attack"
+                        @onpointerdown="OnReelStart"
+                        @onpointerup="OnReelStop"
+                        @onpointerleave="OnReelStop">
+                    🎣 Hold to Reel
+                </button>
+            }
+            else
+            {
+                <button class="runner-btn" disabled>
+                    @PhaseLabel
+                </button>
+            }
+        </div>
+        <p class="runner-hint">Keyboard: <strong>Space</strong> to hook · <strong>Hold Space</strong> to reel</p>
+    }
+    else if (_result?.Success == true)
+    {
+        <div class="runner-result runner-result-win">
+            <div class="runner-result-title">🐟 Fish Caught!</div>
+            <p class="runner-result-sub">You reeled in a <strong>@_result.CaughtFishName</strong>.</p>
+            <button class="runner-done-btn" @onclick="Finish">Keep it</button>
+        </div>
+    }
+    else if (_state.Phase == FishingPhase.LineBroke)
+    {
+        <div class="runner-result runner-result-fail">
+            <div class="runner-result-title">💔 Line Broke</div>
+            <p class="runner-result-sub">Too much tension. The fish escaped.</p>
+            <div class="runner-result-actions">
+                <button class="runner-done-btn" @onclick="Retry">Try Again</button>
+                <button class="runner-done-btn runner-done-btn-secondary" @onclick="Finish">Leave</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="runner-result runner-result-fail">
+            <div class="runner-result-title">🐟 Got Away</div>
+            <p class="runner-result-sub">The fish slipped the hook.</p>
+            <div class="runner-result-actions">
+                <button class="runner-done-btn" @onclick="Retry">Try Again</button>
+                <button class="runner-done-btn runner-done-btn-secondary" @onclick="Finish">Leave</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FishingInitData InitData { get; set; } = null!;
+
+    private FishingGameState _state = new();
+    private FishingResult?   _result;
+    private bool             _showResult;
+    private IJSObjectReference? _js;
+    private DotNetObjectReference<FishingGame>? _self;
+    private bool _keyListenerAdded;
+
+    private string PhaseLabel => _state.Phase switch
+    {
+        FishingPhase.Casting  => "Casting...",
+        FishingPhase.Waiting  => "Waiting...",
+        FishingPhase.Nibbling => "Nibbling!",
+        _                     => "",
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _js = await JS.InvokeAsync<IJSObjectReference>("import", "/fishing.js");
+
+        if (InitData.PlayerSprite.Length > 0)
+            await _js.InvokeVoidAsync("buildSprite", "player", InitData.PlayerSprite, 6);
+        if (InitData.CompanionSprite.Length > 0)
+            await _js.InvokeVoidAsync("buildSprite", "companion", InitData.CompanionSprite, 4);
+
+        StartSession();
+        _self = DotNetObjectReference.Create(this);
+        await _js.InvokeVoidAsync("startLoop", _self);
+        await _js.InvokeVoidAsync("initKeyHandler", _self);
+        _keyListenerAdded = true;
+    }
+
+    private void StartSession()
+    {
+        _state      = FishingEngine.Initialize(InitData);
+        _result     = null;
+        _showResult = false;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnFrame(double timestamp)
+    {
+        if (_showResult) return;
+
+        FishingEngine.Tick(_state, InitData, timestamp);
+
+        bool done = FishingEngine.IsTerminal(_state);
+        var cmds  = FishingRenderer.Build(_state, InitData);
+        await _js!.InvokeVoidAsync("renderFrame", "fishing-canvas",
+            JsonSerializer.Serialize(cmds, _jsonOpts));
+
+        if (done)
+        {
+            await _js!.InvokeVoidAsync("stopLoop");
+            _result     = FishingEngine.BuildResult(_state);
+            _showResult = true;
+            await InvokeAsync(StateHasChanged);
+            if (_result.Success)
+                await _js!.InvokeVoidAsync("playCatchSound");
+            else if (_state.Phase == FishingPhase.LineBroke)
+                await _js!.InvokeVoidAsync("playSnapSound");
+        }
+    }
+
+    private void OnHook()
+    {
+        FishingEngine.Hook(_state);
+        _ = _js?.InvokeVoidAsync("playHookSound");
+    }
+
+    private void OnReelStart()
+    {
+        FishingEngine.SetHolding(_state, true);
+        _ = _js?.InvokeVoidAsync("startReelSound");
+    }
+
+    private void OnReelStop()
+    {
+        FishingEngine.SetHolding(_state, false);
+        _ = _js?.InvokeVoidAsync("stopReelSound");
+    }
+
+    [JSInvokable] public void HookKey()      => OnHook();
+    [JSInvokable] public void StartReelKey() => FishingEngine.SetHolding(_state, true);
+    [JSInvokable] public void StopReelKey()  => FishingEngine.SetHolding(_state, false);
+
+    private async Task Retry()
+    {
+        if (_js != null)
+            await _js.InvokeVoidAsync("startLoop", _self);
+        StartSession();
+    }
+
+    private void Finish()
+    {
+        if (_result?.Success == true)
+            Nav.NavigateTo($"/game?ff=1&fc={Uri.EscapeDataString(_result.CaughtFishId!)}", replace: false);
+        else
+            Nav.NavigateTo("/game", replace: false);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_js != null)
+        {
+            await _js.InvokeVoidAsync("stopLoop");
+            if (_keyListenerAdded)
+                await _js.InvokeVoidAsync("removeKeyHandler");
+            await _js.InvokeVoidAsync("clearSprites");
+            await _js.DisposeAsync();
+        }
+        _self?.Dispose();
+    }
+
+    private static readonly JsonSerializerOptions _jsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+}

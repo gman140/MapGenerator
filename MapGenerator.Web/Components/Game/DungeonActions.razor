@@ -1,24 +1,24 @@
 @if (IsOnDungeonEntrance && !IsInDungeon)
 {
-    <button class="dungeon-action-btn action-item dungeon-enter-btn" @onclick="() => OnEnterDungeon.InvokeAsync()">
+    <button class="action-item dungeon-enter-btn" @onclick="() => OnEnterDungeon.InvokeAsync()">
         🕳️ Enter Dungeon
     </button>
 }
 @if (IsInDungeon && IsOnStaircaseDown)
 {
-    <button class="dungeon-action-btn action-item dungeon-stair-btn" @onclick="() => OnUseStaircase.InvokeAsync()">
+    <button class="action-item dungeon-stair-btn" @onclick="() => OnUseStaircase.InvokeAsync()">
         ⬇️ Descend
     </button>
 }
 @if (IsInDungeon && IsOnStaircaseUp)
 {
-    <button class="dungeon-action-btn action-item dungeon-stair-btn" @onclick="() => OnUseStaircase.InvokeAsync()">
+    <button class="action-item dungeon-stair-btn" @onclick="() => OnUseStaircase.InvokeAsync()">
         @(IsOnFloorOne ? "⬆️ Exit Dungeon" : "⬆️ Ascend")
     </button>
 }
 @if (IsInDungeon && HasRope)
 {
-    <button class="dungeon-action-btn action-item dungeon-rope-btn" @onclick="() => OnUseRope.InvokeAsync()">
+    <button class="action-item dungeon-rope-btn" @onclick="() => OnUseRope.InvokeAsync()">
         🪢 Use Rope <span class="action-cooldown">(exit)</span>
     </button>
 }

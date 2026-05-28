@@ -1,8 +1,10 @@
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
+@using MapGenerator.Fishing.Interfaces
 @inject IItemRegistry Items
 @inject ICraftingRecipeProvider RecipeProvider
+@inject IFishDefinitionProvider FishProvider
 
 @{
     int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value)
@@ -21,9 +23,12 @@
     var consumables= allItems.Where(kv => kv.Value > 0
                                        && Items.FindConsumable(kv.Key) is { SatietyRestore: <= 0 } c && c.UsableInCombat)
                              .OrderBy(kv => kv.Key).ToList();
+    var fish       = allItems.Where(kv => kv.Value > 0 && FishProvider.GetById(kv.Key) != null)
+                             .OrderBy(kv => kv.Key).ToList();
     var materials  = allItems.Where(kv => kv.Value > 0
                                        && Items.FindConsumable(kv.Key) == null
-                                       && Items.FindEquipment(kv.Key) == null)
+                                       && Items.FindEquipment(kv.Key) == null
+                                       && FishProvider.GetById(kv.Key) == null)
                              .OrderBy(kv => kv.Key).ToList();
     var crafted    = allItems.Where(kv => kv.Value > 0
                                        && RecipeProvider.GetById(kv.Key) != null
@@ -51,7 +56,7 @@
 
             @if (_tab == 0)
             {
-                @if (food.Count == 0 && consumables.Count == 0 && materials.Count == 0 && crafted.Count == 0)
+                @if (food.Count == 0 && consumables.Count == 0 && fish.Count == 0 && materials.Count == 0 && crafted.Count == 0)
                 {
                     <p class="inventory-empty">Nothing gathered yet.</p>
                 }
@@ -107,6 +112,30 @@
                                 @if (!string.IsNullOrEmpty(desc))
                                 {
                                     <p class="inv-modal-desc">@desc</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                @if (fish.Count > 0)
+                {
+                    <p class="inventory-section-label">Fish</p>
+                    <div class="inv-modal-list">
+                        @foreach (var (id, qty) in fish)
+                        {
+                            var def = FishProvider.GetById(id)!;
+                            <div class="inv-modal-item">
+                                <div class="inv-modal-item-header">
+                                    <span class="inv-modal-name">@def.Name</span>
+                                    <span class="inv-modal-qty">×@qty</span>
+                                    @if (def.IsChainMaterial)
+                                    {
+                                        <span class="inv-modal-buff">Crafting Material</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(def.Description))
+                                {
+                                    <p class="inv-modal-desc">@def.Description</p>
                                 }
                             </div>
                         }

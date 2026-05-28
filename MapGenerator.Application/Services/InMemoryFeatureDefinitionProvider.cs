@@ -662,6 +662,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Sulfur", Probability = 0.25f },
                 new() { ResourceId = "Quartz", Probability = 0.15f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Hot Spring",
+                BackgroundColor = "#2a1808", WaterColor = "#702020", WaterSurfaceColor = "#904030",
+                RequiredPoleTier = 2,
+                FishIds = ["PaleCavefish", "VolcanicEel", "ThermophilicShrimp", "CoralChip"],
+            },
             PartA =
             [
                 "The water is warm and perfectly clear and smells faintly of minerals and something peaceful.",
@@ -696,6 +703,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Salt",      Probability = 0.25f },
                 new() { ResourceId = "RiverGlass",Probability = 0.12f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Tide Pools",
+                BackgroundColor = "#1a2e4a", WaterColor = "#1a6090", WaterSurfaceColor = "#2a80b8",
+                RequiredPoleTier = 0,
+                FishIds = ["Sandfish", "TideMullet", "ShoreCrab", "Flounder", "Seahorse", "RiverScale"],
+            },
             PartA =
             [
                 "The pools are full of small, improbable creatures committed entirely to their improbable lives.",
@@ -730,6 +744,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Fish", Probability = 0.20f },
                 new() { ResourceId = "Clay", Probability = 0.15f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Reed Beds",
+                BackgroundColor = "#1a2a18", WaterColor = "#254830", WaterSurfaceColor = "#306040",
+                RequiredPoleTier = 0,
+                FishIds = ["SwampEel", "Mudfish", "MarshCrab", "FreshwaterPerch", "Catfish", "RiverScale"],
+            },
             PartA =
             [
                 "The reeds grow taller than your head, turning the world into corridors of green.",
@@ -958,6 +979,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Quartz",      Probability = 0.12f },
                 new() { ResourceId = "CrackedOrb",  Probability = 0.06f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Frozen Shrine",
+                BackgroundColor = "#1e2a38", WaterColor = "#4a6878", WaterSurfaceColor = "#5a7a90",
+                RequiredPoleTier = 4,
+                FishIds = ["IceShrimp", "PolarStar", "AncientFish", "GlacierShard"],
+            },
             PartA =
             [
                 "The altar is sealed in ice so clear the inscriptions are perfectly readable.",
@@ -993,6 +1021,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "HollowStone", Probability = 0.12f },
                 new() { ResourceId = "FrozenFlower",Probability = 0.10f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Icy Cavern",
+                BackgroundColor = "#141e2a", WaterColor = "#2a4860", WaterSurfaceColor = "#3a5c78",
+                RequiredPoleTier = 4,
+                FishIds = ["CrystalFish", "FrozenEel", "ArcticTrout", "GlacierShard"],
+            },
             PartA =
             [
                 "The ice is every shade of blue, from pale surface to something close to black at depth.",
@@ -1029,6 +1064,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "RiverGlass",Probability = 0.12f },
                 new() { ResourceId = "TidalCoin", Probability = 0.10f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Shipwreck",
+                BackgroundColor = "#141820", WaterColor = "#1e2c3a", WaterSurfaceColor = "#283848",
+                RequiredPoleTier = 2,
+                FishIds = ["Ghostfish", "AbyssalEel", "SeaBass", "GiantSquid", "CoralChip"],
+            },
             PartA =
             [
                 "The mast breaks the surface at low tide, wrapped in kelp and barnacles and old intention.",
@@ -1062,6 +1104,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Fish", Probability = 0.40f },
                 new() { ResourceId = "Fiber",Probability = 0.20f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Kelp Forest",
+                BackgroundColor = "#0a1820", WaterColor = "#104040", WaterSurfaceColor = "#1a5555",
+                RequiredPoleTier = 2,
+                FishIds = ["KelpGrouper", "Rockfish", "Octopus", "SeaBass", "Anglerfish", "CoralChip"],
+            },
             PartA =
             [
                 "The kelp rises from the sea floor in long slow columns, reaching for a surface they never quite touch.",
@@ -1095,6 +1144,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Salt",     Probability = 0.20f },
                 new() { ResourceId = "TidalCoin",Probability = 0.05f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Bioluminescent Bloom",
+                BackgroundColor = "#080a14", WaterColor = "#0a1428", WaterSurfaceColor = "#0a2240",
+                RequiredPoleTier = 3,
+                FishIds = ["BioluminescentJellyfish", "AbyssalAnglerfish", "GlowingSquid", "AncientLure"],
+            },
             PartA =
             [
                 "After dark the water lights up from within — cold blue-green, sourceless, alive.",
@@ -1164,6 +1220,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
             [
                 new() { ResourceId = "RiverGlass", Probability = 0.15f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Mirror Lake",
+                BackgroundColor = "#1a2838", WaterColor = "#1a4060", WaterSurfaceColor = "#2a5880",
+                RequiredPoleTier = 1,
+                FishIds = ["MirrorCarp", "LakeBass", "Moonfish", "LegendaryMoonfish", "DeepwaterPearl"],
+            },
             PartA =
             [
                 "The surface is so still it seems less like water than a decision about what water could be.",
@@ -1201,6 +1264,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "RiverGlass",Probability = 0.15f },
                 new() { ResourceId = "TidalCoin", Probability = 0.08f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Coral Reef",
+                BackgroundColor = "#0a2040", WaterColor = "#0a5880", WaterSurfaceColor = "#1070a0",
+                RequiredPoleTier = 1,
+                FishIds = ["Clownfish", "Parrotfish", "Triggerfish", "MorayEel", "Lionfish", "DeepwaterPearl"],
+            },
             PartA =
             [
                 "The reef is more color than you were prepared for — every color you know and some you don't.",
@@ -1531,6 +1601,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "RiverGlass",Probability = 0.15f },
                 new() { ResourceId = "Quartz",    Probability = 0.10f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Waterfall",
+                BackgroundColor = "#1a2a40", WaterColor = "#2050a0", WaterSurfaceColor = "#3068b8",
+                RequiredPoleTier = 1,
+                FishIds = ["MountainTrout", "Salmon", "GlacialChar", "GoldenTrout", "DeepwaterPearl"],
+            },
             PartA =
             [
                 "The water arrives at the edge and commits to the decision without hesitation.",
@@ -1598,6 +1675,13 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 new() { ResourceId = "Fish", Probability = 0.60f },
                 new() { ResourceId = "Reed", Probability = 0.20f },
             ],
+            FishingConfig = new()
+            {
+                LocationLabel = "Fishing Hole",
+                BackgroundColor = "#1a3028", WaterColor = "#1a5535", WaterSurfaceColor = "#2a7048",
+                RequiredPoleTier = 0,
+                FishIds = ["RiverTrout", "FreshwaterPerch", "Catfish", "RiverEel", "FreshwaterCrab", "GiantCarp", "RiverScale"],
+            },
             PartA =
             [
                 "The river bends here and slows into a pool behind a sunken log, clear and cold and full of movement.",

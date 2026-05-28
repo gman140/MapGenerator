@@ -9,12 +9,15 @@
 @inject ICraftingRecipeProvider RecipeProvider
 @inject IFeatureDefinitionProvider FeatureProvider
 @inject ChallengeSessionService ChallengeSession
+@inject FishingSessionService FishingSession
+@inject MapGenerator.Fishing.Interfaces.IFishDefinitionProvider FishProvider
 @using MapGenerator.Application.Services
 @using MapGenerator.Combat.Enums
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
+@using MapGenerator.Fishing.Models
 @using MapGenerator.Runner.Models
 @using MapGenerator.Web.Services
 @implements IAsyncDisposable
@@ -48,6 +51,11 @@ else
                                  IsInCombat="Session.Player.IsInCombat"
                                  IsInDungeon="Session.Player.IsInDungeon"
                                  OnEnterChallenge="HandleEnterChallengeAsync" />
+                <FishingAction FishingConfig="_currentFishingConfig"
+                               CanFish="CanFish"
+                               IsInCombat="Session.Player.IsInCombat"
+                               IsInDungeon="Session.Player.IsInDungeon"
+                               OnFish="HandleFishAsync" />
             </div>
         </div>
         <div class="map-area">
@@ -141,11 +149,12 @@ OnDance="HandleDanceAsync"
                          CooldownBypassed="PermissionSvc.GetPermissions(Session.Player).Contains(Permission.IgnoreCooldowns)"
                          TileHasEgg="Session.TileHasEgg()"
                          HasCompanion="Session.Player.CompanionId != null"
-                         OnHatch="HandleHatchAsync" />
-            <ChallengeAction Challenge="_currentChallenge"
-                             IsInCombat="Session.Player.IsInCombat"
-                             IsInDungeon="Session.Player.IsInDungeon"
-                             OnEnterChallenge="HandleEnterChallengeAsync" />
+                         OnHatch="HandleHatchAsync"
+                         Challenge="_currentChallenge"
+                         OnEnterChallenge="HandleEnterChallengeAsync"
+                         FishingConfig="_currentFishingConfig"
+                         CanFish="CanFish"
+                         OnFish="HandleFishAsync" />
         </div>
         <div class="chat-area">
             <ChatPanel LocalMessages="_localMessages"
@@ -324,6 +333,28 @@ OnDance="HandleDanceAsync"
     private InventoryModal? _inventoryModal;
     private FeatureChallengeConfig? _currentChallenge =>
         FeatureProvider.GetById(MapCache.GetCachedTile(Session.Player!.Q, Session.Player.R)?.FeatureId)?.Challenge;
+
+    private FishingFeatureConfig? _currentFishingConfig =>
+        FeatureProvider.GetById(MapCache.GetCachedTile(Session.Player!.Q, Session.Player.R)?.FeatureId)?.FishingConfig;
+
+    private bool CanFish =>
+        _currentFishingConfig != null
+        && GetPlayerPoleTier() >= _currentFishingConfig.RequiredPoleTier
+        && !(Session.Player?.IsInCombat ?? true)
+        && !(Session.Player?.IsInDungeon ?? true);
+
+    private int GetPlayerPoleTier()
+    {
+        var p = Session.Player;
+        if (p == null) return -1;
+        var all = p.Inventory.Concat(p.CraftedItems);
+        if (all.Any(kv => kv.Key == "IceAuger"       && kv.Value > 0)) return 4;
+        if (all.Any(kv => kv.Key == "LuckyRod"        && kv.Value > 0)) return 3;
+        if (all.Any(kv => kv.Key == "LightLure"       && kv.Value > 0)) return 2;
+        if (all.Any(kv => kv.Key == "ReinforcedRod"   && kv.Value > 0)) return 1;
+        if (all.Any(kv => kv.Key == "FishingRod"      && kv.Value > 0)) return 0;
+        return -1;
+    }
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;
@@ -432,6 +463,11 @@ OnDance="HandleDanceAsync"
             await HandleChallengeReturnAsync(rewards.ToString());
             Nav.NavigateTo("/game", replace: true);
         }
+        if (query.TryGetValue("ff", out _) && query.TryGetValue("fc", out var fishId))
+        {
+            await HandleFishReturnAsync(fishId.ToString());
+            Nav.NavigateTo("/game", replace: true);
+        }
 
         StateHasChanged();
     }
@@ -445,6 +481,14 @@ OnDance="HandleDanceAsync"
             _ = InvokeAsync(async () =>
             {
                 await HandleChallengeReturnAsync(rewards.ToString());
+                Nav.NavigateTo("/game", replace: true);
+            });
+        }
+        if (query.TryGetValue("ff", out _) && query.TryGetValue("fc", out var fishId))
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await HandleFishReturnAsync(fishId.ToString());
                 Nav.NavigateTo("/game", replace: true);
             });
         }
@@ -720,6 +764,57 @@ OnDance="HandleDanceAsync"
 
         var key = ChallengeSession.Store(initData);
         Nav.NavigateTo($"/runner?key={key}");
+    }
+
+    private void HandleFishAsync()
+    {
+        var config = _currentFishingConfig;
+        if (config == null || Session.Player == null) return;
+
+        int poleTier = GetPlayerPoleTier();
+        if (poleTier < config.RequiredPoleTier) return;
+
+        var fishPool = FishProvider.GetPool(config.FishIds, poleTier);
+        if (fishPool.Count == 0) return;
+
+        var (strikeMultiplier, rarityMultiplier, waitMultiplier) = poleTier switch
+        {
+            1 => (1.30, 1.0,  1.0),
+            2 => (1.30, 1.0,  0.70),
+            3 => (1.30, 1.5,  0.70),
+            4 => (1.30, 2.0,  0.60),
+            _ => (1.0,  1.0,  1.0),
+        };
+
+        var companion = Session.Companion;
+        var initData = new FishingInitData
+        {
+            LocationLabel         = config.LocationLabel,
+            BackgroundColor       = config.BackgroundColor,
+            WaterColor            = config.WaterColor,
+            WaterSurfaceColor     = config.WaterSurfaceColor,
+            PoleTier              = poleTier,
+            StrikeWindowMultiplier = strikeMultiplier,
+            RarityMultiplier      = rarityMultiplier,
+            WaitTimeMultiplier    = waitMultiplier,
+            FishPool              = [.. fishPool],
+            PlayerSprite          = Session.Player.SpritePixels,
+            CompanionSprite       = companion?.SpritePixels ?? [],
+            CompanionName         = companion?.Nickname ?? "",
+        };
+
+        var key = FishingSession.Store(initData);
+        Nav.NavigateTo($"/fishing?key={key}");
+    }
+
+    private async Task HandleFishReturnAsync(string fishId)
+    {
+        if (string.IsNullOrEmpty(fishId) || Session.Player == null) return;
+        fishId = Uri.UnescapeDataString(fishId);
+        var fishDef = FishProvider.GetById(fishId);
+        if (fishDef == null) return;
+        await Session.GrantChallengeRewardsAsync([(fishId, 1)]);
+        ShowToast($"You caught a {fishDef.Name}!");
     }
 
     private async Task HandleChallengeReturnAsync(string rewardsCsv)

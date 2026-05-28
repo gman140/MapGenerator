@@ -1,0 +1,16 @@
+@using MapGenerator.Domain.Models
+
+@if (FishingConfig != null && !IsInCombat && !IsInDungeon && CanFish)
+{
+    <button class="action-item challenge-action-btn" @onclick="() => OnFish.InvokeAsync()">
+        🎣 Fish
+    </button>
+}
+
+@code {
+    [Parameter] public FishingFeatureConfig? FishingConfig { get; set; }
+    [Parameter] public bool CanFish { get; set; }
+    [Parameter] public bool IsInCombat { get; set; }
+    [Parameter] public bool IsInDungeon { get; set; }
+    [Parameter] public EventCallback OnFish { get; set; }
+}

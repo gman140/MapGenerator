@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MapGenerator.Runner\MapGenerator.Runner.csproj" />
+    <ProjectReference Include="..\MapGenerator.Fishing\MapGenerator.Fishing.csproj" />
   </ItemGroup>
 
 </Project>

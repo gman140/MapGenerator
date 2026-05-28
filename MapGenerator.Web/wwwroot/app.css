@@ -100,6 +100,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .feature-dot.feature-cold    { fill: #85c1e9; }
 .feature-dot.feature-dungeon   { fill: #f0c040; stroke: rgba(120,80,0,0.7);  opacity: 1; animation: dungeon-dot-pulse 2.4s ease-in-out infinite; }
 .feature-dot.feature-challenge { fill: #40d0e0; stroke: rgba(0,100,120,0.7); opacity: 1; animation: challenge-dot-pulse 2.0s ease-in-out infinite; }
+.feature-dot.feature-fishing   { fill: #40e0a0; stroke: rgba(0,100,60,0.7);  opacity: 1; animation: fishing-dot-pulse 2.8s ease-in-out infinite; }
 
 .feature-dungeon-halo {
     fill: rgba(240, 192, 64, 0.35);
@@ -139,6 +140,26 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 @keyframes challenge-dot-pulse {
     0%, 100% { opacity: 0.90; }
     50%       { opacity: 1; filter: drop-shadow(0 0 3px rgba(64, 208, 224, 0.95)); }
+}
+
+.feature-fishing-halo {
+    fill: rgba(64, 224, 160, 0.28);
+    stroke: rgba(64, 224, 160, 0.55);
+    stroke-width: 0.8;
+    pointer-events: none;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: fishing-halo-ripple 2.8s ease-out infinite;
+}
+
+@keyframes fishing-halo-ripple {
+    0%   { transform: scale(1);   opacity: 0.65; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes fishing-dot-pulse {
+    0%, 100% { opacity: 0.88; }
+    50%       { opacity: 1; filter: drop-shadow(0 0 3px rgba(64, 224, 160, 0.90)); }
 }
 
 .player-dot       { pointer-events: none; }
@@ -675,16 +696,15 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .dungeon-tooltip { position: absolute; background: rgba(10,10,20,.92); border: 1px solid var(--border); border-radius: 4px; padding: .3rem .55rem; font-size: .78rem; color: var(--text); pointer-events: none; max-width: 180px; }
 .dungeon-tooltip-loot { color: #c8a84a; font-size: .73rem; margin-top: .15rem; }
 
-.dungeon-enter-btn { background: rgba(40,60,40,.7) !important; border-color: #4a8040 !important; color: #8cd88c !important; }
-.dungeon-enter-btn:hover { background: rgba(60,90,60,.8) !important; }
+.dungeon-enter-btn, .dungeon-stair-btn { background: rgba(40,60,40,.7) !important; border-color: #4a8040 !important; color: #8cd88c !important; }
+.dungeon-enter-btn:hover, .dungeon-stair-btn:hover { background: rgba(60,90,60,.8) !important; }
+.challenge-action-btn { background: rgba(27, 48, 88, 0.7) !important; border-color: #3d598d !important; color: #9fb1e2 !important; }
+.challenge-action-btn:hover { background: rgba(44, 60, 105, 0.8) !important; }
 .dungeon-rope-btn { background: rgba(60,40,20,.7) !important; border-color: #8a6030 !important; color: #d4a060 !important; }
 .dungeon-rope-btn:hover { background: rgba(80,55,25,.8) !important; }
-/* DungeonActions in ActionsMenu — inherit action-item appearance */
-.actions-list .dungeon-action-btn { background: none; border: none; color: var(--text); padding: .5rem .75rem; font-size: .85rem; cursor: pointer; text-align: left; display: flex; align-items: center; gap: .4rem; width: 100%; }
-.actions-list .dungeon-action-btn:hover { background: var(--border); }
 /* DungeonActions in mobile-status-strip — compact chip style */
-.mobile-status-strip .dungeon-action-btn { padding: 3px 10px; font-size: .75rem; border-radius: 6px; border: 1px solid var(--accent); background: rgba(120,60,200,.18); color: var(--text); cursor: pointer; align-self: flex-start; }
 .mobile-status-strip .mobile-dungeon-actions { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.mobile-status-strip .mobile-dungeon-actions .action-item { border: 1px solid; border-radius: 4px; }
 .admin-combat-btn { background: rgba(80,20,20,.7) !important; border-color: #a04040 !important; color: #e08080 !important; }
 .admin-combat-btn:hover:not(:disabled) { background: rgba(110,30,30,.8) !important; }
 
@@ -829,6 +849,16 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-player-svg:not(.combat-shake):not(.combat-strike):not(.combat-bounce):not(.combat-magic-cast):not(.combat-magic-heal) { animation: combat-player-idle 4s ease-in-out infinite; }
 .combat-companion-svg:not(.combat-strike):not(.combat-bounce)                 { animation: combat-player-idle 3.2s ease-in-out infinite -1.2s; }
 .combat-enemy-svg                                         { animation: combat-idle-bob 2.5s ease-in-out infinite; }
+.combat-enemy-side .combat-enemy:nth-child(2) .combat-enemy-svg {
+    animation-delay: 500ms;
+    animation-duration: 3s;
+    animation-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+.combat-enemy-side .combat-enemy:nth-child(3) .combat-enemy-svg {
+    animation-delay: 800ms;
+    animation-duration: 2s;
+    animation-direction: alternate;
+}
 
 /* ── Magic animations ────────────────────────────────────────────────────── */
 

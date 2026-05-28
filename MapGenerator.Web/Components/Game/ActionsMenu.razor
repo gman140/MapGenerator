@@ -33,7 +33,7 @@
                     <span class="action-cooldown">@_eggCooldownText</span>
                 }
             </button>
-<button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
+            <button class="action-item" @onclick="HandleDance" disabled="@DanceOnCooldown">
                 💃 Dance
                 @if (DanceOnCooldown)
                 {
@@ -50,6 +50,15 @@
                         OnEnterDungeon="OnEnterDungeon"
                         OnUseStaircase="OnUseStaircase"
                         OnUseRope="OnUseRope" />
+        <ChallengeAction Challenge="Challenge"
+                         IsInCombat="Player.IsInCombat"
+                         IsInDungeon="IsInDungeon"
+                         OnEnterChallenge="OnEnterChallenge" />
+        <FishingAction FishingConfig="FishingConfig"
+                       CanFish="CanFish"
+                       IsInCombat="Player.IsInCombat"
+                       IsInDungeon="IsInDungeon"
+                       OnFish="OnFish" />
         @if (!IsInDungeon && TileHasEgg && !HasCompanion)
         {
             <button class="action-item companion-hatch-btn" @onclick="HandleHatch">
@@ -70,6 +79,11 @@
     [Parameter] public EventCallback OnEnterDungeon { get; set; }
     [Parameter] public EventCallback OnUseRope { get; set; }
     [Parameter] public EventCallback OnUseStaircase { get; set; }
+    [Parameter] public FeatureChallengeConfig? Challenge { get; set; }
+    [Parameter] public EventCallback OnEnterChallenge { get; set; }
+    [Parameter] public FishingFeatureConfig? FishingConfig { get; set; }
+    [Parameter] public bool CanFish { get; set; }
+    [Parameter] public EventCallback OnFish { get; set; }
     [Parameter] public DateTime? LastEggLaidAt { get; set; }
     [Parameter] public DateTime? LastDancedAt { get; set; }
     [Parameter] public bool CooldownBypassed { get; set; }

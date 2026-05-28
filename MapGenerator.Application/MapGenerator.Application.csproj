@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MapGenerator.Domain\MapGenerator.Domain.csproj" />
     <ProjectReference Include="..\MapGenerator.Combat\MapGenerator.Combat.csproj" />
+    <ProjectReference Include="..\MapGenerator.Fishing\MapGenerator.Fishing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
