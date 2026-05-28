@@ -87,6 +87,7 @@ public class DungeonGenerationService
     private static readonly string[] BonusLoot =
     [
         "Rope", "Lantern", "Compass", "Amber", "Quartz", "HollowStone", "CrackedOrb",
+        "ElementalCore", "EvolutionStone",
     ];
 
     // Weighted room types for cluster centers only. No traps at centers — those come from the scatter pass.

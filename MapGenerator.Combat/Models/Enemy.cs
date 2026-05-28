@@ -8,7 +8,9 @@ public class Enemy
     public int CurrentHp { get; set; }
     public int MaxHp { get; set; }
     public int Attack { get; set; }
-    public int Defense { get; set; }
+    public int  Defense     { get; set; }
+    public int  Speed       { get; set; } = 5;
+    public float CritChance { get; set; }
     public bool IsDefending { get; set; }
     public bool HasFled { get; set; }
     public List<CombatModifier> ActiveModifiers { get; set; } = [];
@@ -21,6 +23,6 @@ public class Enemy
     // On-hit status effect from the affix (null = none)
     public OnHitEffect? OnHitEffect { get; set; }
 
-    // If true, player dodge chance is bypassed for all this enemy's attacks
-    public bool ActionsCantBeDodged { get; set; }
+    // If true, this enemy ignores the player's Steady accuracy bonus
+    public bool IgnoresSteady { get; set; }
 }

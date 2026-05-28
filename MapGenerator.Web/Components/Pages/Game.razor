@@ -29,6 +29,20 @@ else if (Session.Player == null)
 else
 {
     <div class="game-layout">
+        <div class="mobile-status-strip">
+            <PlayerStatusBars Player="Session.Player" CooldownUntil="_cooldownUntil" />
+            <div class="mobile-dungeon-actions">
+                <DungeonActions IsOnDungeonEntrance="Session.IsOnDungeonEntrance()"
+                                IsInDungeon="Session.Player.IsInDungeon"
+                                IsOnStaircaseUp="_isOnStaircaseUp"
+                                IsOnStaircaseDown="_isOnStaircaseDown"
+                                IsOnFloorOne="Session.Player.DungeonFloor == 1"
+                                HasRope="_playerHasRope"
+                                OnEnterDungeon="HandleEnterDungeonAsync"
+                                OnUseStaircase="HandleUseStaircaseAsync"
+                                OnUseRope="HandleUseRopeAsync" />
+            </div>
+        </div>
         <div class="map-area">
             @if (Session.Player.IsInDungeon && _dungeonFloor != null)
             {
@@ -50,7 +64,11 @@ else
                             RevealedTiles="_revealedTiles" />
             }
         </div>
-        <div class="sidebar">
+        <div class="sidebar @(_showMobileMore ? "mobile-open" : "")">
+            <div class="mobile-sheet-header">
+                <span class="mobile-sheet-title">Menu</span>
+                <button class="mobile-sheet-close" @onclick='() => _showMobileMore = false'>✕</button>
+            </div>
             <MiniMap Player="Session.Player" MapVersion="_mapVersion"
                      RevealedTiles="_revealedTiles" />
             <PlayerInfo Player="Session.Player"
@@ -59,12 +77,13 @@ else
                         OnlinePlayers="Broadcast.GetOnlinePlayersOnTile(Session.Player.Q, Session.Player.R)"
                         OnEditSprite="() => _showSpriteEditor = true"
                         Companion="Session.Companion"
-                        CompanionDefinition="Session.CompanionDefinition"
                         OnOpenCompanion="() => _showCompanionDialog = true"
                         HasCompanion="Session.Companion != null"
                         OnKissPlayer="HandleKissPlayerAsync"
                         OnBattlePlayer="HandleBattlePlayerAsync" />
-            <InventoryModal Inventory="Session.Player.Inventory"
+            <button class="tutorial-open-btn" @onclick="() => _showTutorial = true">? Guide</button>
+            <InventoryModal @ref="_inventoryModal"
+                            Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
                             EquippedArmorId="@Session.Player.EquippedArmorId"
@@ -72,7 +91,7 @@ else
                             OnUse="HandleUseAsync"
                             OnEquip="HandleEquipAsync"
                             OnUnequip="HandleUnequipAsync" />
-            <CraftingPanel Player="Session.Player" OnCraft="HandleCraftAsync" />
+            <CraftingPanel @ref="_craftingPanel" Player="Session.Player" OnCraft="HandleCraftAsync" />
             <FeedbackModal Username="@Session.Player.Username" IsAdmin="Session.Player.IsAdmin" />
             @if (!Session.Player.IsInDungeon)
             {
@@ -123,6 +142,40 @@ OnDance="HandleDanceAsync"
                        OnSendLocal="SendLocalAsync"
                        OnSendWorld="SendWorldAsync" />
         </div>
+    </div>
+
+    @if (_showMobileMore)
+    {
+        <div class="mobile-sheet-backdrop" @onclick='() => _showMobileMore = false'></div>
+    }
+    <div class="mobile-action-bar">
+        <button class="mobile-action-btn"
+                disabled="@Session.Player.IsInCombat"
+                @onclick="HandleInvestigateAsync">
+            <span class="mab-icon">🔍</span>
+            <span class="mab-label">Investigate</span>
+        </button>
+        <button class="mobile-action-btn"
+                disabled="@(Session.Player.IsInCombat || !Session.TileHasResources() || DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < _gatherCooldownUntil)"
+                @onclick="HandleGatherAsync">
+            <span class="mab-icon">⛏️</span>
+            <span class="mab-label">Gather</span>
+        </button>
+        <button class="mobile-action-btn"
+                @onclick='() => _craftingPanel?.Open()'>
+            <span class="mab-icon">⚒️</span>
+            <span class="mab-label">Crafting</span>
+        </button>
+        <button class="mobile-action-btn"
+                @onclick='() => _inventoryModal?.Open()'>
+            <span class="mab-icon">📋</span>
+            <span class="mab-label">Inventory</span>
+        </button>
+        <button class="mobile-action-btn @(_showMobileMore ? "mab-active" : "")"
+                @onclick='() => _showMobileMore = !_showMobileMore'>
+            <span class="mab-icon">☰</span>
+            <span class="mab-label">Menu</span>
+        </button>
     </div>
 
     @if ((Session.Player.IsInCombat || _combatResult != null) && _combatSession != null)
@@ -203,6 +256,11 @@ OnDance="HandleDanceAsync"
         </div>
     }
 
+    @if (_showTutorial)
+    {
+        <TutorialModal OnClose="() => _showTutorial = false" />
+    }
+
     @if (_showSpriteEditor)
     {
         <SpriteEditorModal Player="Session.Player"
@@ -210,13 +268,15 @@ OnDance="HandleDanceAsync"
                            OnCancel="() => _showSpriteEditor = false" />
     }
 
-    @if (_showCompanionDialog && Session.Companion != null && Session.CompanionDefinition != null)
+    @if (_showCompanionDialog && Session.Companion != null)
     {
         <CompanionDialog Companion="Session.Companion"
-                         Definition="Session.CompanionDefinition"
+                         PlayerInventory="Session.Player?.Inventory ?? []"
                          OnSaveSprite="HandleCompanionSpriteAsync"
                          OnSaveNickname="HandleCompanionNicknameAsync"
                          OnSaveMoves="HandleCompanionMovesAsync"
+                         OnUseElementalCore="HandleUseElementalCoreAsync"
+                         OnUseEvolutionStone="HandleUseEvolutionStoneAsync"
                          OnCancel="() => _showCompanionDialog = false"
                          OnRelease="HandleReleaseAsync" />
     }
@@ -240,6 +300,7 @@ OnDance="HandleDanceAsync"
     private long _cooldownUntil;
     private long _gatherCooldownUntil;
     private bool _oceanWarning;
+    private bool _showTutorial;
     private string? _moveError;
     private (int q, int r)? _pendingOceanMove;
     private System.Threading.Timer? _toastTimer;
@@ -247,6 +308,9 @@ OnDance="HandleDanceAsync"
 
     private HashSet<(int, int)>? _revealedTiles;
 
+    private bool _showMobileMore;
+    private CraftingPanel? _craftingPanel;
+    private InventoryModal? _inventoryModal;
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;
@@ -704,7 +768,7 @@ OnDance="HandleDanceAsync"
             if (evt.PlayerStamina >= 0)   _combatSession.PlayerStamina  = evt.PlayerStamina;
             if (evt.PlayerMana >= 0)      _combatSession.PlayerMana     = evt.PlayerMana;
             if (evt.PlayerDefending != null) _combatSession.PlayerDefending = evt.PlayerDefending.Value;
-            if (evt.PlayerDodging   != null) _combatSession.PlayerDodging   = evt.PlayerDodging.Value;
+            if (evt.PlayerSteady    != null) _combatSession.PlayerSteady    = evt.PlayerSteady.Value;
             if (evt.EnemyHp >= 0 && evt.EnemyInstanceId != null)
             {
                 var e = _combatSession.Enemies.FirstOrDefault(e => e.InstanceId == evt.EnemyInstanceId);
@@ -1007,6 +1071,20 @@ OnDance="HandleDanceAsync"
         StateHasChanged();
     }
 
+    private async Task HandleUseElementalCoreAsync(MapGenerator.Domain.Enums.DamageType element)
+    {
+        var (ok, msg) = await Session.UseElementalCoreAsync(element);
+        ShowToast(ok ? (msg ?? "Done.") : (msg ?? "Failed."));
+        StateHasChanged();
+    }
+
+    private async Task HandleUseEvolutionStoneAsync()
+    {
+        var (ok, msg) = await Session.UseEvolutionStoneAsync();
+        ShowToast(ok ? (msg ?? "Evolved!") : (msg ?? "Failed."));
+        StateHasChanged();
+    }
+
     private async Task SendLocalAsync(string content) =>
         await Session.SendLocalMessageAsync(content);
 
@@ -1117,7 +1195,7 @@ OnDance="HandleDanceAsync"
         var challengerId = _pendingBattleChallenge.ChallengerId;
         _pendingBattleChallenge = null;
 
-        var (ok, error) = Session.AcceptCompanionBattle(challengerId);
+        var (ok, error) = await Session.AcceptCompanionBattleAsync(challengerId);
         if (!ok)
         {
             ShowToast(error ?? "Could not start battle.");

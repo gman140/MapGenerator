@@ -10,4 +10,5 @@ public class EquipmentDefinition
     public string EquipmentSlot { get; init; } = string.Empty;  // "Weapon", "Armor", "Hat"
     public DamageType WeaponDamageType { get; init; } = DamageType.Bludgeoning;
     public IReadOnlyList<StatAffix> Affixes { get; init; } = [];
+    public IReadOnlyList<string> WeaponAttackIds { get; init; } = [];
 }

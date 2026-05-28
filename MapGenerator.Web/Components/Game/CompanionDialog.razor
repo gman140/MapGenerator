@@ -1,10 +1,11 @@
+@using MapGenerator.Combat.Enums
 @using MapGenerator.Combat.Models
 @using MapGenerator.Combat.Interfaces
 @using MapGenerator.Domain.Models
-@using MapGenerator.Combat.Enums
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Web.Services
 @inject ICompanionMoveProvider MoveProvider
+@inject ICompanionDefinitionProvider DefProvider
 
 <div class="modal-overlay" @onclick="HandleCancel">
     <div class="companion-dialog" @onclick:stopPropagation
@@ -12,52 +13,136 @@
          @oncontextmenu:preventDefault>
 
         <div class="companion-dialog-titlebar">
-            <span class="companion-emoji">@Definition.Emoji</span>
             <span class="companion-dialog-name">@Companion.Nickname</span>
-            @if (Companion.Nickname != Definition.Name)
+            @if (Companion.Form != CompanionForm.None)
             {
-                <span class="companion-dialog-species">(@Definition.Name)</span>
+                <span class="companion-form-badge form-@Companion.Form.ToString().ToLower()">
+                    @FormDef.DisplayName
+                </span>
             }
         </div>
 
         <div class="sprite-editor-tabs">
-            <button class="sprite-tab @(_tab == "stats" ? "active" : "")" @onclick='() => _tab = "stats"'>Stats</button>
-            <button class="sprite-tab @(_tab == "moves" ? "active" : "")" @onclick='() => { _tab = "moves"; _pickerSlot = -1; }'>Moves</button>
-            <button class="sprite-tab @(_tab == "sprite" ? "active" : "")" @onclick='() => _tab = "sprite"'>Sprite</button>
+            <button class="sprite-tab @(_tab == "stats"   ? "active" : "")" @onclick='() => _tab = "stats"'>Stats</button>
+            <button class="sprite-tab @(_tab == "moves"   ? "active" : "")" @onclick='() => { _tab = "moves"; _pickerSlot = -1; }'>Moves</button>
+            <button class="sprite-tab @(_tab == "sprite"  ? "active" : "")" @onclick='() => _tab = "sprite"'>Sprite</button>
         </div>
 
         @if (_tab == "stats")
         {
             <div class="companion-stats-body">
-                <p class="companion-desc">@Definition.Description</p>
+                <p class="companion-desc">@Companion.Description</p>
 
+                @* Temperament *@
+                <div class="companion-stat-row">
+                    <span class="companion-stat-label">Temperament</span>
+                    <span class="companion-temperament-badge temp-@Companion.Temperament.ToString().ToLower()">
+                        @Companion.Temperament
+                    </span>
+                    <span class="companion-temp-hint">@TemperamentHint</span>
+                </div>
+
+                @* Form (if evolved) *@
+                @if (Companion.Form != CompanionForm.None)
+                {
+                    <div class="companion-stat-row">
+                        <span class="companion-stat-label">Form</span>
+                        <span class="companion-form-badge form-@Companion.Form.ToString().ToLower()">
+                            @FormDef.DisplayName
+                        </span>
+                        <span class="companion-temp-hint">@FormDef.Hint</span>
+                    </div>
+                }
+
+                @* Element types *@
                 <div class="companion-stat-row">
                     <span class="companion-stat-label">Element</span>
                     <span class="companion-element-row">
-                        @foreach (var et in Definition.ElementTypes)
+                        @foreach (var et in EffectiveElementTypes)
                         {
                             <span class="companion-element companion-element-@et.ToString().ToLower()">@et</span>
                         }
                     </span>
                 </div>
+
+                @* Battle record *@
                 <div class="companion-stat-row">
-                    <span class="companion-stat-label">Base Attack</span>
-                    <strong>@Definition.BaseAttack</strong>
+                    <span class="companion-stat-label">Battles</span>
+                    <span class="companion-battle-record">
+                        <span class="record-win">@Companion.BattleWins W</span>
+                        <span class="record-loss">@Companion.BattleLosses L</span>
+                    </span>
                 </div>
 
+                @* ── Stat grid ── *@
+                <div class="companion-stat-grid">
+                    @foreach (var (label, value) in StatRows)
+                    {
+                        <div class="companion-stat-item">
+                            <span class="companion-stat-label">@label</span>
+                            <span class="companion-stat-value">@value</span>
+                        </div>
+                    }
+                </div>
+
+                @* ── Items section ── *@
+                @{
+                    bool hasCore  = PlayerInventory.TryGetValue("ElementalCore",  out int coreQty)  && coreQty  > 0;
+                    bool hasStone = PlayerInventory.TryGetValue("EvolutionStone", out int stoneQty) && stoneQty > 0;
+                    bool canCore  = hasCore  && Companion.ElementTypes.Count < 2;
+                    bool canEvolve= hasStone && Companion.Form == CompanionForm.None;
+                }
+                @if (canCore || canEvolve)
+                {
+                    <div class="companion-items-section">
+                        <div class="companion-items-label">Items</div>
+                        @if (canCore)
+                        {
+                            @if (!_showCorePicker)
+                            {
+                                <button class="companion-item-btn core-btn" @onclick="() => _showCorePicker = true">
+                                    Use Elemental Core (@coreQty)
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="companion-core-picker">
+                                    <span class="companion-core-picker-label">Choose element:</span>
+                                    @foreach (var el in AllElements.Where(e => !EffectiveElementTypes.Contains(e)))
+                                    {
+                                        DamageType el2 = el;
+                                        <button class="companion-element companion-element-@el2.ToString().ToLower() companion-core-choice"
+                                                @onclick="() => UseElementalCore(el2)">
+                                            @el2
+                                        </button>
+                                    }
+                                    <button class="companion-item-btn" @onclick="() => _showCorePicker = false">Cancel</button>
+                                </div>
+                            }
+                        }
+                        @if (canEvolve)
+                        {
+                            <button class="companion-item-btn evolve-btn" @onclick="UseEvolutionStone">
+                                Use Evolution Stone (@stoneQty) → Evolve
+                            </button>
+                        }
+                    </div>
+                }
             </div>
 
             <div class="modal-actions">
-                <button class="companion-release-btn" @onclick="HandleRelease">Release Companion</button>
+                <button class="companion-release-btn" @onclick="HandleRelease">Release</button>
                 <button @onclick="HandleCancel">Close</button>
             </div>
         }
         else if (_tab == "moves")
         {
-            var eligibleMoves = MoveProvider.GetEligibleFor(Definition.ElementTypes);
+            var effectiveTypes = EffectiveElementTypes;
+            var eligibleMoves  = MoveProvider.GetEligibleFor(effectiveTypes);
+            int maxMoves       = FormRegistry.Get(Companion.Form).MaxMoves;
 
             <div class="companion-moves-body">
-                <p class="companion-moves-hint">Select up to 4 moves. Click a slot to change it.</p>
+                <p class="companion-moves-hint">Select up to @maxMoves moves. Click a slot to change it.</p>
 
                 @if (_moveError != null)
                 {
@@ -65,11 +150,11 @@
                 }
 
                 <div class="companion-move-slots">
-                    @for (int slot = 0; slot < 4; slot++)
+                    @for (int slot = 0; slot < maxMoves; slot++)
                     {
                         int s = slot;
                         bool hasMove = s < _editMoveIds.Count;
-                        bool isOpen = _pickerSlot == s;
+                        bool isOpen  = _pickerSlot == s;
                         var slotMove = hasMove ? MoveProvider.GetById(_editMoveIds[s]) : null;
 
                         <div class="companion-move-slot @(isOpen ? "open" : "") @(!hasMove ? "empty" : "")"
@@ -78,13 +163,22 @@
                             {
                                 <div class="companion-move-slot-header">
                                     <span class="companion-move-name">@slotMove.Name</span>
-                                    @if (slotMove.Kind == CompanionMoveKind.Attack)
+                                    @if (slotMove.HasDamage)
                                     {
                                         <span class="companion-element companion-element-@slotMove.DamageType.ToString().ToLower()">@slotMove.DamageType</span>
-                                        <span class="companion-move-power">~@((int)(Definition.BaseAttack * slotMove.Power)) dmg</span>
+                                        <span class="companion-move-power">~@((int)(EffectiveAttack * slotMove.Power)) dmg</span>
                                         @if (slotMove.HitsAll) { <span class="companion-move-aoe">AOE</span> }
+                                        @if (slotMove.HasEnemyEffect)
+                                        {
+                                            <span class="companion-move-status">@FormatEffect(slotMove)</span>
+                                        }
                                     }
-                                    else if (slotMove.Kind == CompanionMoveKind.PlayerBuff)
+                                    else if (slotMove.HasHeal)
+                                    {
+                                        <span class="companion-move-kind buff">Heal</span>
+                                        <span class="companion-move-power">+@((int)slotMove.HealAmount) HP</span>
+                                    }
+                                    else if (slotMove.HasSelfBuff)
                                     {
                                         <span class="companion-move-kind buff">Buff</span>
                                         <span class="companion-move-power">@FormatEffect(slotMove)</span>
@@ -111,16 +205,10 @@
                         @if (isOpen)
                         {
                             <div class="companion-move-picker">
-                                @foreach (var group in eligibleMoves.GroupBy(m => m.Kind).OrderBy(g => g.Key))
+                                @foreach (var group in eligibleMoves.GroupBy(GetMoveCategory).OrderBy(g => g.Key))
                                 {
-                                    string kindLabel = group.Key switch
-                                    {
-                                        CompanionMoveKind.Attack     => "Attacks",
-                                        CompanionMoveKind.PlayerBuff => "Buffs",
-                                        _                            => "Debuffs",
-                                    };
                                     <div class="companion-picker-group">
-                                        <div class="companion-picker-group-label">@kindLabel</div>
+                                        <div class="companion-picker-group-label">@group.Key</div>
                                         @foreach (var m in group)
                                         {
                                             bool inUse = _editMoveIds.Contains(m.Id);
@@ -128,12 +216,21 @@
                                                  @onclick="() => { if (!inUse) AssignMove(s, m.Id); }">
                                                 <div class="companion-picker-option-header">
                                                     <span class="companion-move-name">@m.Name</span>
-                                                    @if (m.Kind == CompanionMoveKind.Attack)
+                                                    @if (m.HasDamage)
                                                     {
                                                         <span class="companion-element companion-element-@m.DamageType.ToString().ToLower()">@m.DamageType</span>
-                                                        <span class="companion-move-power">~@((int)(Definition.BaseAttack * m.Power)) dmg</span>
+                                                        <span class="companion-move-power">~@((int)(EffectiveAttack * m.Power)) dmg</span>
+                                                        @if (m.HasEnemyEffect)
+                                                        {
+                                                            <span class="companion-move-status">@FormatEffect(m)</span>
+                                                        }
                                                     }
-                                                    else if (m.Kind == CompanionMoveKind.PlayerBuff)
+                                                    else if (m.HasHeal)
+                                                    {
+                                                        <span class="companion-move-kind buff">Heal</span>
+                                                        <span class="companion-move-power">+@((int)m.HealAmount) HP</span>
+                                                    }
+                                                    else if (m.HasSelfBuff)
                                                     {
                                                         <span class="companion-move-kind buff">Buff</span>
                                                         <span class="companion-move-power">@FormatEffect(m)</span>
@@ -166,17 +263,20 @@
         }
         else
         {
+            int gridCols = FormDef.GridCols;
+            int cellPx   = Companion.Form == CompanionForm.None ? 28 : 24;
+            string gridSizeClass = Companion.Form == CompanionForm.None ? "" : "medium-grid";
             <div class="sprite-editor-body"
                  @onmouseleave="() => _isPainting = false">
                 <div class="sprite-grid-wrap">
-                    <div class="sprite-grid"
+                    <div class="sprite-grid @(gridSizeClass)"
                          @onmouseup="() => _isPainting = false">
-                        @for (int i = 0; i < 256; i++)
+                        @for (int i = 0; i < _pixels.Length; i++)
                         {
                             int idx = i;
                             string fill = string.IsNullOrEmpty(_pixels[idx]) ? "transparent" : _pixels[idx];
                             <div class="sprite-cell @(string.IsNullOrEmpty(_pixels[idx]) ? "transparent" : "")"
-                                 style="background: @fill"
+                                 style="background: @fill;"
                                  @onmousedown="(e) => HandleMouseDown(idx, e)"
                                  @onmouseenter="() => { if (_isPainting) ApplyPaint(idx); }"
                                  @oncontextmenu:preventDefault>
@@ -187,13 +287,13 @@
 
                 <div class="sprite-preview-wrap">
                     <div class="sprite-preview-label">Preview</div>
-                    <svg width="64" height="64" class="sprite-preview-svg">
-                        @for (int i = 0; i < 256; i++)
+                    <svg viewBox="0 0 @gridCols @gridCols" width="64" height="64" class="sprite-preview-svg">
+                        @for (int i = 0; i < _pixels.Length; i++)
                         {
                             if (!string.IsNullOrEmpty(_pixels[i]))
                             {
-                                int px = i % 16, py = i / 16;
-                                <rect x="@(px * 4)" y="@(py * 4)" width="4" height="4" fill="@_pixels[i]" />
+                                int px = i % gridCols, py = i / gridCols;
+                                <rect x="@px" y="@py" width="1" height="1" fill="@_pixels[i]" />
                             }
                         }
                     </svg>
@@ -234,44 +334,90 @@
 
 @code {
     [Parameter, EditorRequired] public PlayerCompanion Companion { get; set; } = null!;
-    [Parameter, EditorRequired] public CompanionDefinition Definition { get; set; } = null!;
+    [Parameter] public Dictionary<string, int> PlayerInventory { get; set; } = [];
     [Parameter] public EventCallback<string[]> OnSaveSprite { get; set; }
     [Parameter] public EventCallback<string> OnSaveNickname { get; set; }
     [Parameter] public EventCallback<List<string>> OnSaveMoves { get; set; }
+    [Parameter] public EventCallback<DamageType> OnUseElementalCore { get; set; }
+    [Parameter] public EventCallback OnUseEvolutionStone { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public EventCallback OnRelease { get; set; }
 
     private string _tab = "stats";
     private string _nickname = "";
-    private string[] _pixels = new string[256];
+    private string[] _pixels = [];
     private string _hexColor = "#ffffff";
     private double _alpha = 255;
     private bool _erasing;
     private bool _isPainting;
     private bool _paintingAsErase;
     private string? _moveError;
+    private bool _showCorePicker;
 
-    // Moves tab state
     private List<string> _editMoveIds = [];
     private int _pickerSlot = -1;
 
+    private static readonly DamageType[] AllElements =
+    [
+        DamageType.Fire, DamageType.Frost, DamageType.Storm,
+        DamageType.Nature, DamageType.Dark,
+    ];
+
+    private IReadOnlyList<DamageType> EffectiveElementTypes => Companion.ElementTypes;
+
+    private string TemperamentHint => Companion.Temperament switch
+    {
+        CompanionTemperament.Bold     => "+ATK, -DEF",
+        CompanionTemperament.Timid    => "+DEF, -ATK",
+        CompanionTemperament.Reckless => "+ATK, +SPD, -DEF",
+        CompanionTemperament.Careful  => "+DEF, +RES, -SPD",
+        CompanionTemperament.Cunning  => "+FOC, +SPD, -VIT",
+        CompanionTemperament.Stoic    => "+RES, +DEF, -FOC",
+        CompanionTemperament.Playful  => "+SPD, +FOC, -ATK",
+        CompanionTemperament.Fierce   => "+ATK×2, -RES, -DEF",
+        _ => "",
+    };
+
+    private int GetStat(string key) => Companion.Stats.GetValueOrDefault(key);
+
+    // (statKey, display label, format function for computed display value)
+    private TemperamentDefinition TempDef =>
+        TemperamentRegistry.Get(Companion.Temperament);
+
+    private FormDefinition FormDef =>
+        FormRegistry.Get(Companion.Form);
+
+    private IEnumerable<(string Label, string Value)> StatRows =>
+    [
+        ("ATK",  $"{GetStat("ATK") + TempDef.AtkBonus + FormDef.AtkBonus}"),
+        ("DEF",  $"{Math.Max(0, GetStat("DEF") + TempDef.DefBonus + FormDef.DefBonus)}"),
+        ("HP",   $"{10 + Math.Max(0, GetStat("VIT") + TempDef.VitBonus + FormDef.VitBonus) * 5}"),
+        ("SPD",  $"{GetStat("SPD") + TempDef.SpdBonus + FormDef.SpdBonus}"),
+        ("CRIT", $"{(int)Math.Clamp((0.05f + (GetStat("FOC") + TempDef.FocBonus + FormDef.FocBonus) * 0.025f) * 100, 5, 45)}%"),
+        ("RES",  $"{(int)Math.Clamp((GetStat("RES") + TempDef.ResBonus + FormDef.ResBonus) * 6, 0, 55)}%"),
+    ];
+
+    private int EffectiveAttack =>
+        GetStat("ATK") + TempDef.AtkBonus + FormDef.AtkBonus;
+
     protected override void OnInitialized()
     {
-        _nickname = Companion.Nickname;
+        _nickname    = Companion.Nickname;
         _editMoveIds = [.. Companion.MoveIds];
         ResetSprite();
     }
 
     private void ResetSprite()
     {
-        _pixels = new string[256];
-        var src = Companion.SpritePixels;
-        for (int i = 0; i < 256 && i < src.Length; i++)
+        int size = FormDef.SpriteSize;
+        _pixels  = new string[size];
+        var src  = Companion.SpritePixels;
+        for (int i = 0; i < size && i < src.Length; i++)
             _pixels[i] = src[i] ?? "";
         _hexColor = ElementDefaultColor();
     }
 
-    private string ElementDefaultColor() => Definition.ElementTypes.FirstOrDefault() switch
+    private string ElementDefaultColor() => Companion.ElementTypes.FirstOrDefault() switch
     {
         DamageType.Fire    => "#e05020",
         DamageType.Frost   => "#4090e0",
@@ -281,23 +427,19 @@
         _                  => "#a0a0a0",
     };
 
-    private void TogglePicker(int slot)
-    {
+    private void TogglePicker(int slot) =>
         _pickerSlot = _pickerSlot == slot ? -1 : slot;
-    }
 
     private void AssignMove(int slot, string moveId)
     {
-        while (_editMoveIds.Count <= slot)
-            _editMoveIds.Add("");
+        while (_editMoveIds.Count <= slot) _editMoveIds.Add("");
         _editMoveIds[slot] = moveId;
         _pickerSlot = -1;
     }
 
     private void RemoveMove(int slot)
     {
-        if (slot < _editMoveIds.Count)
-            _editMoveIds.RemoveAt(slot);
+        if (slot < _editMoveIds.Count) _editMoveIds.RemoveAt(slot);
         _pickerSlot = -1;
     }
 
@@ -306,6 +448,18 @@
         _moveError = null;
         var cleanIds = _editMoveIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
         await OnSaveMoves.InvokeAsync(cleanIds);
+    }
+
+    private async Task UseElementalCore(DamageType element)
+    {
+        _showCorePicker = false;
+        await OnUseElementalCore.InvokeAsync(element);
+    }
+
+    private async Task UseEvolutionStone()
+    {
+        await OnUseEvolutionStone.InvokeAsync();
+        ResetSprite(); // sprite size may have changed
     }
 
     private void HandleMouseDown(int idx, MouseEventArgs e)
@@ -324,15 +478,79 @@
 
     private void ApplyDefault()
     {
-        _pixels = new string[256];
-        var src = Definition.DefaultSprite;
-        for (int i = 0; i < 256 && i < src.Length; i++)
-            _pixels[i] = src[i] ?? "";
+        int size = FormDef.SpriteSize;
+        _pixels  = new string[size];
+        var primaryElement = Companion.ElementTypes.FirstOrDefault();
+        var def = DefProvider.GetAll().FirstOrDefault(d => d.ElementTypes.Contains(primaryElement));
+        var src = (Companion.Form != CompanionForm.None && def?.DefaultSpriteEvolved.Length > 0)
+            ? def.DefaultSpriteEvolved
+            : def?.DefaultSprite ?? [];
+
+        // Stable per-companion color shift: ±30° hue, ±10% lightness
+        var rng      = new Random(Companion.Id.GetHashCode());
+        float hShift = (float)(rng.NextDouble() * 60 - 30);
+        float lAdj   = (float)(rng.NextDouble() * 0.20 - 0.10);
+
+        for (int i = 0; i < size && i < src.Length; i++)
+            _pixels[i] = string.IsNullOrEmpty(src[i]) ? "" : ShiftColor(src[i], hShift, lAdj);
+    }
+
+    private static string ShiftColor(string hex, float hueShift, float lightAdj)
+    {
+        if (hex.Length < 7 || hex[0] != '#') return hex;
+        int r = Convert.ToInt32(hex[1..3], 16);
+        int g = Convert.ToInt32(hex[3..5], 16);
+        int b = Convert.ToInt32(hex[5..7], 16);
+        string alpha = hex.Length >= 9 ? hex[7..9] : "ff";
+
+        // RGB → HSL
+        float rf = r / 255f, gf = g / 255f, bf = b / 255f;
+        float max = Math.Max(rf, Math.Max(gf, bf));
+        float min = Math.Min(rf, Math.Min(gf, bf));
+        float l = (max + min) / 2f;
+        float h = 0f, s = 0f;
+        if (max != min)
+        {
+            float d = max - min;
+            s = l > 0.5f ? d / (2f - max - min) : d / (max + min);
+            h = max == rf ? (gf - bf) / d + (gf < bf ? 6 : 0)
+              : max == gf ? (bf - rf) / d + 2
+              :              (rf - gf) / d + 4;
+            h /= 6f;
+        }
+
+        h = ((h + hueShift / 360f) % 1f + 1f) % 1f;
+        l = Math.Clamp(l + lightAdj, 0f, 1f);
+
+        // HSL → RGB
+        float nr, ng, nb;
+        if (s == 0f) { nr = ng = nb = l; }
+        else
+        {
+            float q = l < 0.5f ? l * (1 + s) : l + s - l * s;
+            float p = 2 * l - q;
+            nr = HueToRgb(p, q, h + 1f / 3f);
+            ng = HueToRgb(p, q, h);
+            nb = HueToRgb(p, q, h - 1f / 3f);
+        }
+
+        return $"#{(int)(nr*255):x2}{(int)(ng*255):x2}{(int)(nb*255):x2}{alpha}";
+    }
+
+    private static float HueToRgb(float p, float q, float t)
+    {
+        if (t < 0) t += 1f;
+        if (t > 1) t -= 1f;
+        if (t < 1f / 6f) return p + (q - p) * 6 * t;
+        if (t < 1f / 2f) return q;
+        if (t < 2f / 3f) return p + (q - p) * (2f / 3f - t) * 6;
+        return p;
     }
 
     private void ClearAll()
     {
-        for (int i = 0; i < 256; i++) _pixels[i] = "";
+        int size = FormDef.SpriteSize;
+        _pixels  = new string[size];
     }
 
     private string BuildColor()
@@ -361,27 +579,22 @@
         await OnSaveSprite.InvokeAsync([.. _pixels]);
     }
 
+    private static string GetMoveCategory(CompanionMove m) =>
+        m.HasDamage ? "Attacks" :
+        m.HasHeal   ? "Heals" :
+        m.HasSelfBuff ? "Buffs" :
+        "Debuffs";
+
     private static string FormatEffect(CompanionMove move)
     {
-        if (move.Kind == CompanionMoveKind.PlayerBuff)
+        var parts = move.Effects.Select(e =>
         {
-            if (move.EffectStat == null)
-                return $"Heal +{(int)move.EffectValue} HP";
-            string statLabel = move.EffectStat == ModifierStat.DodgeChance
-                ? $"Dodge +{move.EffectValue * 100:F0}%"
-                : $"{move.EffectStat} +{(int)move.EffectValue}";
-            return $"{statLabel} · {move.EffectTurns}t";
-        }
-        else // EnemyDebuff
-        {
-            string statLabel = move.EffectStat == ModifierStat.DodgeChance
-                ? $"Dodge {move.EffectValue * 100:F0}%"
-                : $"{move.EffectStat} {(int)move.EffectValue}";
-            return $"{statLabel} · {move.EffectTurns}t";
-        }
+            string chancePart = e.Chance < 1f ? $" ({(int)(e.Chance * 100)}%)" : "";
+            return $"{e.Status} {e.Duration}t{chancePart}";
+        });
+        return string.Join(", ", parts);
     }
 
     private async Task HandleCancel() => await OnCancel.InvokeAsync();
-
     private async Task HandleRelease() => await OnRelease.InvokeAsync();
 }

@@ -6,13 +6,13 @@
 <div class="actions-menu">
     @if (!Player.IsInCombat)
     {
-        <button class="action-item" @onclick="HandleInvestigate">🔍 Investigate</button>
+        <button class="action-item action-investigate" @onclick="HandleInvestigate">🔍 Investigate</button>
         @if (!IsInDungeon)
         {
             <button class="action-item" @onclick="HandleLeaveNote">📝 Leave a Note</button>
             <button class="action-item" @onclick="HandlePlantSign">🪧 Plant a Sign</button>
         }
-        <button class="action-item" @onclick="HandleGather"
+        <button class="action-item action-gather" @onclick="HandleGather"
                 disabled="@(!TileHasResources || GatherOnCooldown)">
             ⛏ Gather
             @if (GatherOnCooldown)
@@ -41,30 +41,15 @@
                 }
             </button>
         }
-        @if (IsOnDungeonEntrance && !IsInDungeon)
-        {
-            <button class="action-item dungeon-enter-btn" @onclick="HandleEnterDungeon">
-                🕳️ Enter Dungeon
-            </button>
-        }
-        @if (IsInDungeon && IsOnStaircaseDown)
-        {
-            <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
-                ⬇️ Descend
-            </button>
-        }
-        @if (IsInDungeon && IsOnStaircaseUp)
-        {
-            <button class="action-item dungeon-stair-btn" @onclick="HandleUseStaircase">
-                @(IsOnFloorOne ? "⬆️ Exit Dungeon" : "⬆️ Ascend")
-            </button>
-        }
-        @if (IsInDungeon && HasRope)
-        {
-            <button class="action-item dungeon-rope-btn" @onclick="HandleUseRope">
-                🪢 Use Rope <span class="action-cooldown">(exit)</span>
-            </button>
-        }
+        <DungeonActions IsOnDungeonEntrance="IsOnDungeonEntrance"
+                        IsInDungeon="IsInDungeon"
+                        IsOnStaircaseUp="IsOnStaircaseUp"
+                        IsOnStaircaseDown="IsOnStaircaseDown"
+                        IsOnFloorOne="IsOnFloorOne"
+                        HasRope="HasRope"
+                        OnEnterDungeon="OnEnterDungeon"
+                        OnUseStaircase="OnUseStaircase"
+                        OnUseRope="OnUseRope" />
         @if (!IsInDungeon && TileHasEgg && !HasCompanion)
         {
             <button class="action-item companion-hatch-btn" @onclick="HandleHatch">
@@ -172,9 +157,7 @@
     private async Task HandlePlantSign()    { await OnPlantSign.InvokeAsync(); }
     private async Task HandleGather()       { await OnGather.InvokeAsync(); }
 private async Task HandleDance()        { await OnDance.InvokeAsync(); }
-    private async Task HandleEnterDungeon()  { await OnEnterDungeon.InvokeAsync(); }
-    private async Task HandleUseRope()       { await OnUseRope.InvokeAsync(); }
-    private async Task HandleUseStaircase()  { await OnUseStaircase.InvokeAsync(); }
+
     private async Task HandleHatch()         { await OnHatch.InvokeAsync(); }
 
     public void Dispose() => _timer?.Dispose();

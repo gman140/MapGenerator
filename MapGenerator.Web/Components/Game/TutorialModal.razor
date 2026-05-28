@@ -1,0 +1,180 @@
+<div class="modal-overlay" @onclick="Close">
+    <div class="tutorial-modal" @onclick:stopPropagation>
+        <div class="tutorial-header">
+            <span class="tutorial-title">@Pages[_page].Title</span>
+            <button class="tutorial-close" @onclick="Close">✕</button>
+        </div>
+
+        <div class="tutorial-body">
+            @Pages[_page].Content
+        </div>
+
+        <div class="tutorial-footer">
+            <div class="tutorial-dots">
+                @for (int i = 0; i < Pages.Length; i++)
+                {
+                    int idx = i;
+                    <span class="tutorial-dot @(_page == idx ? "active" : "")" @onclick="() => _page = idx"></span>
+                }
+            </div>
+            <div class="tutorial-nav">
+                @if (_page > 0)
+                {
+                    <button class="tutorial-nav-btn" @onclick="() => _page--">← Back</button>
+                }
+                @if (_page < Pages.Length - 1)
+                {
+                    <button class="tutorial-nav-btn primary" @onclick="() => _page++">Next →</button>
+                }
+                else
+                {
+                    <button class="tutorial-nav-btn primary" @onclick="Close">Done</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private int _page;
+
+    private void Close() => OnClose.InvokeAsync();
+
+    private record TutorialPage(string Title, RenderFragment Content);
+
+    private TutorialPage[] Pages => _pages ??= BuildPages();
+    private TutorialPage[]? _pages;
+
+    private TutorialPage[] BuildPages() =>
+    [
+        new("Exploration", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">🔍 Investigate</div>
+                <p class="tut-section-body">
+                    Use the <strong>Investigate</strong> action to examine your surroundings. It surfaces points of interest,
+                    hidden notes, and clues about what's nearby — including whether a tile holds resources worth gathering.
+                </p>
+            </div>
+            <div class="tut-section">
+                <div class="tut-section-title">⛏ Gather</div>
+                <p class="tut-section-body">
+                    Use the <strong>Gather</strong> action to collect raw materials from the tile you're standing on.
+                    Different biomes yield different materials. These are the ingredients for crafting and cooking.
+                    Gather has a short cooldown between uses.
+                </p>
+            </div>
+        </div>),
+
+        new("Crafting & Cooking", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">🔥 Campfire — Cooking</div>
+                <p class="tut-section-body">
+                    Find or build a <strong>Campfire</strong> on any tile. While standing on it, the crafting panel will
+                    show recipes for cooking food. Cooked food restores satiety and can also heal you during or between fights.
+                </p>
+            </div>
+            <div class="tut-section">
+                <div class="tut-section-title">🔨 Workshop — Equipment</div>
+                <p class="tut-section-body">
+                    A <strong>Workshop</strong> unlocks equipment recipes in the crafting panel — weapons, armor, and hats.
+                    Crafted equipment can be equipped to improve your combat stats and unlock special attacks.
+                    Workshops can be built with the right materials.
+                </p>
+            </div>
+        </div>),
+
+        new("Equipment", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">📋 Equipping Items</div>
+                <p class="tut-section-body">
+                    Open your <strong>Inventory</strong> (the 📋 button in the sidebar) and switch to the
+                    <strong>Equipment</strong> tab. From there you can equip weapons, armor, and hats you've gathered or crafted.
+                    Each slot is independent — you can swap freely.
+                </p>
+            </div>
+            <div class="tut-section">
+                <div class="tut-section-title">⚔ Weapons</div>
+                <p class="tut-section-body">
+                    Weapons set your damage type and unlock unique attacks available in combat.
+                    Physical weapons (swords, daggers, maces) scale with <strong>Attack</strong>.
+                    Staves deal elemental damage and scale attacks with <strong>Magic</strong>.
+                    Some rare weapons are only found as boss drops.
+                </p>
+            </div>
+        </div>),
+
+        new("Combat", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">Combat Actions</div>
+                <div class="tut-action-list">
+                    <div class="tut-action"><span class="tut-action-name">⚔ Attack</span> Opens your attack menu. Light and Heavy Attack are always available; your equipped weapon adds more options with unique effects.</div>
+                    <div class="tut-action"><span class="tut-action-name">🎯 Steady</span> Costs 1 stamina. Boosts accuracy of your next attack or spell — useful before high-power moves.</div>
+                    <div class="tut-action"><span class="tut-action-name">🛡 Defend</span> Halves all incoming damage this turn and regenerates 2 extra stamina. Safe when low on resources.</div>
+                    <div class="tut-action"><span class="tut-action-name">✦ Spells</span> Opens your spell list. Spells cost mana and can deal elemental damage, heal you, buff your stats, or debuff enemies.</div>
+                    <div class="tut-action"><span class="tut-action-name">🌀 Refocus</span> Recover 3 mana instantly. Useful when you need to cast but are running low.</div>
+                    <div class="tut-action"><span class="tut-action-name">🎒 Item</span> Use a consumable from your inventory mid-combat. Costs 1 stamina.</div>
+                    <div class="tut-action"><span class="tut-action-name">🏃 Flee</span> Attempt to escape. Base 60% success chance — failure costs a turn.</div>
+                </div>
+            </div>
+        </div>),
+
+        new("Companions", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">🥚 Hatching a Companion</div>
+                <p class="tut-section-body">
+                    Use the <strong>Lay Egg</strong> action to leave an egg on a tile. Other players can interact with it.
+                    Once conditions are met, use the <strong>Hatch</strong> action on a tile with your egg to gain a companion.
+                    Your companion fights alongside you in every battle — it's invulnerable and acts each turn automatically.
+                </p>
+            </div>
+            <div class="tut-section">
+                <div class="tut-section-title">⚔ Companion Battles</div>
+                <p class="tut-section-body">
+                    When another player is on the same tile as you, you can challenge their companion to a battle.
+                    These are automated PvP matches between companions — no risk to either player, just bragging rights.
+                    Companions can be upgraded using <strong>Evolution Stones</strong> and <strong>Elemental Cores</strong>
+                    found as loot from bosses.
+                </p>
+            </div>
+        </div>),
+
+        new("Dungeons", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">🟡 Finding Dungeons</div>
+                <p class="tut-section-body">
+                    Look for <strong>yellow dots</strong> on the map — these mark dungeon entrances.
+                    Walk onto the tile and use <strong>Enter Dungeon</strong> in the Actions menu to descend.
+                </p>
+            </div>
+            <div class="tut-section">
+                <div class="tut-section-title">🏆 Dungeon Rewards</div>
+                <p class="tut-section-body">
+                    Dungeons have multiple floors with progressively stronger enemies and better loot.
+                    Each dungeon has a themed <strong>boss room</strong> at the bottom — defeating the boss guarantees
+                    a unique powerful weapon and a chance at Evolution Stones and Elemental Cores for upgrading your companion.
+                    Boss weapons have multiple special attacks unavailable on regular weapons.
+                </p>
+            </div>
+        </div>),
+
+        new("Leveling Up", @<div>
+            <div class="tut-section">
+                <div class="tut-section-title">⭐ Earning Experience</div>
+                <p class="tut-section-body">
+                    Defeating enemies rewards you with <strong>experience points</strong>. Tougher enemies and dungeon bosses
+                    yield significantly more XP. Watch your progress in the Character dialog — each level requires more XP than the last.
+                </p>
+            </div>
+            <div class="tut-section">
+                <div class="tut-section-title">📊 Assigning Stat Points</div>
+                <p class="tut-section-body">
+                    When you level up you earn <strong>stat points</strong> to spend. Click your <strong>sprite portrait</strong>
+                    next to your name to open the Character dialog, then assign points to the stats that match your playstyle —
+                    Attack and Magic for more damage, Defense and Resistance to survive longer, or Speed to hit more accurately.
+                </p>
+            </div>
+        </div>),
+    ];
+}

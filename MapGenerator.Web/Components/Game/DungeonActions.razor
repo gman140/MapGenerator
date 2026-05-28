@@ -1,0 +1,36 @@
+@if (IsOnDungeonEntrance && !IsInDungeon)
+{
+    <button class="dungeon-action-btn action-item dungeon-enter-btn" @onclick="() => OnEnterDungeon.InvokeAsync()">
+        🕳️ Enter Dungeon
+    </button>
+}
+@if (IsInDungeon && IsOnStaircaseDown)
+{
+    <button class="dungeon-action-btn action-item dungeon-stair-btn" @onclick="() => OnUseStaircase.InvokeAsync()">
+        ⬇️ Descend
+    </button>
+}
+@if (IsInDungeon && IsOnStaircaseUp)
+{
+    <button class="dungeon-action-btn action-item dungeon-stair-btn" @onclick="() => OnUseStaircase.InvokeAsync()">
+        @(IsOnFloorOne ? "⬆️ Exit Dungeon" : "⬆️ Ascend")
+    </button>
+}
+@if (IsInDungeon && HasRope)
+{
+    <button class="dungeon-action-btn action-item dungeon-rope-btn" @onclick="() => OnUseRope.InvokeAsync()">
+        🪢 Use Rope <span class="action-cooldown">(exit)</span>
+    </button>
+}
+
+@code {
+    [Parameter] public bool IsOnDungeonEntrance { get; set; }
+    [Parameter] public bool IsInDungeon { get; set; }
+    [Parameter] public bool IsOnStaircaseUp { get; set; }
+    [Parameter] public bool IsOnStaircaseDown { get; set; }
+    [Parameter] public bool IsOnFloorOne { get; set; }
+    [Parameter] public bool HasRope { get; set; }
+    [Parameter] public EventCallback OnEnterDungeon { get; set; }
+    [Parameter] public EventCallback OnUseStaircase { get; set; }
+    [Parameter] public EventCallback OnUseRope { get; set; }
+}

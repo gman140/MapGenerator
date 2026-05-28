@@ -6,7 +6,7 @@
 @inject IResourceDefinitionProvider ResourceProvider
 @inject MapGeneratorService MapCache
 
-<button class="crafting-toggle" @onclick="() => _open = true">
+<button class="crafting-toggle craft-toggle" @onclick="() => _open = true">
     <span>⚒️ Crafting</span>
 </button>
 
@@ -155,4 +155,6 @@
     [Parameter] public EventCallback<string> OnCraft { get; set; }
 
     private bool _open;
+
+    public void Open() => _open = true;
 }

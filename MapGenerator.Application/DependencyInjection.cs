@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddSingleton<IEnemyDefinitionProvider, InMemoryEnemyDefinitionProvider>();
         services.AddSingleton<IEnemyAffixProvider, InMemoryEnemyAffixProvider>();
         services.AddSingleton<ISpellDefinitionProvider, InMemorySpellDefinitionProvider>();
+        services.AddSingleton<IWeaponAttackProvider, InMemoryWeaponAttackProvider>();
         services.AddSingleton<ICompanionDefinitionProvider, InMemoryCompanionDefinitionProvider>();
         services.AddSingleton<ICompanionMoveProvider, InMemoryCompanionMoveProvider>();
         services.AddScoped<EnemySpawner>();

@@ -19,4 +19,5 @@ public class SpellDefinition
     public int HealAmount { get; init; }                   // flat HP heal (for Self spells)
     public OnHitEffect[] OnHits { get; init; } = [];       // on-hit status effects applied to targets
     public SelfBuff[] SelfBuffs { get; init; } = [];       // stat boosts applied to the caster (Self spells)
+    public float DrainRatio { get; init; }                  // heal player for this fraction of damage dealt
 }

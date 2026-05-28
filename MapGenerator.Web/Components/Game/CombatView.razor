@@ -2,8 +2,10 @@
 @using MapGenerator.Combat.Interfaces
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
+@using MapGenerator.Domain.Models
 @inject MapGenerator.Domain.Interfaces.IConsumableDefinitionProvider ConsumableProvider
 @inject ISpellDefinitionProvider SpellProvider
+@inject IWeaponAttackProvider AttackProvider
 
 
 <div class="combat-view">
@@ -107,9 +109,10 @@
                     }
                     @if (Session.CompanionPresent && CompanionSpritePixels != null && CompanionSpritePixels.Any(p => !string.IsNullOrEmpty(p)))
                     {
+                        var (cx, cy, cw, ch) = CompanionSvgLayout(CompanionSpritePixels);
                         <div class="combat-companion-mini">
                             <svg width="72" height="72" class="combat-companion-svg @(_companionAttacking ? "combat-strike" : _companionBouncing ? "combat-bounce" : "")">
-                                <image href="@SpriteHelper.ToSvgDataUri(CompanionSpritePixels)" x="20" y="16" width="40" height="40" image-rendering="pixelated" />
+                                <image href="@SpriteHelper.ToSvgDataUri(CompanionSpritePixels)" x="@cx" y="@cy" width="@cw" height="@ch" image-rendering="pixelated" />
                             </svg>
                         </div>
                     }
@@ -120,9 +123,9 @@
                     {
                         <div class="combat-status-badge defend">🛡 Defending</div>
                     }
-                    @if (Session.PlayerDodging)
+                    @if (Session.PlayerSteady)
                     {
-                        <div class="combat-status-badge dodge">🌀 Dodging</div>
+                        <div class="combat-status-badge steady">🎯 Steady</div>
                     }
                     @foreach (var mod in Session.ActiveModifiers.Where(m => m.TurnsRemaining.HasValue))
                     {
@@ -204,17 +207,13 @@
         @if (Session.Phase == CombatPhase.PlayerTurn)
         {
             <div class="combat-actions">
-                <button class="combat-btn attack" disabled="@(Session.PlayerStamina < 2 || CannotTakeAction())"
-                        @onclick="() => TakeTurn(CombatActionType.Attack)">
-                    ⚔ Attack <span class="cost">(2)</span>
+                <button class="combat-btn attack" disabled="@CannotTakeAction()"
+                        @onclick="() => { _showAttackPicker = !_showAttackPicker; _showSpellPicker = false; _showItemPicker = false; }">
+                    ⚔ Attack
                 </button>
-                <button class="combat-btn heavy" disabled="@(Session.PlayerStamina < 4 || CannotTakeAction())"
-                        @onclick="() => TakeTurn(CombatActionType.HeavyAttack)">
-                    🗡 Heavy <span class="cost">(4)</span>
-                </button>
-                <button class="combat-btn dodge" disabled="@(Session.PlayerStamina < 2 || CannotTakeAction())"
-                        @onclick="() => TakeTurn(CombatActionType.Dodge)">
-                    🌀 Dodge <span class="cost">(2)</span>
+                <button class="combat-btn steady" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
+                        @onclick="() => TakeTurn(CombatActionType.Steady)">
+                    🎯 Steady <span class="cost">(1)</span>
                 </button>
                 <button class="combat-btn defend" disabled="@CannotTakeAction()"
                         @onclick="() => TakeTurn(CombatActionType.Defend)">
@@ -240,6 +239,24 @@
                     🏃 Flee
                 </button>
             </div>
+
+            @if (_showAttackPicker)
+            {
+                <div class="combat-attack-picker">
+                    @foreach (var atk in AvailableAttacks)
+                    {
+                        var capturedAtk = atk;
+                        <button class="combat-attack-btn @(Session.PlayerStamina < capturedAtk.StaminaCost ? "attack-insufficient" : "")"
+                                disabled="@(Session.PlayerStamina < capturedAtk.StaminaCost || CannotTakeAction())"
+                                title="@capturedAtk.Description"
+                                @onclick="() => UseAttack(capturedAtk.Id)">
+                            <span class="attack-name">@capturedAtk.Name</span>
+                            <span class="attack-cost">⚡@capturedAtk.StaminaCost</span>
+                            <span class="attack-desc">@capturedAtk.Description</span>
+                        </button>
+                    }
+                </div>
+            }
 
             @if (_showSpellPicker)
             {
@@ -302,6 +319,7 @@
     private string? _targetEnemyId;
     private bool _showItemPicker;
     private bool _showSpellPicker;
+    private bool _showAttackPicker;
     private bool _waitingForResult;
     private string? _shakingEnemyId;
     private string? _bouncingEnemyId;
@@ -318,6 +336,12 @@
     private HashSet<string> _fleeingEnemyIds   = [];
     private HashSet<string> _completedDeathIds = [];
 
+    private IReadOnlyList<WeaponAttackDefinition> AvailableAttacks =>
+        Session.PlayerWeaponAttackIds
+            .Select(id => AttackProvider.GetById(id))
+            .OfType<WeaponAttackDefinition>()
+            .ToList();
+
     private IEnumerable<(string Id, int Qty)> CombatItems =>
         PlayerInventory
             .Concat(PlayerCraftedItems)
@@ -333,6 +357,8 @@
     private async Task TakeTurn(CombatActionType type)
     {
         _showItemPicker   = false;
+        _showSpellPicker  = false;
+        _showAttackPicker = false;
         _waitingForResult = true;
         await OnAction.InvokeAsync(new CombatAction { Type = type, TargetEnemyId = GetTarget() });
         _waitingForResult = false;
@@ -343,6 +369,14 @@
         _showItemPicker   = false;
         _waitingForResult = true;
         await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.UseItem, ItemId = itemId });
+        _waitingForResult = false;
+    }
+
+    private async Task UseAttack(string attackId)
+    {
+        _showAttackPicker = false;
+        _waitingForResult = true;
+        await OnAction.InvokeAsync(new CombatAction { Type = CombatActionType.Attack, WeaponAttackId = attackId, TargetEnemyId = GetTarget() });
         _waitingForResult = false;
     }
 
@@ -476,15 +510,16 @@
         {
             ModifierStat.Attack           => "⚔",
             ModifierStat.Defense          => "🛡",
-            ModifierStat.DodgeChance      => "💨",
+            ModifierStat.Speed            => "💨",
+            ModifierStat.Accuracy         => mod.Value >= 0 ? "🎯" : "🌀",
             ModifierStat.StaminaRegen     => "⚡",
             ModifierStat.DamageMultiplier => "💥",
             ModifierStat.Magic            => "✦",
             ModifierStat.Resistance       => "🔮",
             _                             => "✦",
         };
-        string val = mod.Stat == ModifierStat.DodgeChance
-            ? $"{(mod.Value >= 0 ? "+" : "")}{mod.Value * 100:0}%"
+        string val = mod.Stat is ModifierStat.Accuracy
+            ? $"{mod.Value * 100:+0;-0}%"
             : $"{(mod.Value >= 0 ? "+" : "")}{mod.Value:0}";
         return $"{icon} {val} ({mod.TurnsRemaining}t)";
     }
@@ -494,6 +529,14 @@
         var alive = Session.Enemies.Where(e => e.CurrentHp > 0 && !e.HasFled).ToList();
         if (alive.Count == 1) return alive[0].InstanceId;
         return _targetEnemyId;
+    }
+
+    private static (int x, int y, int w, int h) CompanionSvgLayout(string[] pixels)
+    {
+        int cols = (int)Math.Round(Math.Sqrt(pixels.Length));
+        return cols == 20
+            ? (8, 4, 56, 56)
+            : (20, 16, 40, 40);
     }
 
 }

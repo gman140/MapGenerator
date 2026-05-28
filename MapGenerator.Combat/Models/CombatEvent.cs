@@ -37,7 +37,7 @@ public class CombatEvent
     public int PlayerStamina { get; set; } = -1;
     public int PlayerMana { get; set; } = -1;
     public bool? PlayerDefending { get; set; }
-    public bool? PlayerDodging { get; set; }
+    public bool? PlayerSteady { get; set; }
 
     // Enemy state (−1 = no change)
     public int EnemyHp { get; set; } = -1;

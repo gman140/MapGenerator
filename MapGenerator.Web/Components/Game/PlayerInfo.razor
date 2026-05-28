@@ -1,104 +1,40 @@
 @using MapGenerator.Application.Services
-@using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
-@inject MapGeneratorService MapCache
-@inject IFeatureDefinitionProvider FeatureProvider
-@inject SettlementCacheService SettlementCache
 @using static MapGenerator.Application.Services.DanceService
-@using static MapGenerator.Application.Services.HungerService
 @implements IDisposable
 
 <div class="player-info">
-    <div class="player-name">
-        <button class="sprite-edit-btn" title="Edit your sprite" @onclick="async () => await OnEditSprite.InvokeAsync()">
-            <SpriteView Pixels="@Player.SpritePixels" Size="32" Class="sprite-edit-preview" />
-        </button>
-        <span>@Player.Username</span>
-        @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
-        @{ var selfTitle = GetTitle(Player.EggsDestroyed); }
-        @if (selfTitle != null) { <span class="egg-title">@selfTitle</span> }
-    </div>
-    @if (Companion != null && CompanionDefinition != null)
-    {
-        <div class="companion-inline" @onclick="async () => await OnOpenCompanion.InvokeAsync()">
-            @if (Companion.SpritePixels.Any(p => !string.IsNullOrEmpty(p)))
-            {
-                <SpriteView Pixels="@Companion.SpritePixels" Size="32" Class="companion-inline-sprite" />
-            }
-            else
-            {
-                <span class="companion-inline-emoji">@CompanionDefinition.Emoji</span>
-            }
-            <span class="companion-inline-name">@Companion.Nickname</span>
+    <div class="player-companion-container">
+        <div class="player-name">
+            <button class="sprite-edit-btn" title="Edit your sprite" @onclick="async () => await OnEditSprite.InvokeAsync()">
+                <SpriteView Pixels="@Player.SpritePixels" Size="32" Class="sprite-edit-preview" />
+            </button>
+            <div class="player-name-details">
+                <span>@Player.Username</span>
+                @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
+                @{ var selfTitle = GetTitle(Player.EggsDestroyed); }
+                @if (selfTitle != null) { <span class="egg-title">@selfTitle</span> }
+            </div>
         </div>
-    }
-
-    <div class="tile-info">
-        @{
-            var tile = MapCache.GetCachedTile(Player.Q, Player.R);
-            var featureDef = FeatureProvider.GetById(tile?.FeatureId);
-            var (settlementName, _) = SettlementCache.GetSettlementTile(Player.Q, Player.R);
-        }
-        <span class="biome-tag biome-@(tile?.Biome.ToString().ToLower() ?? "unknown")">
-            @(tile?.Biome.ToString() ?? "Unknown")
-        </span>
-        @if (featureDef != null)
+        @if (Companion != null)
         {
-            <span class="feature-tag">@featureDef.GetDisplayName(Player.Q, Player.R)</span>
+            <div class="companion-inline" @onclick="async () => await OnOpenCompanion.InvokeAsync()">
+                @if (Companion.SpritePixels.Any(p => !string.IsNullOrEmpty(p)))
+                {
+                    <SpriteView Pixels="@Companion.SpritePixels" Size="32" Class="companion-inline-sprite" />
+                }
+                else
+                {
+                    <span class="companion-inline-emoji">🐾</span>
+                }
+                <span class="companion-inline-name">@Companion.Nickname</span>
+            </div>
         }
-        @if (settlementName != null)
-        {
-            <span class="settlement-tag">@settlementName</span>
-        }
-        <span class="coords">(@Player.Q, @Player.R)</span>
     </div>
 
-    @{
-        var hungerBand = GetBand(Player.Satiety);
-        var hungerLabel = hungerBand switch
-        {
-            HungerBand.Stuffed  => "Stuffed",
-            HungerBand.Satiated => "Satiated",
-            HungerBand.Peckish  => "Peckish",
-            HungerBand.Hungry   => "Hungry",
-            _                   => "Starving",
-        };
-    }
-    <div class="hunger-bar">
-        <div class="hunger-fill hunger-@hungerBand.ToString().ToLower()"
-             style="width: @Player.Satiety.ToString("F0")%"></div>
-        <span class="hunger-text">@hungerLabel</span>
-    </div>
-
-    @if (Player.ActiveBuffs.Count > 0)
-    {
-        <div class="active-buffs">
-            @foreach (var buff in Player.ActiveBuffs)
-            {
-                <span class="buff-chip buff-@buff.Type.ToString().ToLower()">
-                    @FormatActiveBuff(buff)
-                </span>
-            }
-        </div>
-    }
-
-    @if (_stunnedRemaining > 0)
-    {
-        <div class="stun-bar">
-            <div class="stun-fill" style="width: @(_stunnedRemaining / 60000.0 * 100.0)%"></div>
-            <span class="stun-text">💥 Stunned @((_stunnedRemaining / 1000.0).ToString("F1"))s</span>
-        </div>
-    }
-
-    @if (_cooldownRemaining > 0)
-    {
-        <div class="cooldown-bar">
-            <div class="cooldown-fill" style="width: @_fillPct%"></div>
-            <span class="cooldown-text">@((_cooldownRemaining / 1000.0).ToString("F1"))s</span>
-        </div>
-    }
+    <PlayerStatusBars Player="Player" CooldownUntil="CooldownUntil" />
 
     @if (OnlinePlayers.Count > 0)
     {
@@ -108,11 +44,6 @@
             {
                 <span class="player-chip @(id == Player.Id ? "self" : "")">
                     @username
-                    @{ var chipTitle = GetTitle(eggsDestroyed); }
-                    @if (chipTitle != null)
-                    {
-                        <span class="egg-title-small">@chipTitle</span>
-                    }
                     @if (id != Player.Id)
                     {
                         var capturedId = id;
@@ -149,28 +80,18 @@
     [Parameter] public List<(string Id, string Username, int EggsDestroyed, bool HasCompanion)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback OnEditSprite { get; set; }
     [Parameter] public PlayerCompanion? Companion { get; set; }
-    [Parameter] public CompanionDefinition? CompanionDefinition { get; set; }
     [Parameter] public bool HasCompanion { get; set; }
     [Parameter] public EventCallback OnOpenCompanion { get; set; }
     [Parameter] public EventCallback<(string Id, string Username)> OnKissPlayer { get; set; }
     [Parameter] public EventCallback<(string Id, string Username)> OnBattlePlayer { get; set; }
 
-    private long _cooldownRemaining;
-    private double _fillPct;
-    private long _cooldownDuration;
     private long _kissRemainingMs;
     private long _kissEndMs;
-    private long _stunnedRemaining;
     private System.Threading.Timer? _timer;
 
     protected override void OnParametersSet()
     {
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        _cooldownRemaining = Math.Max(0, CooldownUntil - now);
-        _cooldownDuration  = _cooldownRemaining > 0 ? _cooldownRemaining : _cooldownDuration;
-        _stunnedRemaining  = Math.Max(0, Player.StunnedUntil - now);
-        UpdateFill();
-
         if (LastKissedAt.HasValue)
         {
             _kissEndMs = new DateTimeOffset(LastKissedAt.Value.ToUniversalTime()).ToUnixTimeMilliseconds()
@@ -183,10 +104,9 @@
             _kissEndMs = 0;
         }
 
-        bool needsTimer = _cooldownRemaining > 0 || _kissRemainingMs > 0 || _stunnedRemaining > 0;
-        if (needsTimer && _timer == null)
+        if (_kissRemainingMs > 0 && _timer == null)
             _timer = new System.Threading.Timer(Tick, null, 100, 100);
-        else if (!needsTimer)
+        else if (_kissRemainingMs <= 0)
         {
             _timer?.Dispose();
             _timer = null;
@@ -195,34 +115,10 @@
 
     private void Tick(object? _)
     {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        _cooldownRemaining = Math.Max(0, CooldownUntil - now);
-        _kissRemainingMs   = Math.Max(0, _kissEndMs - now);
-        _stunnedRemaining  = Math.Max(0, Player.StunnedUntil - now);
-        UpdateFill();
-
-        if (_cooldownRemaining <= 0 && _kissRemainingMs <= 0 && _stunnedRemaining <= 0)
-        {
-            _timer?.Dispose();
-            _timer = null;
-        }
+        _kissRemainingMs = Math.Max(0, _kissEndMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (_kissRemainingMs <= 0) { _timer?.Dispose(); _timer = null; }
         InvokeAsync(StateHasChanged);
     }
-
-    private void UpdateFill()
-    {
-        _fillPct = _cooldownDuration > 0
-            ? _cooldownRemaining / (double)_cooldownDuration * 100.0
-            : 0;
-    }
-
-    private static string FormatActiveBuff(ActiveBuff buff) => buff.Type switch
-    {
-        BuffType.CooldownReduction    => $"⚡ CD −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
-        BuffType.GatherBonus          => $"🎯 Gather +{(buff.Magnitude - 1) * 100:F0}% × {buff.RemainingCharges}",
-        BuffType.HungerDrainReduction => $"🌿 Hunger −{(1 - buff.Magnitude) * 100:F0}% × {buff.RemainingCharges}",
-        _                             => buff.Type.ToString(),
-    };
 
     public void Dispose() => _timer?.Dispose();
 }

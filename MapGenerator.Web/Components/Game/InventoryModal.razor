@@ -8,7 +8,7 @@
     int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value)
                   + CraftedItems.Where(kv => kv.Value > 0).Sum(kv => kv.Value);
 }
-<button class="crafting-toggle" @onclick="() => _open = true">
+<button class="crafting-toggle inventory-toggle" @onclick="() => _open = true">
     <span>📋 Inventory@(totalItems > 0 ? $" ({totalItems})" : "")</span>
 </button>
 
@@ -179,6 +179,8 @@
     private bool _open;
     private int _tab;
 
+    public void Open() { _open = true; StateHasChanged(); }
+
     private RenderFragment RenderEquipSlot(string slot, string label, string? equippedId, List<KeyValuePair<string, int>> available) => __builder =>
     {
         __builder.OpenElement(0, "div");
@@ -264,7 +266,8 @@
                 ModifierStat.Magic       => $"+{(int)affix.Value} Mag",
                 ModifierStat.Defense     => $"+{(int)affix.Value} Def",
                 ModifierStat.Resistance  => $"+{(int)affix.Value} Res",
-                ModifierStat.DodgeChance => $"+{affix.Value * 100:F0}% Dodge",
+                ModifierStat.Accuracy    => $"{affix.Value * 100:+0;-0}% Accuracy",
+                ModifierStat.Speed       => $"+{(int)affix.Value} Speed",
                 ModifierStat.StaminaRegen=> $"+{(int)affix.Value} Stam/turn",
                 ModifierStat.ManaRegen   => $"+{(int)affix.Value} Mana/turn",
                 ModifierStat.HpRegen     => $"+{(int)affix.Value} HP/turn",
