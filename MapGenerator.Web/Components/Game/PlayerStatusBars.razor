@@ -63,15 +63,15 @@
             <div class="stun-fill" style="width: @(_stunnedMs / 60000.0 * 100.0)%"></div>
             <span class="stun-text">💥 Stunned @((_stunnedMs / 1000.0).ToString("F1"))s</span>
         </div>
+    } else {
+        <div class="cooldown-bar">
+            <div class="cooldown-fill" style="width: @_fillPct%"></div>
+            @if (_cdMs > 0)
+            {
+                <span class="cooldown-text">@((_cdMs / 1000.0).ToString("F1"))s</span>
+            }
+        </div>
     }
-
-    <div class="cooldown-bar">
-        <div class="cooldown-fill" style="width: @_fillPct%"></div>
-        @if (_cdMs > 0)
-        {
-            <span class="cooldown-text">@((_cdMs / 1000.0).ToString("F1"))s</span>
-        }
-    </div>
 </div>
 
 @code {

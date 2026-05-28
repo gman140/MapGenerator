@@ -31,6 +31,17 @@ else
     <div class="game-layout">
         <div class="mobile-status-strip">
             <PlayerStatusBars Player="Session.Player" CooldownUntil="_cooldownUntil" />
+            <div class="mobile-dungeon-actions">
+                <DungeonActions IsOnDungeonEntrance="Session.IsOnDungeonEntrance()"
+                                IsInDungeon="Session.Player.IsInDungeon"
+                                IsOnStaircaseUp="_isOnStaircaseUp"
+                                IsOnStaircaseDown="_isOnStaircaseDown"
+                                IsOnFloorOne="Session.Player.DungeonFloor == 1"
+                                HasRope="_playerHasRope"
+                                OnEnterDungeon="HandleEnterDungeonAsync"
+                                OnUseStaircase="HandleUseStaircaseAsync"
+                                OnUseRope="HandleUseRopeAsync" />
+            </div>
         </div>
         <div class="map-area">
             @if (Session.Player.IsInDungeon && _dungeonFloor != null)

@@ -526,7 +526,6 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .mobile-action-btn.mab-active { color: var(--accent); }
 .mab-icon  { font-size: 1.25rem; line-height: 1; }
 .mab-label { font-size: .58rem; line-height: 1; white-space: nowrap; }
-.mss-tile-row { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
 .player-companion-container { display: contents; }
 .sidebar .player-info { min-height: 120px;}
 .sidebar .player-name-details {
@@ -639,8 +638,8 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 }
 
 /* ── Dungeon ──────────────────────────────────────────────────────────────── */
-.dungeon-view { display: flex; flex-direction: column; gap: .5rem; height: 100%; }
-.dungeon-hud { display: flex; align-items: center; gap: 1rem; padding: .25rem .5rem; background: rgba(10,10,20,.7); border-radius: 4px; font-size: .8rem; color: var(--text-dim); }
+.dungeon-view { display: flex; flex-direction: column; gap: .5rem; height: 100%; align-items: center; justify-content: center; position: relative; }
+.dungeon-hud { display: flex; align-items: center; gap: 1rem; padding: .25rem .5rem; background: rgba(10,10,20,.7); border-radius: 4px; font-size: .8rem; color: var(--text-dim); position: absolute; top: 0; }
 .dungeon-floor-label { color: var(--accent); font-weight: 600; }
 .dungeon-dark-warning { color: #aaa; font-size: .75rem; }
 
@@ -659,6 +658,12 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .dungeon-enter-btn:hover { background: rgba(60,90,60,.8) !important; }
 .dungeon-rope-btn { background: rgba(60,40,20,.7) !important; border-color: #8a6030 !important; color: #d4a060 !important; }
 .dungeon-rope-btn:hover { background: rgba(80,55,25,.8) !important; }
+/* DungeonActions in ActionsMenu — inherit action-item appearance */
+.actions-list .dungeon-action-btn { background: none; border: none; color: var(--text); padding: .5rem .75rem; font-size: .85rem; cursor: pointer; text-align: left; display: flex; align-items: center; gap: .4rem; width: 100%; }
+.actions-list .dungeon-action-btn:hover { background: var(--border); }
+/* DungeonActions in mobile-status-strip — compact chip style */
+.mobile-status-strip .dungeon-action-btn { padding: 3px 10px; font-size: .75rem; border-radius: 6px; border: 1px solid var(--accent); background: rgba(120,60,200,.18); color: var(--text); cursor: pointer; align-self: flex-start; }
+.mobile-status-strip .mobile-dungeon-actions { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
 .admin-combat-btn { background: rgba(80,20,20,.7) !important; border-color: #a04040 !important; color: #e08080 !important; }
 .admin-combat-btn:hover:not(:disabled) { background: rgba(110,30,30,.8) !important; }
 
