@@ -147,13 +147,13 @@ OnDance="HandleDanceAsync"
         <button class="mobile-action-btn"
                 disabled="@(Session.Player.IsInCombat || !Session.TileHasResources() || DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < _gatherCooldownUntil)"
                 @onclick="HandleGatherAsync">
-            <span class="mab-icon">⛏</span>
+            <span class="mab-icon">⛏️</span>
             <span class="mab-label">Gather</span>
         </button>
         <button class="mobile-action-btn"
                 @onclick='() => _craftingPanel?.Open()'>
-            <span class="mab-icon">⚒</span>
-            <span class="mab-label">Craft</span>
+            <span class="mab-icon">⚒️</span>
+            <span class="mab-label">Crafting</span>
         </button>
         <button class="mobile-action-btn"
                 @onclick='() => _inventoryModal?.Open()'>

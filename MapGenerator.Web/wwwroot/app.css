@@ -30,6 +30,8 @@
     --snow:      #e6ebf0;
     --glacier:   #c8dce8;
     --volcano:   #d85a06;
+    --sprite-grid-cell: 24px;
+    --sprite-grid-cell-medium: 20px;
 }
 
 html, body { height: 100svh; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden; }
@@ -1107,12 +1109,10 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .sprite-editor-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; width: min(90vw, 520px); box-shadow: 0 8px 32px rgba(0,0,0,.5); }
 .sprite-editor-body { display: flex; gap: 1rem; align-items: flex-start; }
 .sprite-grid-wrap { flex: 0 0 auto; }
-.sprite-grid { display: grid; grid-template-columns: repeat(16, 24px); grid-template-rows: repeat(16, 24px); border: 1px solid var(--border); cursor: crosshair; user-select: none; }
-.sprite-grid.medium-grid { grid-template-columns: repeat(20, 20px); grid-template-rows: repeat(20, 20px); }
-.sprite-grid.large-grid { grid-template-columns: repeat(24, 16px); grid-template-rows: repeat(24, 16px); }
-.sprite-cell { width: 24px; height: 24px; box-sizing: border-box; border: 1px solid rgba(255,255,255,.06); }
-.sprite-grid.medium-grid .sprite-cell { width: 20px; height: 20px; }
-.sprite-grid.large-grid .sprite-cell { width: 16px; height: 16px; }
+.sprite-grid { display: grid; grid-template-columns: repeat(16, var(--sprite-grid-cell)); grid-template-rows: repeat(16, var(--sprite-grid-cell)); border: 1px solid var(--border); cursor: crosshair; user-select: none; }
+.sprite-grid.medium-grid { grid-template-columns: repeat(20, var(--sprite-grid-cell-medium)); grid-template-rows: repeat(20, var(--sprite-grid-cell-medium)); }
+.sprite-cell { width: var(--sprite-grid-cell); height: var(--sprite-grid-cell); box-sizing: border-box; border: 1px solid rgba(255,255,255,.06); }
+.sprite-grid.medium-grid .sprite-cell { width: var(--sprite-grid-cell-medium); height: var(--sprite-grid-cell-medium); }
 .sprite-cell.transparent { background-image: repeating-conic-gradient(#333 0% 25%, #555 0% 50%); background-size: 8px 8px; }
 .sprite-cell:hover { outline: 1px solid rgba(255,255,255,.4); outline-offset: -1px; }
 .sprite-preview-wrap { display: flex; flex-direction: column; gap: .35rem; align-items: center; }
@@ -1469,3 +1469,32 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .tut-action-list { display: flex; flex-direction: column; gap: .5rem; }
 .tut-action { font-size: .78rem; color: var(--text-dim); line-height: 1.45; }
 .tut-action-name { font-weight: 700; color: var(--text); margin-right: .3rem; }
+
+/* ── sprite editor ─────────────────────────────────────────────────────────────── */
+@media(max-width: 560px) {
+    .sprite-editor-body .sprite-preview-wrap { display: none; }
+}
+@media(max-width: 470px) {
+    .sprite-editor-body { 
+        --sprite-grid-cell: 22px;
+        --sprite-grid-cell-medium: 18px;
+    }
+}
+@media(max-width: 430px) {
+    .sprite-editor-body { 
+        --sprite-grid-cell: 20px;
+        --sprite-grid-cell-medium: 16px;
+    }
+}
+@media(max-width: 400px) {
+    .sprite-editor-body { 
+        --sprite-grid-cell: 18px;
+        --sprite-grid-cell-medium: 15px;
+    }
+}
+@media(max-width: 360px) {
+    .sprite-editor-body { 
+        --sprite-grid-cell: 16px;
+        --sprite-grid-cell-medium: 14px;
+    }
+}
