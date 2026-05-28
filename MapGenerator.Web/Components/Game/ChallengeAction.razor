@@ -1,0 +1,15 @@
+@using MapGenerator.Domain.Models
+
+@if (Challenge != null && !IsInCombat && !IsInDungeon)
+{
+    <button class="action-item challenge-action-btn" @onclick="() => OnEnterChallenge.InvokeAsync()">
+        ⚔ @Challenge.Label
+    </button>
+}
+
+@code {
+    [Parameter] public FeatureChallengeConfig? Challenge { get; set; }
+    [Parameter] public bool IsInCombat { get; set; }
+    [Parameter] public bool IsInDungeon { get; set; }
+    [Parameter] public EventCallback OnEnterChallenge { get; set; }
+}

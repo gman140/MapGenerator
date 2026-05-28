@@ -8,13 +8,16 @@ using MapGenerator.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
 builder.Services.AddSignalR();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
 builder.Services.AddSingleton<GameBroadcastService>();
+builder.Services.AddSingleton<ChallengeSessionService>();
 builder.Services.AddSingleton<CompanionBattleService>();
 builder.Services.AddScoped<CompanionService>();
 builder.Services.AddScoped<GameSessionService>();
@@ -28,12 +31,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAntiforgery();
 app.MapStaticAssets();
 
 app.MapHub<GameHub>("/gamehub");
 
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(MapGenerator.Web.Client.Components.RunnerGame).Assembly);
 
 // Seed map and settlements on startup
 using (var scope = app.Services.CreateScope())

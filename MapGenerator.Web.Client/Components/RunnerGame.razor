@@ -1,0 +1,167 @@
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@using System.Text.Json
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<div class="runner-wrapper">
+    @if (_state.Phase == RunnerPhase.Playing)
+    {
+        <div class="runner-label">@InitData.Config.Label</div>
+        <canvas id="runner-canvas" class="runner-canvas"
+                width="@((int)RunnerEngine.CanvasWidth)"
+                height="@((int)RunnerEngine.CanvasHeight)"></canvas>
+        <div class="runner-controls">
+            <button class="runner-btn runner-btn-jump" @onpointerdown="OnJump">
+                ⬆ Jump
+            </button>
+            <button class="runner-btn runner-btn-attack"
+                    @onpointerdown="OnAttack"
+                    disabled="@(_state.AttackCooldownMs > 0)">
+                ⚔ Attack
+            </button>
+        </div>
+        <p class="runner-hint">Keyboard: <strong>Space</strong> to jump · <strong>Enter</strong> to attack</p>
+    }
+    else if (_state.Phase == RunnerPhase.Complete)
+    {
+        <div class="runner-result runner-result-win">
+            <div class="runner-result-title">🏆 Challenge Complete!</div>
+            @if (_result?.Rewards.Count > 0)
+            {
+                <p class="runner-result-sub">You found:</p>
+                <ul class="runner-reward-list">
+                    @foreach (var r in _result.Rewards)
+                    {
+                        <li>@r.ItemId ×@r.Quantity</li>
+                    }
+                </ul>
+            }
+            <button class="runner-done-btn" @onclick="Finish">Collect Rewards</button>
+        </div>
+    }
+    else
+    {
+        <div class="runner-result runner-result-fail">
+            <div class="runner-result-title">💀 Defeated</div>
+            <p class="runner-result-sub">No rewards this time.</p>
+            <div class="runner-result-actions">
+                <button class="runner-done-btn" @onclick="Retry">Try Again</button>
+                <button class="runner-done-btn runner-done-btn-secondary" @onclick="Finish">Leave</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RunnerInitData InitData { get; set; } = null!;
+
+    private RunnerGameState _state = new();
+    private RunnerResult? _result;
+    private IJSObjectReference? _js;
+    private DotNetObjectReference<RunnerGame>? _self;
+    private bool _keyListenerAdded;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _js = await JS.InvokeAsync<IJSObjectReference>("import", "/runner.js");
+
+        // Pre-render sprites once onto offscreen canvases; game loop uses drawImage
+        if (InitData.PlayerSprite.Length > 0)
+            await _js.InvokeVoidAsync("buildSprite", "player", InitData.PlayerSprite, 6);
+        if (InitData.CompanionSprite.Length > 0)
+            await _js.InvokeVoidAsync("buildSprite", "companion", InitData.CompanionSprite, 4);
+
+        StartRun();
+        _self = DotNetObjectReference.Create(this);
+        await _js.InvokeVoidAsync("startLoop", _self);
+        await _js.InvokeVoidAsync("initKeyHandler", _self);
+        _keyListenerAdded = true;
+    }
+
+    private void StartRun()
+    {
+        _state = RunnerEngine.Initialize(InitData);
+        _result = null;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnFrame(double timestamp)
+    {
+        if (_state.Phase != RunnerPhase.Playing) return;
+
+        RunnerEngine.Tick(_state, InitData.Config, timestamp);
+
+        if (_state.Phase != RunnerPhase.Playing)
+        {
+            await _js!.InvokeVoidAsync("stopLoop");
+            if (_state.Phase == RunnerPhase.Complete)
+                _result = RunnerEngine.BuildResult(_state, InitData.Config);
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var cmds = RunnerRenderer.Build(_state, InitData);
+        await _js!.InvokeVoidAsync("renderFrame", "runner-canvas",
+            JsonSerializer.Serialize(cmds, _jsonOpts));
+    }
+
+    private void OnJump()
+    {
+        bool wasGrounded = _state.IsGrounded;
+        RunnerEngine.Jump(_state);
+        if (wasGrounded) _ = _js?.InvokeVoidAsync("playJumpSound");
+    }
+
+    private void OnAttack()
+    {
+        RunnerEngine.Attack(_state, InitData.Config.PlayerAttackStat);
+        _ = _js?.InvokeVoidAsync("playAttackSound");
+    }
+
+    [JSInvokable] public void JumpKey() => OnJump();
+    [JSInvokable] public void AttackKey() => OnAttack();
+
+    private async Task Retry()
+    {
+        if (_js != null)
+            await _js.InvokeVoidAsync("startLoop", _self);
+        StartRun();
+    }
+
+    private void Finish()
+    {
+        if (_result?.Won == true && _result.Rewards.Count > 0)
+        {
+            var items = string.Join(",", _result.Rewards.Select(r => Uri.EscapeDataString(r.ItemId)));
+            Nav.NavigateTo($"/game?cw=1&cr={items}", replace: false);
+        }
+        else
+        {
+            Nav.NavigateTo("/game", replace: false);
+        }
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_js != null)
+        {
+            await _js.InvokeVoidAsync("stopLoop");
+            if (_keyListenerAdded)
+                await _js.InvokeVoidAsync("removeKeyHandler");
+            await _js.InvokeVoidAsync("clearSprites");
+            await _js.DisposeAsync();
+        }
+        _self?.Dispose();
+    }
+
+    private static readonly JsonSerializerOptions _jsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+}

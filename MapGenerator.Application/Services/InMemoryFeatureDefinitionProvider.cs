@@ -358,6 +358,23 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You trace the worn shapes. They are doing their best. You feel a kinship.",
                 "You stand among them for a moment, feeling out of jurisdiction in a comfortable way.",
             ],
+            Challenge = new()
+            {
+                Label            = "Shrine Trial",
+                PlayerMaxHp      = 60,
+                EnemyHp          = 25,
+                EnemyDamage      = 6,
+                EnemyCount       = 2,
+                ObstacleCount    = 5,
+                TotalDistancePx  = 3500.0,
+                InitialScrollSpeed = 160.0,
+                RewardPool       = ["Poultice", "Rope", "HollowStone", "CrackedOrb", "Quartz"],
+                RewardCount      = 2,
+                BackgroundColor  = "#1a1428",
+                GroundColor      = "#3a2a50",
+                ObstacleColor    = "#706080",
+                EnemyColor       = "#9040c0",
+            },
         },
         new()
         {
@@ -392,6 +409,23 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You find the missing pane nearby. It is intact. You hold it up and the world goes briefly red.",
                 "You press your hand flat against it. The ivy adjusts slightly. Something about this feels like a greeting.",
             ],
+            Challenge = new()
+            {
+                Label            = "Tower Collapse",
+                PlayerMaxHp      = 55,
+                EnemyHp          = 40,
+                EnemyDamage      = 10,
+                EnemyCount       = 3,
+                ObstacleCount    = 8,
+                TotalDistancePx  = 5000.0,
+                InitialScrollSpeed = 200.0,
+                RewardPool       = ["Stone", "Rope", "Pickaxe", "TarnishedRing", "Lantern", "SteelIngot"],
+                RewardCount      = 2,
+                BackgroundColor  = "#1c1810",
+                GroundColor      = "#4a3820",
+                ObstacleColor    = "#908060",
+                EnemyColor       = "#c07030",
+            },
         },
         new()
         {
@@ -526,6 +560,23 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You watch it fly away and wonder what it said and to whom.",
                 "You don't know who left them. You feel certain they'll be back.",
             ],
+            Challenge = new()
+            {
+                Label            = "The Circle's Trial",
+                PlayerMaxHp      = 65,
+                EnemyHp          = 22,
+                EnemyDamage      = 5,
+                EnemyCount       = 2,
+                ObstacleCount    = 4,
+                TotalDistancePx  = 3000.0,
+                InitialScrollSpeed = 150.0,
+                RewardPool       = ["Quartz", "HollowStone", "CrackedOrb", "Poultice", "BoneFlute"],
+                RewardCount      = 2,
+                BackgroundColor  = "#101820",
+                GroundColor      = "#203040",
+                ObstacleColor    = "#506878",
+                EnemyColor       = "#406880",
+            },
         },
         new()
         {
@@ -875,6 +926,23 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You count with it for a while. You lose the count. You think the cave may have been counting from before you.",
                 "You press yours over it. The sizes are different. The gesture is the same.",
             ],
+            Challenge = new()
+            {
+                Label            = "Cave Gauntlet",
+                PlayerMaxHp      = 50,
+                EnemyHp          = 50,
+                EnemyDamage      = 12,
+                EnemyCount       = 4,
+                ObstacleCount    = 9,
+                TotalDistancePx  = 5500.0,
+                InitialScrollSpeed = 220.0,
+                RewardPool       = ["Ore", "Flint", "Lantern", "Pickaxe", "SteelIngot", "Rope"],
+                RewardCount      = 3,
+                BackgroundColor  = "#0e0e14",
+                GroundColor      = "#2a2a38",
+                ObstacleColor    = "#555566",
+                EnemyColor       = "#804040",
+            },
         },
         new()
         {
@@ -1397,6 +1465,23 @@ public class InMemoryFeatureDefinitionProvider : IFeatureDefinitionProvider
                 "You take a small amount of the food. You leave a coin. The arrangement feels reasonable given the circumstances.",
                 "You climb to it. From up here you see why they chose this spot. You also see that it didn't help in the end.",
             ],
+            Challenge = new()
+            {
+                Label            = "Bandit Ambush",
+                PlayerMaxHp      = 55,
+                EnemyHp          = 35,
+                EnemyDamage      = 9,
+                EnemyCount       = 3,
+                ObstacleCount    = 7,
+                TotalDistancePx  = 4500.0,
+                InitialScrollSpeed = 190.0,
+                RewardPool       = ["Fiber", "Flint", "Coal", "Poultice", "Rope", "WarmCloak"],
+                RewardCount      = 2,
+                BackgroundColor  = "#141a0e",
+                GroundColor      = "#2a3818",
+                ObstacleColor    = "#607040",
+                EnemyColor       = "#b04828",
+            },
         },
         new()
         {

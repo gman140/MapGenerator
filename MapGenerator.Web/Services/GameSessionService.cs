@@ -1078,6 +1078,15 @@ public class GameSessionService : IAsyncDisposable
         return null;
     }
 
+    // ── Challenge rewards ─────────────────────────────────────────────────────
+
+    public async Task GrantChallengeRewardsAsync(IEnumerable<(string ItemId, int Quantity)> rewards)
+    {
+        foreach (var (id, qty) in rewards)
+            Player!.Inventory[id] = Player.Inventory.GetValueOrDefault(id) + qty;
+        await _playerRepo.UpdateAsync(Player!);
+    }
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
     public ValueTask DisposeAsync()

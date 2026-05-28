@@ -1,0 +1,15 @@
+namespace MapGenerator.Runner.Models;
+
+public class RunnerEnemy
+{
+    /// <summary>Screen-space X. Enemies walk left across the screen independently of world scroll.</summary>
+    public double ScreenX { get; set; }
+    public int Hp { get; set; }
+    public int MaxHp { get; init; }
+    public int Damage { get; init; }
+    public double AttackIntervalMs { get; init; } = 2500.0;
+    public double AttackCooldownMs { get; set; } = 2500.0;
+    public double WalkSpeedPx { get; init; } = 80.0;
+    public string Color { get; init; } = "#c04040";
+    public bool IsDefeated => Hp <= 0;
+}

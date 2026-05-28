@@ -4,10 +4,13 @@
     <ProjectReference Include="..\MapGenerator.Application\MapGenerator.Application.csproj" />
     <ProjectReference Include="..\MapGenerator.Combat\MapGenerator.Combat.csproj" />
     <ProjectReference Include="..\MapGenerator.Infrastructure\MapGenerator.Infrastructure.csproj" />
+    <ProjectReference Include="..\MapGenerator.Runner\MapGenerator.Runner.csproj" />
+    <ProjectReference Include="..\MapGenerator.Web.Client\MapGenerator.Web.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="*" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.7" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,0 +1,32 @@
+@page "/runner"
+@inject ChallengeSessionService ChallengeSession
+
+@if (_initData != null)
+{
+    <div class="runner-overlay">
+        <MapGenerator.Web.Client.Components.RunnerGame
+            @rendermode="@InteractiveWebAssembly"
+            InitData="_initData" />
+    </div>
+}
+else
+{
+    <div class="runner-overlay">
+        <div class="runner-result runner-result-fail">
+            <div class="runner-result-title">Challenge not found</div>
+            <a href="/game" class="runner-done-btn">Return to game</a>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "key")] public string? Key { get; set; }
+
+    private RunnerInitData? _initData;
+
+    protected override void OnInitialized()
+    {
+        if (Key != null)
+            _initData = ChallengeSession.Take(Key);
+    }
+}

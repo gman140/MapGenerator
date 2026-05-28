@@ -7,12 +7,15 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject ICraftingRecipeProvider RecipeProvider
+@inject IFeatureDefinitionProvider FeatureProvider
+@inject ChallengeSessionService ChallengeSession
 @using MapGenerator.Application.Services
 @using MapGenerator.Combat.Enums
 @using MapGenerator.Combat.Models
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
+@using MapGenerator.Runner.Models
 @using MapGenerator.Web.Services
 @implements IAsyncDisposable
 
@@ -41,6 +44,10 @@ else
                                 OnEnterDungeon="HandleEnterDungeonAsync"
                                 OnUseStaircase="HandleUseStaircaseAsync"
                                 OnUseRope="HandleUseRopeAsync" />
+                <ChallengeAction Challenge="_currentChallenge"
+                                 IsInCombat="Session.Player.IsInCombat"
+                                 IsInDungeon="Session.Player.IsInDungeon"
+                                 OnEnterChallenge="HandleEnterChallengeAsync" />
             </div>
         </div>
         <div class="map-area">
@@ -135,6 +142,10 @@ OnDance="HandleDanceAsync"
                          TileHasEgg="Session.TileHasEgg()"
                          HasCompanion="Session.Player.CompanionId != null"
                          OnHatch="HandleHatchAsync" />
+            <ChallengeAction Challenge="_currentChallenge"
+                             IsInCombat="Session.Player.IsInCombat"
+                             IsInDungeon="Session.Player.IsInDungeon"
+                             OnEnterChallenge="HandleEnterChallengeAsync" />
         </div>
         <div class="chat-area">
             <ChatPanel LocalMessages="_localMessages"
@@ -311,6 +322,8 @@ OnDance="HandleDanceAsync"
     private bool _showMobileMore;
     private CraftingPanel? _craftingPanel;
     private InventoryModal? _inventoryModal;
+    private FeatureChallengeConfig? _currentChallenge =>
+        FeatureProvider.GetById(MapCache.GetCachedTile(Session.Player!.Q, Session.Player.R)?.FeatureId)?.Challenge;
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;
@@ -407,8 +420,34 @@ OnDance="HandleDanceAsync"
         Broadcast.CompanionChallengeDeclined += OnCompanionChallengeDeclined;
         Broadcast.CompanionBattleCompleted   += OnCompanionBattleCompleted;
 
+        Nav.LocationChanged += OnLocationChanged;
+
         await JS.InvokeVoidAsync("gameJs.initMinimap", Session.Player.Q, Session.Player.R);
+
+        // Handle return from runner challenge
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("cw", out _) && query.TryGetValue("cr", out var rewards))
+        {
+            await HandleChallengeReturnAsync(rewards.ToString());
+            Nav.NavigateTo("/game", replace: true);
+        }
+
         StateHasChanged();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        var uri = Nav.ToAbsoluteUri(e.Location);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("cw", out _) && query.TryGetValue("cr", out var rewards))
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await HandleChallengeReturnAsync(rewards.ToString());
+                Nav.NavigateTo("/game", replace: true);
+            });
+        }
     }
 
     private async Task HandleBuildRoadAsync()
@@ -645,6 +684,52 @@ OnDance="HandleDanceAsync"
             IsSystemMessage = true, SentAt = DateTime.UtcNow
         });
         StateHasChanged();
+    }
+
+    private void HandleEnterChallengeAsync()
+    {
+        var challenge = _currentChallenge;
+        if (challenge == null || Session.Player == null) return;
+
+        var companion = Session.Companion;
+        var initData = new RunnerInitData
+        {
+            Config = new RunnerConfig
+            {
+                Label              = challenge.Label,
+                PlayerMaxHp        = challenge.PlayerMaxHp,
+                PlayerAttackStat   = Session.Player.BaseAttack,
+                CompanionAttackStat = companion?.Stats.GetValueOrDefault("ATK", 0) ?? 0,
+                EnemyHp            = challenge.EnemyHp,
+                EnemyDamage        = challenge.EnemyDamage,
+                EnemyCount         = challenge.EnemyCount,
+                ObstacleCount      = challenge.ObstacleCount,
+                TotalDistancePx    = challenge.TotalDistancePx,
+                InitialScrollSpeed = challenge.InitialScrollSpeed,
+                RewardPool         = challenge.RewardPool,
+                RewardCount        = challenge.RewardCount,
+                BackgroundColor    = challenge.BackgroundColor,
+                GroundColor        = challenge.GroundColor,
+                ObstacleColor      = challenge.ObstacleColor,
+                EnemyColor         = challenge.EnemyColor,
+            },
+            PlayerSprite    = Session.Player.SpritePixels,
+            CompanionSprite = companion?.SpritePixels ?? [],
+            CompanionName   = companion?.Nickname ?? "",
+        };
+
+        var key = ChallengeSession.Store(initData);
+        Nav.NavigateTo($"/runner?key={key}");
+    }
+
+    private async Task HandleChallengeReturnAsync(string rewardsCsv)
+    {
+        if (string.IsNullOrEmpty(rewardsCsv) || Session.Player == null) return;
+        var items = rewardsCsv.Split(',')
+            .Select(Uri.UnescapeDataString)
+            .Where(s => !string.IsNullOrEmpty(s))
+            .Select(id => (id, 1));
+        await Session.GrantChallengeRewardsAsync(items);
     }
 
     private async Task HandleEnterDungeonAsync()
@@ -1310,6 +1395,7 @@ OnDance="HandleDanceAsync"
         Broadcast.CompanionChallengeReceived -= OnCompanionChallengeReceived;
         Broadcast.CompanionChallengeDeclined -= OnCompanionChallengeDeclined;
         Broadcast.CompanionBattleCompleted   -= OnCompanionBattleCompleted;
+        Nav.LocationChanged -= OnLocationChanged;
         _toastTimer?.Dispose();
         await Session.DisposeAsync();
     }
