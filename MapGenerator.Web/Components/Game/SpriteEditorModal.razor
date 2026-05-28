@@ -53,13 +53,13 @@
             }
 
             <div class="pstab-stats">
-                @StatRow("MaxHp", "Max HP", Player.MaxHp.ToString(), "1 pt = +2 HP")
-                @StatRow("BaseAttack", "Attack", Player.BaseAttack.ToString(), null)
-                @StatRow("BaseDefense", "Defense", Player.BaseDefense.ToString(), null)
-                @StatRow("BaseResistance", "Resistance", Player.BaseResistance.ToString(), "vs energy attacks")
-                @StatRow("BaseMagic", "Magic", Player.BaseMagic.ToString(), null)
-                @StatRow("BaseSpeed", "Speed", Player.BaseSpeed.ToString(), null)
-                @StatRow("BaseCritChance", "Crit", $"{Player.BaseCritChance * 100:F0}%", null)
+                @StatRow("MaxHp",          "Max HP",     Player.MaxHp.ToString(),                    "1 pt = +2 HP · your total health pool")
+                @StatRow("BaseAttack",     "Attack",     Player.BaseAttack.ToString(),               "physical damage with weapons")
+                @StatRow("BaseDefense",    "Defense",    Player.BaseDefense.ToString(),              "reduces physical damage taken")
+                @StatRow("BaseResistance", "Resistance", Player.BaseResistance.ToString(),           "reduces elemental damage (Fire, Frost, Storm, Nature, Dark)")
+                @StatRow("BaseMagic",      "Magic",      Player.BaseMagic.ToString(),               "scales spell damage and magic weapon attacks")
+                @StatRow("BaseSpeed",      "Speed",      Player.BaseSpeed.ToString(),               "improves hit chance and dodge chance in combat")
+                @StatRow("BaseCritChance", "Crit",       $"{Player.BaseCritChance * 100:F0}%",      "chance to deal 50% bonus damage on any hit")
             </div>
 
             @if (Player.EquippedWeaponId != null || Player.EquippedArmorId != null || Player.EquippedHatId != null)

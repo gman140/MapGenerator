@@ -63,6 +63,7 @@ else
                         HasCompanion="Session.Companion != null"
                         OnKissPlayer="HandleKissPlayerAsync"
                         OnBattlePlayer="HandleBattlePlayerAsync" />
+            <button class="tutorial-open-btn" @onclick="() => _showTutorial = true">? Guide</button>
             <InventoryModal Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
@@ -202,6 +203,11 @@ OnDance="HandleDanceAsync"
         </div>
     }
 
+    @if (_showTutorial)
+    {
+        <TutorialModal OnClose="() => _showTutorial = false" />
+    }
+
     @if (_showSpriteEditor)
     {
         <SpriteEditorModal Player="Session.Player"
@@ -241,6 +247,7 @@ OnDance="HandleDanceAsync"
     private long _cooldownUntil;
     private long _gatherCooldownUntil;
     private bool _oceanWarning;
+    private bool _showTutorial;
     private string? _moveError;
     private (int q, int r)? _pendingOceanMove;
     private System.Threading.Timer? _toastTimer;
