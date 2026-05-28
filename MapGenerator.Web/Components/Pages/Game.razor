@@ -50,7 +50,11 @@ else
                             RevealedTiles="_revealedTiles" />
             }
         </div>
-        <div class="sidebar">
+        <div class="sidebar @(_showMobileMore ? "mobile-open" : "")">
+            <div class="mobile-sheet-header">
+                <span class="mobile-sheet-title">Menu</span>
+                <button class="mobile-sheet-close" @onclick='() => _showMobileMore = false'>✕</button>
+            </div>
             <MiniMap Player="Session.Player" MapVersion="_mapVersion"
                      RevealedTiles="_revealedTiles" />
             <PlayerInfo Player="Session.Player"
@@ -123,6 +127,35 @@ OnDance="HandleDanceAsync"
                        OnSendLocal="SendLocalAsync"
                        OnSendWorld="SendWorldAsync" />
         </div>
+    </div>
+
+    @if (_showMobileMore)
+    {
+        <div class="mobile-sheet-backdrop" @onclick='() => _showMobileMore = false'></div>
+    }
+    <div class="mobile-action-bar">
+        <button class="mobile-action-btn"
+                disabled="@Session.Player.IsInCombat"
+                @onclick="HandleInvestigateAsync">
+            <span class="mab-icon">🔍</span>
+            <span class="mab-label">Investigate</span>
+        </button>
+        <button class="mobile-action-btn"
+                disabled="@(Session.Player.IsInCombat || !Session.TileHasResources() || DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < _gatherCooldownUntil)"
+                @onclick="HandleGatherAsync">
+            <span class="mab-icon">⛏</span>
+            <span class="mab-label">Gather</span>
+        </button>
+        <button class="mobile-action-btn @(_showMobileMore ? "mab-active" : "")"
+                @onclick='() => _showMobileMore = !_showMobileMore'>
+            <span class="mab-icon">⚒</span>
+            <span class="mab-label">Craft</span>
+        </button>
+        <button class="mobile-action-btn @(_showMobileMore ? "mab-active" : "")"
+                @onclick='() => _showMobileMore = !_showMobileMore'>
+            <span class="mab-icon">☰</span>
+            <span class="mab-label">Menu</span>
+        </button>
     </div>
 
     @if ((Session.Player.IsInCombat || _combatResult != null) && _combatSession != null)
@@ -255,6 +288,7 @@ OnDance="HandleDanceAsync"
 
     private HashSet<(int, int)>? _revealedTiles;
 
+    private bool _showMobileMore;
     private bool _showNoteModal;
     private bool _showSignModal;
     private bool _showSpriteEditor;

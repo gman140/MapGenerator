@@ -505,13 +505,95 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 
-@media (max-width: 500px) {
+/* ── Mobile-only elements (hidden on desktop) ────────────────────────────── */
+.mobile-action-bar     { display: none; }
+.mobile-sheet-backdrop { display: none; }
+.mobile-sheet-header   { display: none; }
+.mobile-sheet-title    { font-size: .85rem; font-weight: 600; color: var(--text); }
+.mobile-sheet-close    { background: none; border: none; color: var(--text-dim); font-size: 1.1rem; cursor: pointer; padding: 0 .3rem; line-height: 1; }
+.mobile-sheet-close:hover { color: var(--text); }
+.mobile-action-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; background: none; border: none; cursor: pointer; color: var(--text-dim);
+    padding: 6px 2px; transition: color .15s; -webkit-tap-highlight-color: transparent;
+}
+.mobile-action-btn:active:not(:disabled) { background: rgba(255,255,255,.08); }
+.mobile-action-btn:disabled { opacity: .38; cursor: default; }
+.mobile-action-btn.mab-active { color: var(--accent); }
+.mab-icon  { font-size: 1.25rem; line-height: 1; }
+.mab-label { font-size: .58rem; line-height: 1; white-space: nowrap; }
+
+@media (max-width: 768px) {
     .game-layout {
-        grid-template-columns: 1fr 160px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 150px;
+        padding-bottom: 56px;
     }
+    .map-area  { grid-column: 1; grid-row: 1; }
+    .sidebar   { display: none; }
+    .chat-area { grid-column: 1; grid-row: 2; }
+
+    /* Sidebar repositioned as slide-up sheet */
+    .sidebar.mobile-open {
+        display: flex;
+        position: fixed;
+        bottom: 56px; left: 0; right: 0;
+        max-height: 78vh;
+        z-index: 97;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-radius: 14px 14px 0 0;
+        overflow-y: auto;
+        flex-direction: column;
+        gap: 4px;
+        padding: 0 6px 20px;
+        animation: mobile-slide-up .22s ease-out;
+        box-shadow: 0 -4px 24px rgba(0,0,0,.5);
+    }
+    @keyframes mobile-slide-up {
+        from { transform: translateY(100%); opacity: 0.6; }
+        to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .mobile-sheet-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        bottom: 56px;
+        background: rgba(0,0,0,.45);
+        z-index: 96;
+    }
+
+    .mobile-sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .6rem .5rem .4rem;
+        border-bottom: 1px solid var(--border);
+        margin: 0 -6px .25rem;
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 1;
+        flex-shrink: 0;
+    }
+
+    .mobile-action-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 56px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        z-index: 95;
+        padding: 0 4px;
+    }
+
     .minimap-canvas { display: none; }
-    .minimap-label { display: inline; }
+    .minimap-label  { display: inline; }
     .tile-inv-input { width: 28px; }
+    .toast-error    { bottom: calc(56px + .75rem); }
 }
 
 /* ── Dungeon ──────────────────────────────────────────────────────────────── */
