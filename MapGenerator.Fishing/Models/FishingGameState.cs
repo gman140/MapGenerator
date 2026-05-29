@@ -51,6 +51,7 @@ public class FishingGameState
     public bool AlmostThereCallFired { get; set; }
 
     // Rhythm reel mechanic
+    public double ReelDisplayProgress { get; set; }  // smoothed version of ReelProgressPct, used for fish position
     public double ReelCursorPos { get; set; }        // 0–1 position across the tap bar
     public int    ReelCursorDir { get; set; } = 1;   // +1 or -1
     public double ReelZoneStart { get; set; } = 0.30; // 0–1 left edge of sweet zone

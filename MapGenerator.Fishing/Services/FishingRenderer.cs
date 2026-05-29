@@ -76,8 +76,8 @@ public static class FishingRenderer
         // Water body
         cmds.Add(FishDrawCmd.Fill(0, WaterY, CanvasWidth, CanvasHeight - WaterY, data.WaterColor));
 
-        // Water surface shimmer
-        cmds.Add(FishDrawCmd.Fill(0, WaterY, CanvasWidth, 6, data.WaterSurfaceColor));
+        // Animated water surface
+        DrawWaterSurface(cmds, data, state);
 
         // Tier label
         string tierLabel = data.PoleTier switch
@@ -109,7 +109,10 @@ public static class FishingRenderer
     private static void DrawFishingLine(List<FishDrawCmd> cmds, FishingGameState state)
     {
         var (bx, by) = GetBobberPosition(state);
-        cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, bx, by, "#d0c8a0", 1.5));
+        if (state.Phase == FishingPhase.Casting)
+            cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, bx, by, "#d0c8a0", 1.5));
+        else
+            DrawCurvedLine(cmds, RodTipX, RodTipY, bx, by, 22.0, "#d0c8a0", 1.5);
     }
 
     private static void DrawBobber(List<FishDrawCmd> cmds, FishingGameState state)
@@ -133,7 +136,7 @@ public static class FishingRenderer
         const double hangX = 112;
         const double hangY = WaterY - 20;
 
-        cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, hangX, hangY, "#d0c8a0", 1.5));
+        DrawCurvedLine(cmds, RodTipX, RodTipY, hangX, hangY, 10.0, "#d0c8a0", 1.5);
 
         var fish = state.CaughtFish;
         if (fish == null) return;
@@ -313,7 +316,7 @@ public static class FishingRenderer
 
     private static (double x, double y) FishPosition(FishingGameState state)
     {
-        double x = BobberX - (BobberX - (PlayerX + 115)) * state.ReelProgressPct;
+        double x = BobberX - (BobberX - (PlayerX + 115)) * state.ReelDisplayProgress;
         double y = WaterY + 34 + Math.Sin(state.BobberAnimMs * 0.003) * 5;
         if (state.TensionPct > 0.60)
             x += Math.Sin(state.BobberAnimMs * 0.05) * (state.TensionPct - 0.60) * 14;
@@ -323,7 +326,8 @@ public static class FishingRenderer
     private static void DrawFishingLineToFish(List<FishDrawCmd> cmds, FishingGameState state)
     {
         var (fx, fy) = FishPosition(state);
-        cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, fx, fy, "#d0c8a0", 1.5));
+        double sag = 14.0 * (1.0 - state.TensionPct * 0.85); // nearly straight when tension peaks
+        DrawCurvedLine(cmds, RodTipX, RodTipY, fx, fy, sag, "#d0c8a0", 1.5);
     }
 
     private static void DrawFishApproaching(List<FishDrawCmd> cmds, FishingGameState state)
@@ -332,32 +336,62 @@ public static class FishingRenderer
         if (fish == null) return;
 
         var (fx, fy) = FishPosition(state);
-        double bodyR  = 7 + Math.Clamp(fish.TensionDrainRate * 55, 0, 13);
-        double alpha  = 0.78 + state.ReelProgressPct * 0.20;
-        string color  = state.TensionPct > 0.70 ? "#3a1500" : "#0e2a3a";
+        double bodyR = 7 + Math.Clamp(fish.TensionDrainRate * 55, 0, 13);
+        double alpha = 0.78 + state.ReelDisplayProgress * 0.20;
+        string color = state.TensionPct > 0.70 ? "#3a1500" : "#0e2a3a";
 
-        // Body — two overlapping circles create an oval (head left, tail right)
-        cmds.Add(FishDrawCmd.Circle(fx + bodyR * 0.3, fy, bodyR,        color, alpha));
-        cmds.Add(FishDrawCmd.Circle(fx + bodyR * 0.9, fy, bodyR * 0.65, color, alpha));
+        // ── Swimming animation ────────────────────────────────────────────────
+        double t = state.BobberAnimMs;
+        double tiltAngle = 0.20 * Math.Sin(t * 0.0040);               // body tilt cycle
+        double tailWag   = 0.24 * Math.Sin(t * 0.0080 + Math.PI / 2); // tail 2× faster, 90° offset
 
-        // Tail fin — V shape on the right
-        double tx = fx + bodyR * 1.65;
-        cmds.Add(FishDrawCmd.Line(tx, fy, tx + bodyR * 0.75, fy - bodyR * 0.8, color, 2.0));
-        cmds.Add(FishDrawCmd.Line(tx, fy, tx + bodyR * 0.75, fy + bodyR * 0.8, color, 2.0));
-
-        // Dorsal fin
-        cmds.Add(FishDrawCmd.Line(fx + bodyR * 0.3, fy - bodyR,       fx + bodyR * 0.85, fy - bodyR * 1.35, color, 1.5));
-        cmds.Add(FishDrawCmd.Line(fx + bodyR * 0.85, fy - bodyR * 1.35, fx + bodyR * 1.15, fy - bodyR,      color, 1.5));
-
-        // Eye
-        cmds.Add(FishDrawCmd.Circle(fx + bodyR * 0.05, fy - bodyR * 0.20, 2.5, "#ffffff",    alpha));
-        cmds.Add(FishDrawCmd.Circle(fx + bodyR * 0.08, fy - bodyR * 0.20, 1.2, "#001020",    alpha));
-
-        // Highlight flash as fish nears (progress > 80%)
-        if (state.ReelProgressPct > 0.80)
+        // High-tension thrash: rapid tilt added when tension > 55%
+        if (state.TensionPct > 0.55)
         {
-            double flashAlpha = (state.ReelProgressPct - 0.80) / 0.20 * 0.35;
-            cmds.Add(FishDrawCmd.Circle(fx + bodyR * 0.3, fy, bodyR + 3, "#ffffff", flashAlpha));
+            double thrashT = (state.TensionPct - 0.55) / 0.45;
+            tiltAngle += 0.16 * Math.Sin(t * 0.026) * thrashT;
+        }
+
+        double cosA = Math.Cos(tiltAngle);
+        double sinA = Math.Sin(tiltAngle);
+        double cx   = fx + bodyR * 0.5; // rotation pivot (fish center)
+
+        // Rotates a local-space offset around the fish center
+        (double x, double y) R(double dx, double dy) =>
+            (cx + dx * cosA - dy * sinA,
+             fy + dx * sinA + dy * cosA);
+
+        // ── Body ──────────────────────────────────────────────────────────────
+        var (b1x, b1y) = R(-bodyR * 0.20, 0);
+        var (b2x, b2y) = R( bodyR * 0.40, 0);
+        cmds.Add(FishDrawCmd.Circle(b1x, b1y, bodyR,        color, alpha));
+        cmds.Add(FishDrawCmd.Circle(b2x, b2y, bodyR * 0.65, color, alpha));
+
+        // ── Tail (wag shifts both fins together) ──────────────────────────────
+        var (tbx, tby) = R(bodyR * 1.15, 0);
+        double wagOff  = tailWag * bodyR * 0.55;
+        var (t1x, t1y) = R(bodyR * 1.65, -bodyR * 0.80 + wagOff);
+        var (t2x, t2y) = R(bodyR * 1.65,  bodyR * 0.80 + wagOff);
+        cmds.Add(FishDrawCmd.Line(tbx, tby, t1x, t1y, color, 2.0));
+        cmds.Add(FishDrawCmd.Line(tbx, tby, t2x, t2y, color, 2.0));
+
+        // ── Dorsal fin ────────────────────────────────────────────────────────
+        var (d1x, d1y) = R(-bodyR * 0.20, -bodyR);
+        var (d2x, d2y) = R( bodyR * 0.35, -bodyR * 1.35);
+        var (d3x, d3y) = R( bodyR * 0.65, -bodyR);
+        cmds.Add(FishDrawCmd.Line(d1x, d1y, d2x, d2y, color, 1.5));
+        cmds.Add(FishDrawCmd.Line(d2x, d2y, d3x, d3y, color, 1.5));
+
+        // ── Eye ───────────────────────────────────────────────────────────────
+        var (ex, ey) = R(-bodyR * 0.45, -bodyR * 0.18);
+        cmds.Add(FishDrawCmd.Circle(ex,              ey,              2.5, "#ffffff", alpha));
+        cmds.Add(FishDrawCmd.Circle(ex + cosA * 0.4, ey + sinA * 0.4, 1.2, "#001020", alpha));
+
+        // ── Approach flash ────────────────────────────────────────────────────
+        if (state.ReelDisplayProgress > 0.80)
+        {
+            double flashAlpha = (state.ReelDisplayProgress - 0.80) / 0.20 * 0.35;
+            cmds.Add(FishDrawCmd.Circle(b1x, b1y, bodyR + 3, "#ffffff", flashAlpha));
         }
     }
 
@@ -377,5 +411,53 @@ public static class FishingRenderer
         double tx = BobberX + bodyR * 1.65;
         cmds.Add(FishDrawCmd.Line(tx, fishY, tx + bodyR * 0.7, fishY - bodyR * 0.75, "#0a1a28", 1.5));
         cmds.Add(FishDrawCmd.Line(tx, fishY, tx + bodyR * 0.7, fishY + bodyR * 0.75, "#0a1a28", 1.5));
+    }
+
+    // ── Shared drawing helpers ────────────────────────────────────────────────
+
+    /// <summary>Draws a fishing line that droops under gravity using 7 parabolic segments.</summary>
+    private static void DrawCurvedLine(List<FishDrawCmd> cmds,
+        double x1, double y1, double x2, double y2,
+        double sag, string color, double lineWidth)
+    {
+        const int segments = 7;
+        double px = x1, py = y1;
+        for (int i = 1; i <= segments; i++)
+        {
+            double t  = (double)i / segments;
+            double nx = x1 + (x2 - x1) * t;
+            double ny = y1 + (y2 - y1) * t + sag * Math.Sin(t * Math.PI);
+            cmds.Add(FishDrawCmd.Line(px, py, nx, ny, color, lineWidth));
+            px = nx; py = ny;
+        }
+    }
+
+    /// <summary>
+    /// Draws the full-width animated water surface as 40 connected line segments following
+    /// three overlapping sine waves, giving an organic side-view ripple effect.
+    /// </summary>
+    private static void DrawWaterSurface(List<FishDrawCmd> cmds, FishingInitData data, FishingGameState state)
+    {
+        const int    steps = 40;
+        const double stepW = CanvasWidth / steps;
+
+        double p1 = state.BobberAnimMs * 0.0015;          // primary wave
+        double p2 = state.BobberAnimMs * 0.0009 + 2.1;    // secondary — different speed + phase offset
+        double p3 = state.BobberAnimMs * 0.0005 + 4.4;    // subtle third harmonic
+
+        double WaveY(double x) =>
+            WaterY
+            + 2.4 * Math.Sin(x * 0.015 + p1)
+            + 1.0 * Math.Sin(x * 0.028 + p2)
+            + 0.5 * Math.Sin(x * 0.044 + p3);
+
+        double px = 0, py = WaveY(0);
+        for (int i = 1; i <= steps; i++)
+        {
+            double nx = i * stepW;
+            double ny = WaveY(nx);
+            cmds.Add(FishDrawCmd.Line(px, py, nx, ny, data.WaterSurfaceColor, 6.0));
+            px = nx; py = ny;
+        }
     }
 }

@@ -89,9 +89,10 @@ public static class FishingEngine
         if (state.Phase != FishingPhase.Striking) return;
         state.Phase           = FishingPhase.Reeling;
         state.PhaseElapsedMs  = 0;
-        state.TensionPct      = 0.15;
-        state.ReelProgressPct = 0;
-        state.BurstCooldownMs = BurstCooldownBaseMs;
+        state.TensionPct         = 0.15;
+        state.ReelProgressPct    = 0;
+        state.ReelDisplayProgress = 0;
+        state.BurstCooldownMs    = BurstCooldownBaseMs;
         state.PreviousTensionPct   = 0.15;
         state.AlmostThereCallFired = false;
         // Rhythm reel init
@@ -238,6 +239,16 @@ public static class FishingEngine
         // Flash countdowns
         state.TapFlashMs     = Math.Max(0, state.TapFlashMs     - deltaMs);
         state.MissTapFlashMs = Math.Max(0, state.MissTapFlashMs - deltaMs);
+
+        // ── Smooth display position ───────────────────────────────────────────
+        // ReelDisplayProgress chases ReelProgressPct at a fixed speed so the fish
+        // darts forward visibly on each tap instead of teleporting.
+        const double CatchUpSpeed = 0.90; // units/sec — a 0.10 tap takes ~110 ms to complete
+        double disp  = state.ReelDisplayProgress;
+        double tgt   = state.ReelProgressPct;
+        double delta = tgt - disp;
+        state.ReelDisplayProgress = Math.Clamp(
+            disp + Math.Sign(delta) * Math.Min(Math.Abs(delta), CatchUpSpeed * dt), 0, 1);
 
         // ── Passive forces ────────────────────────────────────────────────────
         double prevTension        = state.TensionPct;
