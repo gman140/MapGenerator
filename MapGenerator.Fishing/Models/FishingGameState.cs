@@ -42,4 +42,11 @@ public class FishingGameState
     public FishDefinition? CaughtFish { get; set; }
 
     public double LastTimestamp { get; set; } = -1;
+
+    // Companion calls
+    public string? CompanionCallText { get; set; }
+    public double CompanionCallRemainingMs { get; set; }
+    public double TensionCallCooldownMs { get; set; }
+    public double PreviousTensionPct { get; set; }
+    public bool AlmostThereCallFired { get; set; }
 }

@@ -1087,6 +1087,20 @@ public class GameSessionService : IAsyncDisposable
         await _playerRepo.UpdateAsync(Player!);
     }
 
+    public async Task RecordFishCatchAsync(string fishId)
+    {
+        Player!.Inventory[fishId] = Player.Inventory.GetValueOrDefault(fishId) + 1;
+        if (Player.FishLog.TryGetValue(fishId, out var entry))
+        {
+            entry.TotalCaught++;
+        }
+        else
+        {
+            Player.FishLog[fishId] = new() { FirstCaughtAt = DateTime.UtcNow, TotalCaught = 1 };
+        }
+        await _playerRepo.UpdateAsync(Player!);
+    }
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
     public ValueTask DisposeAsync()

@@ -100,6 +100,7 @@ else
             <InventoryModal @ref="_inventoryModal"
                             Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
+                            FishLog="Session.Player.FishLog"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
                             EquippedArmorId="@Session.Player.EquippedArmorId"
                             EquippedHatId="@Session.Player.EquippedHatId"
@@ -813,7 +814,7 @@ OnDance="HandleDanceAsync"
         fishId = Uri.UnescapeDataString(fishId);
         var fishDef = FishProvider.GetById(fishId);
         if (fishDef == null) return;
-        await Session.GrantChallengeRewardsAsync([(fishId, 1)]);
+        await Session.RecordFishCatchAsync(fishId);
         ShowToast($"You caught a {fishDef.Name}!");
     }
 

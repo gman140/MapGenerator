@@ -67,4 +67,7 @@ public class Player
 
     // Companion
     public string? CompanionId { get; set; }
+
+    // Fishing journal — keyed by fish/chain-material ID
+    public Dictionary<string, FishLogEntry> FishLog { get; set; } = new();
 }

@@ -52,6 +52,9 @@
             <div class="inv-tabs">
                 <button class="inv-tab @(_tab == 0 ? "active" : "")" @onclick="() => _tab = 0">Items</button>
                 <button class="inv-tab @(_tab == 1 ? "active" : "")" @onclick="() => _tab = 1">Equipment</button>
+                <button class="inv-tab @(_tab == 2 ? "active" : "")" @onclick="() => _tab = 2">
+                    Journal@(FishLog.Count > 0 ? $" ({FishLog.Count})" : "")
+                </button>
             </div>
 
             @if (_tab == 0)
@@ -183,13 +186,64 @@
                     </div>
                 }
             }
-            else
+            else if (_tab == 1)
             {
                 <div class="inv-equipment">
                     @RenderEquipSlot("Weapon", "⚔ Weapon", EquippedWeaponId, weaponItems)
                     @RenderEquipSlot("Armor", "🛡 Armor", EquippedArmorId, armorItems)
                     @RenderEquipSlot("Hat", "🎩 Hat", EquippedHatId, hatItems)
                 </div>
+            }
+            else
+            {
+                @if (FishLog.Count == 0)
+                {
+                    <p class="inventory-empty">No fish caught yet. Find a fishing spot to get started.</p>
+                }
+                else
+                {
+                    var fishEntries = FishLog
+                        .OrderByDescending(kv => kv.Value.FirstCaughtAt)
+                        .ToList();
+                    var regularFish   = fishEntries.Where(kv => FishProvider.GetById(kv.Key) is { IsChainMaterial: false }).ToList();
+                    var chainMaterials = fishEntries.Where(kv => FishProvider.GetById(kv.Key) is { IsChainMaterial: true }).ToList();
+
+                    @if (regularFish.Count > 0)
+                    {
+                        <p class="inventory-section-label">Fish Caught — @regularFish.Count species</p>
+                        <div class="inv-modal-list">
+                            @foreach (var (id, entry) in regularFish)
+                            {
+                                var def = FishProvider.GetById(id)!;
+                                bool isRare = def.RarityWeight < 0.5;
+                                <div class="inv-modal-item">
+                                    <div class="inv-modal-item-header">
+                                        <span class="inv-modal-name">@(isRare ? "★ " : "")@def.Name</span>
+                                        <span class="inv-modal-qty">×@entry.TotalCaught caught</span>
+                                    </div>
+                                    <p class="inv-modal-desc">First caught @entry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (chainMaterials.Count > 0)
+                    {
+                        <p class="inventory-section-label">Rare Materials</p>
+                        <div class="inv-modal-list">
+                            @foreach (var (id, entry) in chainMaterials)
+                            {
+                                var def = FishProvider.GetById(id)!;
+                                <div class="inv-modal-item">
+                                    <div class="inv-modal-item-header">
+                                        <span class="inv-modal-name">@def.Name</span>
+                                        <span class="inv-modal-qty">×@entry.TotalCaught found</span>
+                                    </div>
+                                    <p class="inv-modal-desc">First found @entry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
             }
         </div>
     </div>
@@ -198,6 +252,7 @@
 @code {
     [Parameter, EditorRequired] public Dictionary<string, int> Inventory { get; set; } = null!;
     [Parameter] public Dictionary<string, int> CraftedItems { get; set; } = new();
+    [Parameter] public Dictionary<string, FishLogEntry> FishLog { get; set; } = new();
     [Parameter] public string? EquippedWeaponId { get; set; }
     [Parameter] public string? EquippedArmorId { get; set; }
     [Parameter] public string? EquippedHatId { get; set; }

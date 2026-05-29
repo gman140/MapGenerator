@@ -95,6 +95,7 @@ export function renderFrame(canvasId, commandsJson) {
                 break;
 
             case 'text':
+                ctx.globalAlpha = c.alpha ?? 1;
                 ctx.font = c.f ?? '12px monospace';
                 ctx.fillStyle = c.c;
                 ctx.textAlign = c.al ?? 'left';

@@ -142,7 +142,7 @@
 
     private void OnHook()
     {
-        FishingEngine.Hook(_state);
+        FishingEngine.Hook(_state, InitData);
         _ = _js?.InvokeVoidAsync("playHookSound");
     }
 
@@ -158,7 +158,7 @@
         _ = _js?.InvokeVoidAsync("stopReelSound");
     }
 
-    [JSInvokable] public void HookKey()      => OnHook();
+    [JSInvokable] public void HookKey() => OnHook();
     [JSInvokable] public void StartReelKey() => FishingEngine.SetHolding(_state, true);
     [JSInvokable] public void StopReelKey()  => FishingEngine.SetHolding(_state, false);
 

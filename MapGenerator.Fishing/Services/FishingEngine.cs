@@ -4,15 +4,36 @@ namespace MapGenerator.Fishing.Services;
 
 public static class FishingEngine
 {
-    private const double CastingDurationMs = 1100.0;
-    private const double BurstCooldownBaseMs = 1500.0;
-    private const double ReelSlipRate = 0.05;       // reel progress lost per second when not holding
-    private const double TensionRecoveryRate = 0.10; // tension recovered per second when not holding
+    private const double CastingDurationMs      = 1100.0;
+    private const double BurstCooldownBaseMs    = 1500.0;
+    private const double ReelSlipRate           = 0.05;
+    private const double TensionRecoveryRate    = 0.10;
+    private const double CallDurationMs         = 3400.0;
+    private const double TensionCallCooldownMs  = 2800.0;
 
     private static readonly Random _rng = new();
 
-    public static FishingGameState Initialize(FishingInitData data) =>
-        new() { Phase = FishingPhase.Casting };
+    // ── Call message pools ────────────────────────────────────────────────────
+
+    private static readonly string[] CallsCasting  = ["Here we go.", "Let's see what's biting.", "Good cast.", "Perfect spot."];
+    private static readonly string[] CallsWaiting  = ["Any moment now...", "Patience.", "Something's around here.", "The water looks good."];
+    private static readonly string[] CallsNibbling = ["Something's there!", "Get ready to hook it!", "Here it comes—"];
+    private static readonly string[] CallsStriking = ["Now!", "Hook it!", "Now, now—", "Don't miss!"];
+    private static readonly string[] CallsReeling  = ["You got one!", "Reel it in!", "Don't let it go!"];
+    private static readonly string[] CallsTensionMed  = ["Ease up!", "Let it run a bit!", "Not so hard—"];
+    private static readonly string[] CallsTensionHigh = ["Careful, the line—", "Back off!", "It's going to snap!"];
+    private static readonly string[] CallsTensionDrop = ["Now pull!", "It's tiring—reel!", "Go, go!"];
+    private static readonly string[] CallsAlmost   = ["Almost there!", "Keep going!", "You've almost got it!"];
+    private static readonly string[] CallsCaught   = ["Yes! You got it!", "Nice one!", "Look at that thing!"];
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    public static FishingGameState Initialize(FishingInitData data)
+    {
+        var state = new FishingGameState { Phase = FishingPhase.Casting };
+        TriggerCall(state, data, CallsCasting);
+        return state;
+    }
 
     public static void Tick(FishingGameState state, FishingInitData data, double timestamp)
     {
@@ -22,8 +43,10 @@ public static class FishingEngine
         state.LastTimestamp = timestamp;
         double dt = deltaMs / 1000.0;
 
-        state.PhaseElapsedMs += deltaMs;
-        state.BobberAnimMs   += deltaMs;
+        state.PhaseElapsedMs          += deltaMs;
+        state.BobberAnimMs            += deltaMs;
+        state.CompanionCallRemainingMs = Math.Max(0, state.CompanionCallRemainingMs - deltaMs);
+        state.TensionCallCooldownMs    = Math.Max(0, state.TensionCallCooldownMs - deltaMs);
 
         switch (state.Phase)
         {
@@ -52,7 +75,7 @@ public static class FishingEngine
                 break;
 
             case FishingPhase.Reeling:
-                TickReeling(state, deltaMs, dt);
+                TickReeling(state, data, deltaMs, dt);
                 break;
 
             case FishingPhase.Caught:
@@ -61,7 +84,7 @@ public static class FishingEngine
         }
     }
 
-    public static void Hook(FishingGameState state)
+    public static void Hook(FishingGameState state, FishingInitData data)
     {
         if (state.Phase != FishingPhase.Striking) return;
         state.Phase           = FishingPhase.Reeling;
@@ -69,6 +92,9 @@ public static class FishingEngine
         state.TensionPct      = 0.15;
         state.ReelProgressPct = 0;
         state.BurstCooldownMs = BurstCooldownBaseMs;
+        state.PreviousTensionPct   = 0.15;
+        state.AlmostThereCallFired = false;
+        TriggerCall(state, data, CallsReeling);
     }
 
     public static void SetHolding(FishingGameState state, bool holding) =>
@@ -89,7 +115,7 @@ public static class FishingEngine
         return new FishingResult();
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── Phase transitions ────────────────────────────────────────────────────
 
     private static void EnterWaiting(FishingGameState state, FishingInitData data)
     {
@@ -98,6 +124,7 @@ public static class FishingEngine
         double baseWait      = 3000.0 + _rng.NextDouble() * 5000.0;
         state.BiteWaitMs     = baseWait * data.WaitTimeMultiplier;
         state.ActiveFish     = null;
+        TriggerCall(state, data, CallsWaiting);
     }
 
     private static void EnterNibbling(FishingGameState state, FishingInitData data)
@@ -106,6 +133,7 @@ public static class FishingEngine
         state.PhaseElapsedMs = 0;
         state.MissedStrikes  = 0;
         state.ActiveFish     = PickFish(data);
+        TriggerCall(state, data, CallsNibbling);
     }
 
     private static void EnterStriking(FishingGameState state, FishingInitData data)
@@ -114,6 +142,7 @@ public static class FishingEngine
         state.PhaseElapsedMs    = 0;
         double window           = state.ActiveFish?.StrikeWindowMs ?? 700;
         state.StrikeRemainingMs = window * data.StrikeWindowMultiplier;
+        TriggerCall(state, data, CallsStriking);
     }
 
     private static void HandleMissedStrike(FishingGameState state, FishingInitData data)
@@ -125,11 +154,13 @@ public static class FishingEngine
         }
         else
         {
-            // Give another nibble with the same fish
             state.Phase          = FishingPhase.Nibbling;
             state.PhaseElapsedMs = 0;
+            TriggerCall(state, data, CallsNibbling);
         }
     }
+
+    // ── Tick helpers ─────────────────────────────────────────────────────────
 
     private static void TickBobber(FishingGameState state, double dt, bool nibbling)
     {
@@ -139,10 +170,12 @@ public static class FishingEngine
         state.BobberY = bob;
     }
 
-    private static void TickReeling(FishingGameState state, double deltaMs, double dt)
+    private static void TickReeling(FishingGameState state, FishingInitData data, double deltaMs, double dt)
     {
         var fish = state.ActiveFish;
         if (fish == null) { state.Phase = FishingPhase.EscapedFish; return; }
+
+        double prevTension = state.TensionPct;
 
         if (state.IsHolding)
         {
@@ -159,12 +192,41 @@ public static class FishingEngine
         state.BurstCooldownMs = Math.Max(0, state.BurstCooldownMs - deltaMs);
         if (state.BurstCooldownMs <= 0 && _rng.NextDouble() < fish.BurstChancePerSec * dt)
         {
-            state.TensionPct      += fish.BurstStrength;
-            state.BurstCooldownMs  = BurstCooldownBaseMs;
+            state.TensionPct     += fish.BurstStrength;
+            state.BurstCooldownMs = BurstCooldownBaseMs;
         }
 
         state.TensionPct      = Math.Clamp(state.TensionPct, 0, 1.0);
         state.ReelProgressPct = Math.Clamp(state.ReelProgressPct, 0, 1.0);
+
+        // Companion tension calls (threshold crossings)
+        if (state.TensionCallCooldownMs <= 0)
+        {
+            if (state.TensionPct >= 0.80 && prevTension < 0.80)
+            {
+                TriggerCall(state, data, CallsTensionHigh);
+                state.TensionCallCooldownMs = TensionCallCooldownMs;
+            }
+            else if (state.TensionPct >= 0.65 && prevTension < 0.65)
+            {
+                TriggerCall(state, data, CallsTensionMed);
+                state.TensionCallCooldownMs = TensionCallCooldownMs;
+            }
+            else if (prevTension >= 0.70 && state.TensionPct < 0.40)
+            {
+                TriggerCall(state, data, CallsTensionDrop);
+                state.TensionCallCooldownMs = TensionCallCooldownMs;
+            }
+        }
+
+        // "Almost there" milestone
+        if (!state.AlmostThereCallFired && state.ReelProgressPct >= 0.75)
+        {
+            TriggerCall(state, data, CallsAlmost);
+            state.AlmostThereCallFired = true;
+        }
+
+        state.PreviousTensionPct = state.TensionPct;
 
         if (state.TensionPct >= 1.0)
         {
@@ -172,9 +234,10 @@ public static class FishingEngine
         }
         else if (state.ReelProgressPct >= 1.0)
         {
-            state.Phase        = FishingPhase.Caught;
-            state.CaughtFish   = fish;
+            state.Phase         = FishingPhase.Caught;
+            state.CaughtFish    = fish;
             state.CelebrationMs = 0;
+            TriggerCall(state, data, CallsCaught);
         }
     }
 
@@ -194,5 +257,12 @@ public static class FishingEngine
             if (roll <= 0) return f;
         }
         return pool[^1];
+    }
+
+    private static void TriggerCall(FishingGameState state, FishingInitData data, string[] options)
+    {
+        if (string.IsNullOrEmpty(data.CompanionName)) return;
+        state.CompanionCallText       = options[_rng.Next(options.Length)];
+        state.CompanionCallRemainingMs = CallDurationMs;
     }
 }
