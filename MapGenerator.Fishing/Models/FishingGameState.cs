@@ -49,4 +49,12 @@ public class FishingGameState
     public double TensionCallCooldownMs { get; set; }
     public double PreviousTensionPct { get; set; }
     public bool AlmostThereCallFired { get; set; }
+
+    // Rhythm reel mechanic
+    public double ReelCursorPos { get; set; }        // 0–1 position across the tap bar
+    public int    ReelCursorDir { get; set; } = 1;   // +1 or -1
+    public double ReelZoneStart { get; set; } = 0.30; // 0–1 left edge of sweet zone
+    public double ReelZoneShiftMs { get; set; }       // ms until zone jumps to new position
+    public double TapFlashMs { get; set; }            // success flash countdown
+    public double MissTapFlashMs { get; set; }        // miss flash countdown
 }

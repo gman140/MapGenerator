@@ -246,20 +246,45 @@ public static class FishingRenderer
 
     private static void DrawReelingHUD(List<FishDrawCmd> cmds, FishingGameState state)
     {
-        string fishName = state.ActiveFish?.Name ?? "Fish";
+        var fish = state.ActiveFish;
+        if (fish == null) return;
 
-        // Fish name at top — above the speech bubble area
-        cmds.Add(FishDrawCmd.Text(fishName, CanvasWidth / 2, 22, "#ffd080", "bold 13px monospace", "center"));
+        // Fish name at top
+        cmds.Add(FishDrawCmd.Text(fish.Name, CanvasWidth / 2, 22, "#ffd080", "bold 13px monospace", "center"));
 
-        // Tension bar pinned to bottom strip, well below the scene
-        string tensionColor = state.TensionPct > 0.75 ? "#ff4422" : state.TensionPct > 0.5 ? "#ffaa22" : "#44cc44";
-        cmds.Add(FishDrawCmd.Text($"Tension  {state.TensionPct * 100:F0}%", 20, CanvasHeight - 52, "#ddbbaa", "10px monospace"));
-        cmds.Add(FishDrawCmd.Bar(20, CanvasHeight - 42, CanvasWidth - 40, 12, state.TensionPct, tensionColor));
+        // ── Rhythm tap bar ────────────────────────────────────────────────────
+        const double barX = 20, barW = CanvasWidth - 40, barH = 20;
+        const double barY = CanvasHeight - 52;
 
-        // Hold indicator
-        string holdHint = state.IsHolding ? "REELING ✓" : "Let go to ease tension";
-        string holdColor = state.IsHolding ? "#44ff88" : "#aaaaaa";
-        cmds.Add(FishDrawCmd.Text(holdHint, CanvasWidth / 2, CanvasHeight - 16, holdColor, "12px monospace", "center"));
+        // Background
+        cmds.Add(FishDrawCmd.Fill(barX, barY, barW, barH, "#111820"));
+
+        // Sweet zone — color shifts green→orange→red as tension rises; narrows at high tension
+        double baseZoneW      = Math.Clamp(0.36 - fish.TensionDrainRate * 0.85, 0.14, 0.36);
+        double effectiveZoneW = baseZoneW * (1.0 - state.TensionPct * 0.45);
+        double zoneX          = barX + state.ReelZoneStart * barW;
+        double zoneW          = effectiveZoneW * barW;
+        string zoneColor      = state.TensionPct > 0.75 ? "#ee4422"
+                              : state.TensionPct > 0.50 ? "#ee9922"
+                              : "#44ee88";
+
+        cmds.Add(FishDrawCmd.Fill(zoneX, barY, zoneW, barH, zoneColor, 0.80));
+
+        // Miss flash — brief red wash over the whole bar
+        if (state.MissTapFlashMs > 0)
+            cmds.Add(FishDrawCmd.Fill(barX, barY, barW, barH, "#ff2200", state.MissTapFlashMs / 220.0 * 0.55));
+
+        // Hit flash — white pulse on the zone
+        if (state.TapFlashMs > 0)
+            cmds.Add(FishDrawCmd.Fill(zoneX, barY, zoneW, barH, "#ffffff", state.TapFlashMs / 260.0 * 0.65));
+
+        // Cursor — white vertical bar, slightly taller than the bar
+        double cursorX = barX + state.ReelCursorPos * barW - 2;
+        cmds.Add(FishDrawCmd.Fill(cursorX, barY - 3, 4, barH + 6, "#ffffff"));
+
+        // Labels
+        cmds.Add(FishDrawCmd.Text("Tap in the zone!", CanvasWidth / 2, barY - 7, "#88aabb", "10px monospace", "center"));
+        cmds.Add(FishDrawCmd.Text($"Tension  {state.TensionPct * 100:F0}%", 20, CanvasHeight - 16, "#ddbbaa", "10px monospace"));
     }
 
     private static void DrawCaughtCelebration(List<FishDrawCmd> cmds, FishingGameState state)

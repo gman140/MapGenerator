@@ -48,30 +48,17 @@ export function initKeyHandler(dotnetRef) {
     window._fishingKeyDown = function (e) {
         if (e.code === 'Space') {
             e.preventDefault();
-            if (!e.repeat) {
+            if (!e.repeat)
                 dotnetRef.invokeMethodAsync('HookKey');
-                dotnetRef.invokeMethodAsync('StartReelKey');
-            }
-        }
-    };
-    window._fishingKeyUp = function (e) {
-        if (e.code === 'Space') {
-            e.preventDefault();
-            dotnetRef.invokeMethodAsync('StopReelKey');
         }
     };
     document.addEventListener('keydown', window._fishingKeyDown);
-    document.addEventListener('keyup',   window._fishingKeyUp);
 }
 
 export function removeKeyHandler() {
     if (window._fishingKeyDown) {
         document.removeEventListener('keydown', window._fishingKeyDown);
         window._fishingKeyDown = null;
-    }
-    if (window._fishingKeyUp) {
-        document.removeEventListener('keyup', window._fishingKeyUp);
-        window._fishingKeyUp = null;
     }
 }
 
@@ -215,24 +202,32 @@ export function playSnapSound() {
     } catch (_) {}
 }
 
-export function startReelSound() {
+export function playTapHitSound() {
     try {
-        stopReelSound();
         const ctx = getAudio();
-        _reelOsc  = ctx.createOscillator();
-        _reelGain = ctx.createGain();
-        _reelOsc.connect(_reelGain);
-        _reelGain.connect(ctx.destination);
-        _reelOsc.type = 'sawtooth';
-        _reelOsc.frequency.value = 55;
-        _reelGain.gain.setValueAtTime(0.04, ctx.currentTime);
-        _reelOsc.start();
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.05);
+        g.gain.setValueAtTime(0.18, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.12);
     } catch (_) {}
 }
 
-export function stopReelSound() {
+export function playTapMissSound() {
     try {
-        if (_reelOsc) { _reelOsc.stop(); _reelOsc.disconnect(); _reelOsc = null; }
-        if (_reelGain) { _reelGain.disconnect(); _reelGain = null; }
+        const ctx = getAudio();
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(160, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.08);
+        g.gain.setValueAtTime(0.14, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.10);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.10);
     } catch (_) {}
 }

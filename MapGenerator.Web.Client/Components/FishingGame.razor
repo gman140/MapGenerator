@@ -16,29 +16,18 @@
                 height="@((int)FishingRenderer.CanvasHeight)"></canvas>
 
         <div class="runner-controls">
-            @if (_state.Phase == FishingPhase.Striking)
+            @if (_state.Phase is FishingPhase.Striking or FishingPhase.Reeling)
             {
                 <button class="runner-btn runner-btn-jump" @onpointerdown="OnHook">
-                    ⚡ Hook!
-                </button>
-            }
-            else if (_state.Phase == FishingPhase.Reeling)
-            {
-                <button class="runner-btn runner-btn-attack"
-                        @onpointerdown="OnReelStart"
-                        @onpointerup="OnReelStop"
-                        @onpointerleave="OnReelStop">
-                    🎣 Hold to Reel
+                    @(_state.Phase == FishingPhase.Striking ? "⚡ Hook!" : "🎣 Tap!")
                 </button>
             }
             else
             {
-                <button class="runner-btn" disabled>
-                    @PhaseLabel
-                </button>
+                <button class="runner-btn" disabled>@PhaseLabel</button>
             }
         </div>
-        <p class="runner-hint">Keyboard: <strong>Space</strong> to hook · <strong>Hold Space</strong> to reel</p>
+        <p class="runner-hint">Keyboard: <strong>Space</strong> to hook · <strong>Space</strong> to tap</p>
     }
     else if (_result?.Success == true)
     {
@@ -142,25 +131,28 @@
 
     private void OnHook()
     {
-        FishingEngine.Hook(_state, InitData);
-        _ = _js?.InvokeVoidAsync("playHookSound");
+        if (_state.Phase == FishingPhase.Striking)
+        {
+            FishingEngine.Hook(_state, InitData);
+            _ = _js?.InvokeVoidAsync("playHookSound");
+        }
+        else if (_state.Phase == FishingPhase.Reeling)
+        {
+            bool wasInZone = IsInZone();
+            FishingEngine.Tap(_state, InitData);
+            _ = _js?.InvokeVoidAsync(wasInZone ? "playTapHitSound" : "playTapMissSound");
+        }
     }
 
-    private void OnReelStart()
+    private bool IsInZone()
     {
-        FishingEngine.SetHolding(_state, true);
-        _ = _js?.InvokeVoidAsync("startReelSound");
-    }
-
-    private void OnReelStop()
-    {
-        FishingEngine.SetHolding(_state, false);
-        _ = _js?.InvokeVoidAsync("stopReelSound");
+        double baseZoneW = Math.Clamp(0.36 - (_state.ActiveFish?.TensionDrainRate ?? 0.1) * 0.85, 0.14, 0.36);
+        double effectiveW = baseZoneW * (1.0 - _state.TensionPct * 0.45);
+        return _state.ReelCursorPos >= _state.ReelZoneStart &&
+               _state.ReelCursorPos <= _state.ReelZoneStart + effectiveW;
     }
 
     [JSInvokable] public void HookKey() => OnHook();
-    [JSInvokable] public void StartReelKey() => FishingEngine.SetHolding(_state, true);
-    [JSInvokable] public void StopReelKey()  => FishingEngine.SetHolding(_state, false);
 
     private async Task Retry()
     {

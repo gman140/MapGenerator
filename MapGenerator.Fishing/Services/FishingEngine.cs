@@ -94,11 +94,56 @@ public static class FishingEngine
         state.BurstCooldownMs = BurstCooldownBaseMs;
         state.PreviousTensionPct   = 0.15;
         state.AlmostThereCallFired = false;
+        // Rhythm reel init
+        state.ReelCursorPos   = 0;
+        state.ReelCursorDir   = 1;
+        state.ReelZoneStart   = 0.30;
+        state.ReelZoneShiftMs = 2000 + _rng.NextDouble() * 1500;
+        state.TapFlashMs      = 0;
+        state.MissTapFlashMs  = 0;
         TriggerCall(state, data, CallsReeling);
     }
 
-    public static void SetHolding(FishingGameState state, bool holding) =>
-        state.IsHolding = holding;
+    /// <summary>Player taps during reeling — checks cursor-in-zone and applies reward or penalty.</summary>
+    public static void Tap(FishingGameState state, FishingInitData data)
+    {
+        if (state.Phase != FishingPhase.Reeling) return;
+        var fish = state.ActiveFish;
+        if (fish == null) return;
+
+        double baseZoneW      = ZoneBaseWidth(fish);
+        double effectiveZoneW = baseZoneW * (1.0 - state.TensionPct * 0.45);
+        bool inZone           = state.ReelCursorPos >= state.ReelZoneStart &&
+                                state.ReelCursorPos <= state.ReelZoneStart + effectiveZoneW;
+
+        if (inZone)
+        {
+            state.ReelProgressPct = Math.Clamp(state.ReelProgressPct + 0.10 + (1 - state.TensionPct) * 0.05, 0, 1);
+            state.TensionPct      = Math.Max(0, state.TensionPct - 0.06);
+            state.TapFlashMs      = 260;
+        }
+        else
+        {
+            state.TensionPct = Math.Clamp(state.TensionPct + 0.14, 0, 1);
+            state.MissTapFlashMs = 220;
+        }
+
+        // Check terminal conditions immediately — the next tick's passive slip runs before
+        // TickReeling's own check and would pull ReelProgressPct back below 1.0 before it fires.
+        if (state.TensionPct >= 1.0)
+        {
+            state.Phase = FishingPhase.LineBroke;
+        }
+        else if (state.ReelProgressPct >= 1.0)
+        {
+            state.Phase         = FishingPhase.Caught;
+            state.CaughtFish    = fish;
+            state.CelebrationMs = 0;
+            TriggerCall(state, data, CallsCaught);
+        }
+    }
+
+    public static void SetHolding(FishingGameState state, bool holding) { } // no-op — replaced by Tap()
 
     public static bool IsTerminal(FishingGameState state) =>
         state.Phase is FishingPhase.LineBroke or FishingPhase.EscapedFish ||
@@ -175,31 +220,39 @@ public static class FishingEngine
         var fish = state.ActiveFish;
         if (fish == null) { state.Phase = FishingPhase.EscapedFish; return; }
 
-        double prevTension = state.TensionPct;
+        // ── Rhythm cursor ─────────────────────────────────────────────────────
+        double cursorSpeed = 0.50 + fish.TensionDrainRate * 5.5;
+        state.ReelCursorPos += state.ReelCursorDir * cursorSpeed * dt;
+        if (state.ReelCursorPos >= 1.0) { state.ReelCursorPos = 1.0; state.ReelCursorDir = -1; }
+        if (state.ReelCursorPos <= 0.0) { state.ReelCursorPos = 0.0; state.ReelCursorDir  =  1; }
 
-        if (state.IsHolding)
+        // Zone shifts to a new random position periodically
+        state.ReelZoneShiftMs -= deltaMs;
+        if (state.ReelZoneShiftMs <= 0)
         {
-            state.ReelProgressPct += fish.ReelRate * dt;
-            state.TensionPct      += (fish.TensionDrainRate + fish.ReelResistance) * dt;
+            double zw = ZoneBaseWidth(fish);
+            state.ReelZoneStart   = _rng.NextDouble() * (1.0 - zw);
+            state.ReelZoneShiftMs = 1800 + _rng.NextDouble() * 2000;
         }
-        else
-        {
-            state.TensionPct      = Math.Max(0, state.TensionPct - TensionRecoveryRate * dt);
-            state.ReelProgressPct = Math.Max(0, state.ReelProgressPct - ReelSlipRate * dt);
-        }
+
+        // Flash countdowns
+        state.TapFlashMs     = Math.Max(0, state.TapFlashMs     - deltaMs);
+        state.MissTapFlashMs = Math.Max(0, state.MissTapFlashMs - deltaMs);
+
+        // ── Passive forces ────────────────────────────────────────────────────
+        double prevTension        = state.TensionPct;
+        state.ReelProgressPct     = Math.Max(0, state.ReelProgressPct - 0.020 * dt);
+        state.TensionPct          = Math.Clamp(state.TensionPct + fish.TensionDrainRate * 0.40 * dt, 0, 1);
 
         // Fish burst
         state.BurstCooldownMs = Math.Max(0, state.BurstCooldownMs - deltaMs);
         if (state.BurstCooldownMs <= 0 && _rng.NextDouble() < fish.BurstChancePerSec * dt)
         {
-            state.TensionPct     += fish.BurstStrength;
+            state.TensionPct      = Math.Clamp(state.TensionPct + fish.BurstStrength, 0, 1);
             state.BurstCooldownMs = BurstCooldownBaseMs;
         }
 
-        state.TensionPct      = Math.Clamp(state.TensionPct, 0, 1.0);
-        state.ReelProgressPct = Math.Clamp(state.ReelProgressPct, 0, 1.0);
-
-        // Companion tension calls (threshold crossings)
+        // ── Companion tension calls ───────────────────────────────────────────
         if (state.TensionCallCooldownMs <= 0)
         {
             if (state.TensionPct >= 0.80 && prevTension < 0.80)
@@ -219,7 +272,6 @@ public static class FishingEngine
             }
         }
 
-        // "Almost there" milestone
         if (!state.AlmostThereCallFired && state.ReelProgressPct >= 0.75)
         {
             TriggerCall(state, data, CallsAlmost);
@@ -240,6 +292,10 @@ public static class FishingEngine
             TriggerCall(state, data, CallsCaught);
         }
     }
+
+    // Width of the sweet zone for a given fish (base, before tension narrowing)
+    private static double ZoneBaseWidth(FishDefinition fish) =>
+        Math.Clamp(0.36 - fish.TensionDrainRate * 0.85, 0.14, 0.36);
 
     private static FishDefinition? PickFish(FishingInitData data)
     {
