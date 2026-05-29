@@ -13,7 +13,7 @@ public static class FishingRenderer
     private const double BobberX    = 310;
     private const double BobberBaseY = WaterY + 14;
     private const double PlayerX    = 18;
-    private const double PlayerY    = WaterY - 52;  // bottom of sprite lands at waterline
+    private const double PlayerY    = WaterY - 48;  // bottom of sprite lands at waterline
 
     public static List<FishDrawCmd> Build(FishingGameState state, FishingInitData data)
     {
@@ -25,6 +25,10 @@ public static class FishingRenderer
         {
             DrawFishApproaching(cmds, state);
             DrawFishingLineToFish(cmds, state);
+        }
+        else if (state.Phase == FishingPhase.Caught)
+        {
+            DrawCaughtLine(cmds, state);
         }
         else
         {
@@ -88,48 +92,66 @@ public static class FishingRenderer
         cmds.Add(FishDrawCmd.Text($"🎣 {tierLabel}", CanvasWidth - 8, 22, "#a0c8e0", "11px monospace", "right"));
     }
 
-    private static void DrawFishingLine(List<FishDrawCmd> cmds, FishingGameState state)
+    /// <summary>Single source of truth for bobber position — handles both cast arc and idle float.</summary>
+    private static (double x, double y) GetBobberPosition(FishingGameState state)
     {
-        double bobberY = BobberBaseY + state.BobberY;
-
         if (state.Phase == FishingPhase.Casting)
         {
-            // Arc cast animation — line sweeps from player to bobber
             double t = Math.Min(state.PhaseElapsedMs / 1100.0, 1.0);
-            double midX = RodTipX + (BobberX - RodTipX) * t;
-            double midY = RodTipY + (bobberY - RodTipY) * t - (60 * Math.Sin(t * Math.PI));
-            cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, midX, midY, "#d0c8a0", 1.5));
+            return (
+                RodTipX + (BobberX - RodTipX) * t,
+                RodTipY + (BobberBaseY - RodTipY) * t - 60 * Math.Sin(t * Math.PI)
+            );
         }
-        else
-        {
-            // Straight line to bobber
-            cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, BobberX, bobberY, "#d0c8a0", 1.5));
-        }
+        return (BobberX, BobberBaseY + state.BobberY);
+    }
+
+    private static void DrawFishingLine(List<FishDrawCmd> cmds, FishingGameState state)
+    {
+        var (bx, by) = GetBobberPosition(state);
+        cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, bx, by, "#d0c8a0", 1.5));
     }
 
     private static void DrawBobber(List<FishDrawCmd> cmds, FishingGameState state)
     {
-        double bobberY = BobberBaseY + state.BobberY;
-        if (state.Phase == FishingPhase.Casting)
-        {
-            double t = Math.Min(state.PhaseElapsedMs / 1100.0, 1.0);
-            bobberY = RodTipY + (BobberBaseY - RodTipY) * t - (60 * Math.Sin(t * Math.PI));
-        }
+        var (bx, by) = GetBobberPosition(state);
 
-        // Bobber stick
-        cmds.Add(FishDrawCmd.Fill(BobberX - 1, bobberY - 9, 2, 9, "#e0d0a0"));
-        // Bobber top (red)
-        cmds.Add(FishDrawCmd.Circle(BobberX, bobberY - 5, 5, "#dd3333"));
-        // Bobber bottom (white, in water)
-        cmds.Add(FishDrawCmd.Circle(BobberX, bobberY + 3, 5, "#eeeeee"));
+        cmds.Add(FishDrawCmd.Fill(bx - 1, by - 9, 2, 9, "#e0d0a0"));
+        cmds.Add(FishDrawCmd.Circle(bx, by - 5, 5, "#dd3333"));
+        cmds.Add(FishDrawCmd.Circle(bx, by + 3, 5, "#eeeeee"));
 
-        // Striking: bobber flash
         if (state.Phase == FishingPhase.Striking)
         {
             bool flash = (state.PhaseElapsedMs / 150) % 2 < 1;
             if (flash)
-                cmds.Add(FishDrawCmd.Circle(BobberX, bobberY - 1, 9, "#ffdd44", 0.7));
+                cmds.Add(FishDrawCmd.Circle(bx, by - 1, 9, "#ffdd44", 0.7));
         }
+    }
+
+    private static void DrawCaughtLine(List<FishDrawCmd> cmds, FishingGameState state)
+    {
+        const double hangX = 112;
+        const double hangY = WaterY - 20;
+
+        cmds.Add(FishDrawCmd.Line(RodTipX, RodTipY, hangX, hangY, "#d0c8a0", 1.5));
+
+        var fish = state.CaughtFish;
+        if (fish == null) return;
+
+        double bodyR = 7 + Math.Clamp(fish.TensionDrainRate * 55, 0, 13);
+
+        // Fish hangs vertically: head near hook, tail below
+        cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 0.45, bodyR * 0.85, "#0e2a3a", 0.88));
+        cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 1.15, bodyR * 0.62, "#0e2a3a", 0.88));
+
+        // Tail spread at bottom
+        double tailY = hangY + bodyR * 1.85;
+        cmds.Add(FishDrawCmd.Line(hangX, tailY, hangX - bodyR * 0.7, tailY + bodyR * 0.65, "#0e2a3a", 2.0));
+        cmds.Add(FishDrawCmd.Line(hangX, tailY, hangX + bodyR * 0.7, tailY + bodyR * 0.65, "#0e2a3a", 2.0));
+
+        // Eye
+        cmds.Add(FishDrawCmd.Circle(hangX - bodyR * 0.22, hangY + bodyR * 0.20, 2.2, "#ffffff", 0.88));
+        cmds.Add(FishDrawCmd.Circle(hangX - bodyR * 0.18, hangY + bodyR * 0.20, 1.0, "#001020", 0.88));
     }
 
     private static void DrawPlayer(List<FishDrawCmd> cmds, FishingInitData data)
