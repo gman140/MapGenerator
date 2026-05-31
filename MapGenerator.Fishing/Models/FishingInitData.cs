@@ -23,6 +23,11 @@ public class FishingInitData
     /// <summary>Multiplier on bite wait time. Values below 1.0 mean faster bites (Light Lure boon).</summary>
     public double WaitTimeMultiplier { get; init; } = 1.0;
 
+    /// <summary>Current consecutive catch count. Bonus applies at 3+.</summary>
+    public int FishingStreak { get; init; }
+
+    public bool StreakBonusActive => FishingStreak >= 3;
+
     /// <summary>Fish pool for this location, filtered to the player's pole tier.</summary>
     public FishDefinition[] FishPool { get; init; } = [];
 

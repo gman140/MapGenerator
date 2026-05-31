@@ -101,12 +101,14 @@ else
                             Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
                             FishLog="Session.Player.FishLog"
+                            WorldRecords="_fishWorldRecords"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
                             EquippedArmorId="@Session.Player.EquippedArmorId"
                             EquippedHatId="@Session.Player.EquippedHatId"
                             OnUse="HandleUseAsync"
                             OnEquip="HandleEquipAsync"
-                            OnUnequip="HandleUnequipAsync" />
+                            OnUnequip="HandleUnequipAsync"
+                            OnJournalTabOpened="LoadFishWorldRecordsAsync" />
             <CraftingPanel @ref="_craftingPanel" Player="Session.Player" OnCraft="HandleCraftAsync" />
             <FeedbackModal Username="@Session.Player.Username" IsAdmin="Session.Player.IsAdmin" />
             @if (!Session.Player.IsInDungeon)
@@ -332,6 +334,7 @@ OnDance="HandleDanceAsync"
     private bool _showMobileMore;
     private CraftingPanel? _craftingPanel;
     private InventoryModal? _inventoryModal;
+    private Dictionary<string, (string PlayerName, double WeightKg)> _fishWorldRecords = new();
     private FeatureChallengeConfig? _currentChallenge =>
         FeatureProvider.GetById(MapCache.GetCachedTile(Session.Player!.Q, Session.Player.R)?.FeatureId)?.Challenge;
 
@@ -466,7 +469,13 @@ OnDance="HandleDanceAsync"
         }
         if (query.TryGetValue("ff", out _) && query.TryGetValue("fc", out var fishId))
         {
-            await HandleFishReturnAsync(fishId.ToString());
+            double w = query.TryGetValue("fw", out var fw) && double.TryParse(fw.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var wp) ? wp : 0;
+            await HandleFishReturnAsync(fishId.ToString(), w);
+            Nav.NavigateTo("/game", replace: true);
+        }
+        if (query.TryGetValue("fq", out _))
+        {
+            await Session.ResetFishingStreakAsync();
             Nav.NavigateTo("/game", replace: true);
         }
 
@@ -487,9 +496,18 @@ OnDance="HandleDanceAsync"
         }
         if (query.TryGetValue("ff", out _) && query.TryGetValue("fc", out var fishId))
         {
+            double w = query.TryGetValue("fw", out var fw) && double.TryParse(fw.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var wp) ? wp : 0;
             _ = InvokeAsync(async () =>
             {
-                await HandleFishReturnAsync(fishId.ToString());
+                await HandleFishReturnAsync(fishId.ToString(), w);
+                Nav.NavigateTo("/game", replace: true);
+            });
+        }
+        if (query.TryGetValue("fq", out _))
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await Session.ResetFishingStreakAsync();
                 Nav.NavigateTo("/game", replace: true);
             });
         }
@@ -790,32 +808,47 @@ OnDance="HandleDanceAsync"
         var companion = Session.Companion;
         var initData = new FishingInitData
         {
-            LocationLabel         = config.LocationLabel,
-            BackgroundColor       = config.BackgroundColor,
-            WaterColor            = config.WaterColor,
-            WaterSurfaceColor     = config.WaterSurfaceColor,
-            PoleTier              = poleTier,
+            LocationLabel          = config.LocationLabel,
+            BackgroundColor        = config.BackgroundColor,
+            WaterColor             = config.WaterColor,
+            WaterSurfaceColor      = config.WaterSurfaceColor,
+            PoleTier               = poleTier,
             StrikeWindowMultiplier = strikeMultiplier,
-            RarityMultiplier      = rarityMultiplier,
-            WaitTimeMultiplier    = waitMultiplier,
-            FishPool              = [.. fishPool],
-            PlayerSprite          = Session.Player.SpritePixels,
-            CompanionSprite       = companion?.SpritePixels ?? [],
-            CompanionName         = companion?.Nickname ?? "",
+            RarityMultiplier       = rarityMultiplier,
+            WaitTimeMultiplier     = waitMultiplier,
+            FishingStreak          = Session.Player.FishingStreak,
+            FishPool               = [.. fishPool],
+            PlayerSprite           = Session.Player.SpritePixels,
+            CompanionSprite        = companion?.SpritePixels ?? [],
+            CompanionName          = companion?.Nickname ?? "",
         };
 
         var key = FishingSession.Store(initData);
         Nav.NavigateTo($"/fishing?key={key}");
     }
 
-    private async Task HandleFishReturnAsync(string fishId)
+    private async Task HandleFishReturnAsync(string fishId, double weightKg = 0)
     {
         if (string.IsNullOrEmpty(fishId) || Session.Player == null) return;
         fishId = Uri.UnescapeDataString(fishId);
         var fishDef = FishProvider.GetById(fishId);
         if (fishDef == null) return;
-        await Session.RecordFishCatchAsync(fishId);
-        ShowToast($"You caught a {fishDef.Name}!");
+        bool newRecord = await Session.RecordFishCatchAsync(fishId, weightKg);
+        string weightStr = weightKg > 0 ? $" ({FormatFishWeight(weightKg)})" : "";
+        ShowToast(newRecord && weightKg > 0
+            ? $"🏆 New personal best! {fishDef.Name}{weightStr}"
+            : $"You caught a {fishDef.Name}!{weightStr}");
+        if (Session.Player.FishingStreak == 3)
+            ShowToast("🔥 3-catch streak! Fishing bonus active.");
+    }
+
+    private static string FormatFishWeight(double kg) =>
+        kg < 0.1 ? $"{kg * 1000:F0} g" : $"{kg:F2} kg";
+
+    private async Task LoadFishWorldRecordsAsync()
+    {
+        _fishWorldRecords = await Session.GetFishWorldRecordsAsync();
+        StateHasChanged();
     }
 
     private async Task HandleChallengeReturnAsync(string rewardsCsv)

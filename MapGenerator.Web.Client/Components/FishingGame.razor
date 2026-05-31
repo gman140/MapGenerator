@@ -10,7 +10,13 @@
 <div class="runner-wrapper">
     @if (!_showResult)
     {
-        <div class="runner-label">@InitData.LocationLabel</div>
+        <div class="runner-label">
+            @InitData.LocationLabel
+            @if (InitData.StreakBonusActive)
+            {
+                <span class="fishing-streak-badge">🔥 @InitData.FishingStreak-catch streak bonus</span>
+            }
+        </div>
         <canvas id="fishing-canvas" class="runner-canvas"
                 width="@((int)FishingRenderer.CanvasWidth)"
                 height="@((int)FishingRenderer.CanvasHeight)"></canvas>
@@ -33,7 +39,13 @@
     {
         <div class="runner-result runner-result-win">
             <div class="runner-result-title">🐟 Fish Caught!</div>
-            <p class="runner-result-sub">You reeled in a <strong>@_result.CaughtFishName</strong>.</p>
+            <p class="runner-result-sub">
+                You reeled in a <strong>@_result.CaughtFishName</strong>.
+                @if (_result.CaughtWeightKg > 0)
+                {
+                    <span> (@FormatWeight(_result.CaughtWeightKg))</span>
+                }
+            </p>
             <button class="runner-done-btn" @onclick="Finish">Keep it</button>
         </div>
     }
@@ -164,10 +176,18 @@
     private void Finish()
     {
         if (_result?.Success == true)
-            Nav.NavigateTo($"/game?ff=1&fc={Uri.EscapeDataString(_result.CaughtFishId!)}", replace: false);
+        {
+            string weight = _result.CaughtWeightKg.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            Nav.NavigateTo($"/game?ff=1&fc={Uri.EscapeDataString(_result.CaughtFishId!)}&fw={weight}", replace: false);
+        }
         else
-            Nav.NavigateTo("/game", replace: false);
+        {
+            Nav.NavigateTo("/game?fq=1", replace: false);
+        }
     }
+
+    private static string FormatWeight(double kg) =>
+        kg < 0.1 ? $"{kg * 1000:F0} g" : $"{kg:F2} kg";
 
     public async ValueTask DisposeAsync()
     {

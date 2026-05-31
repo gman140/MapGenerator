@@ -40,6 +40,7 @@ public class FishingGameState
 
     // Session result
     public FishDefinition? CaughtFish { get; set; }
+    public double CaughtWeightKg { get; set; }
 
     public double LastTimestamp { get; set; } = -1;
 

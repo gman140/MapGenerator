@@ -137,9 +137,10 @@ public static class FishingEngine
         }
         else if (state.ReelProgressPct >= 1.0)
         {
-            state.Phase         = FishingPhase.Caught;
-            state.CaughtFish    = fish;
-            state.CelebrationMs = 0;
+            state.Phase          = FishingPhase.Caught;
+            state.CaughtFish     = fish;
+            state.CaughtWeightKg = RollCatchWeight(fish);
+            state.CelebrationMs  = 0;
             TriggerCall(state, data, CallsCaught);
         }
     }
@@ -157,6 +158,7 @@ public static class FishingEngine
             {
                 CaughtFishId   = state.CaughtFish.Id,
                 CaughtFishName = state.CaughtFish.Name,
+                CaughtWeightKg = state.CaughtWeightKg,
             };
         return new FishingResult();
     }
@@ -187,7 +189,8 @@ public static class FishingEngine
         state.Phase             = FishingPhase.Striking;
         state.PhaseElapsedMs    = 0;
         double window           = state.ActiveFish?.StrikeWindowMs ?? 700;
-        state.StrikeRemainingMs = window * data.StrikeWindowMultiplier;
+        double streakBonus      = data.StreakBonusActive ? 1.25 : 1.0;
+        state.StrikeRemainingMs = window * data.StrikeWindowMultiplier * streakBonus;
         TriggerCall(state, data, CallsStriking);
     }
 
@@ -252,8 +255,9 @@ public static class FishingEngine
 
         // ── Passive forces ────────────────────────────────────────────────────
         double prevTension        = state.TensionPct;
+        double tensionMult        = data.StreakBonusActive ? 0.70 : 1.0;
         state.ReelProgressPct     = Math.Max(0, state.ReelProgressPct - 0.020 * dt);
-        state.TensionPct          = Math.Clamp(state.TensionPct + fish.TensionDrainRate * 0.40 * dt, 0, 1);
+        state.TensionPct          = Math.Clamp(state.TensionPct + fish.TensionDrainRate * 0.40 * tensionMult * dt, 0, 1);
 
         // Fish burst
         state.BurstCooldownMs = Math.Max(0, state.BurstCooldownMs - deltaMs);
@@ -297,9 +301,10 @@ public static class FishingEngine
         }
         else if (state.ReelProgressPct >= 1.0)
         {
-            state.Phase         = FishingPhase.Caught;
-            state.CaughtFish    = fish;
-            state.CelebrationMs = 0;
+            state.Phase          = FishingPhase.Caught;
+            state.CaughtFish     = fish;
+            state.CaughtWeightKg = RollCatchWeight(fish);
+            state.CelebrationMs  = 0;
             TriggerCall(state, data, CallsCaught);
         }
     }
@@ -331,5 +336,44 @@ public static class FishingEngine
         if (string.IsNullOrEmpty(data.CompanionName)) return;
         state.CompanionCallText       = options[_rng.Next(options.Length)];
         state.CompanionCallRemainingMs = CallDurationMs;
+    }
+
+    private static double RollCatchWeight(FishDefinition fish)
+    {
+        // Explicit overrides for creatures whose size doesn't follow difficulty stats
+        (double min, double max) = fish.Id switch
+        {
+            "Seahorse"                          => (0.02, 0.09),
+            "ShoreCrab" or "FreshwaterCrab"
+                         or "MarshCrab"         => (0.05, 0.35),
+            "ThermophilicShrimp" or "IceShrimp" => (0.01, 0.04),
+            "PolarStar"                         => (0.15, 0.80),
+            "BioluminescentJellyfish"            => (0.40, 2.50),
+            "RiverScale" or "DeepwaterPearl"
+                         or "CoralChip"         => (0.01, 0.05),
+            "AncientLure" or "GlacierShard"     => (0.02, 0.08),
+            "Catfish"                           => (1.50, 9.00),
+            "GiantCarp"                         => (8.00, 35.0),
+            "Salmon"                            => (2.00, 12.0),
+            "MirrorCarp"                        => (4.00, 22.0),
+            "MorayEel" or "AbyssalEel"
+                        or "FrozenEel"          => (2.00, 14.0),
+            "GiantSquid"                        => (20.0, 100.0),
+            "Moonfish"                          => (8.00, 30.0),
+            "LegendaryMoonfish"                 => (25.0, 90.0),
+            "AncientFish"                       => (18.0, 75.0),
+            _                                   => (0.00, 0.00),
+        };
+
+        if (min == 0)
+        {
+            // Auto-compute from fight difficulty and rarity
+            double difficulty = fish.TensionDrainRate * 45 + fish.ReelResistance * 30;
+            double rarityMult = 1.0 / Math.Sqrt(fish.RarityWeight + 0.05);
+            min = Math.Max(0.10, difficulty * rarityMult * 0.12);
+            max = min * (2.0 + rarityMult * 0.8);
+        }
+
+        return min + _rng.NextDouble() * (max - min);
     }
 }

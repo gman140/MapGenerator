@@ -52,7 +52,7 @@
             <div class="inv-tabs">
                 <button class="inv-tab @(_tab == 0 ? "active" : "")" @onclick="() => _tab = 0">Items</button>
                 <button class="inv-tab @(_tab == 1 ? "active" : "")" @onclick="() => _tab = 1">Equipment</button>
-                <button class="inv-tab @(_tab == 2 ? "active" : "")" @onclick="() => _tab = 2">
+                <button class="inv-tab @(_tab == 2 ? "active" : "")" @onclick="async () => { _tab = 2; await OnJournalTabOpened.InvokeAsync(); }">
                     Journal@(FishLog.Count > 0 ? $" ({FishLog.Count})" : "")
                 </button>
             </div>
@@ -222,6 +222,14 @@
                                         <span class="inv-modal-qty">×@entry.TotalCaught caught</span>
                                     </div>
                                     <p class="inv-modal-desc">First caught @entry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
+                                    @if (entry.PersonalBestWeightKg > 0)
+                                    {
+                                        <p class="inv-modal-buff">Personal best: @FormatWeight(entry.PersonalBestWeightKg)</p>
+                                    }
+                                    @if (WorldRecords.TryGetValue(id, out var wr) && wr.WeightKg > 0)
+                                    {
+                                        <p class="inv-modal-buff fish-world-record">🏆 Record: @wr.PlayerName — @FormatWeight(wr.WeightKg)</p>
+                                    }
                                 </div>
                             }
                         </div>
@@ -253,17 +261,22 @@
     [Parameter, EditorRequired] public Dictionary<string, int> Inventory { get; set; } = null!;
     [Parameter] public Dictionary<string, int> CraftedItems { get; set; } = new();
     [Parameter] public Dictionary<string, FishLogEntry> FishLog { get; set; } = new();
+    [Parameter] public Dictionary<string, (string PlayerName, double WeightKg)> WorldRecords { get; set; } = new();
     [Parameter] public string? EquippedWeaponId { get; set; }
     [Parameter] public string? EquippedArmorId { get; set; }
     [Parameter] public string? EquippedHatId { get; set; }
     [Parameter] public EventCallback<string> OnUse { get; set; }
     [Parameter] public EventCallback<string> OnEquip { get; set; }
     [Parameter] public EventCallback<string> OnUnequip { get; set; }
+    [Parameter] public EventCallback OnJournalTabOpened { get; set; }
 
     private bool _open;
     private int _tab;
 
     public void Open() { _open = true; StateHasChanged(); }
+
+    private static string FormatWeight(double kg) =>
+        kg < 0.1 ? $"{kg * 1000:F0} g" : $"{kg:F2} kg";
 
     private RenderFragment RenderEquipSlot(string slot, string label, string? equippedId, List<KeyValuePair<string, int>> available) => __builder =>
     {

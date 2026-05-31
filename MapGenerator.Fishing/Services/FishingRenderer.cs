@@ -142,19 +142,28 @@ public static class FishingRenderer
         if (fish == null) return;
 
         double bodyR = 7 + Math.Clamp(fish.TensionDrainRate * 55, 0, 13);
+        var (color, glowColor, hasGlow, isLegendary) = GetRarityStyle(fish);
+
+        if (hasGlow)
+        {
+            double pulse = isLegendary
+                ? 0.45 + 0.20 * Math.Sin(state.CelebrationMs * 0.005)
+                : 0.25;
+            cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 0.45, bodyR * (isLegendary ? 2.6 : 1.9), glowColor, pulse));
+        }
 
         // Fish hangs vertically: head near hook, tail below
-        cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 0.45, bodyR * 0.85, "#0e2a3a", 0.88));
-        cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 1.15, bodyR * 0.62, "#0e2a3a", 0.88));
+        cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 0.45, bodyR * 0.85, color, 0.90));
+        cmds.Add(FishDrawCmd.Circle(hangX, hangY + bodyR * 1.15, bodyR * 0.62, color, 0.90));
 
         // Tail spread at bottom
         double tailY = hangY + bodyR * 1.85;
-        cmds.Add(FishDrawCmd.Line(hangX, tailY, hangX - bodyR * 0.7, tailY + bodyR * 0.65, "#0e2a3a", 2.0));
-        cmds.Add(FishDrawCmd.Line(hangX, tailY, hangX + bodyR * 0.7, tailY + bodyR * 0.65, "#0e2a3a", 2.0));
+        cmds.Add(FishDrawCmd.Line(hangX, tailY, hangX - bodyR * 0.7, tailY + bodyR * 0.65, color, 2.0));
+        cmds.Add(FishDrawCmd.Line(hangX, tailY, hangX + bodyR * 0.7, tailY + bodyR * 0.65, color, 2.0));
 
         // Eye
-        cmds.Add(FishDrawCmd.Circle(hangX - bodyR * 0.22, hangY + bodyR * 0.20, 2.2, "#ffffff", 0.88));
-        cmds.Add(FishDrawCmd.Circle(hangX - bodyR * 0.18, hangY + bodyR * 0.20, 1.0, "#001020", 0.88));
+        cmds.Add(FishDrawCmd.Circle(hangX - bodyR * 0.22, hangY + bodyR * 0.20, 2.2, "#ffffff", 0.90));
+        cmds.Add(FishDrawCmd.Circle(hangX - bodyR * 0.18, hangY + bodyR * 0.20, 1.0, "#001020", 0.90));
     }
 
     private static void DrawPlayer(List<FishDrawCmd> cmds, FishingInitData data)
@@ -338,7 +347,8 @@ public static class FishingRenderer
         var (fx, fy) = FishPosition(state);
         double bodyR = 7 + Math.Clamp(fish.TensionDrainRate * 55, 0, 13);
         double alpha = 0.78 + state.ReelDisplayProgress * 0.20;
-        string color = state.TensionPct > 0.70 ? "#3a1500" : "#0e2a3a";
+        var (color, glowColor, hasGlow, isLegendary) = GetRarityStyle(fish);
+        if (state.TensionPct > 0.70) color = "#3a1500"; // high-tension override
 
         // ── Swimming animation ────────────────────────────────────────────────
         double t = state.BobberAnimMs;
@@ -364,6 +374,17 @@ public static class FishingRenderer
         // ── Body ──────────────────────────────────────────────────────────────
         var (b1x, b1y) = R(-bodyR * 0.20, 0);
         var (b2x, b2y) = R( bodyR * 0.40, 0);
+
+        // Rarity glow drawn behind body
+        if (hasGlow)
+        {
+            double glowPulse = isLegendary
+                ? 0.38 + 0.22 * Math.Sin(t * 0.006)
+                : 0.18 + 0.07 * Math.Sin(t * 0.004);
+            double glowR = bodyR * (isLegendary ? 2.4 : 1.7);
+            cmds.Add(FishDrawCmd.Circle(b1x, b1y, glowR, glowColor, glowPulse));
+        }
+
         cmds.Add(FishDrawCmd.Circle(b1x, b1y, bodyR,        color, alpha));
         cmds.Add(FishDrawCmd.Circle(b2x, b2y, bodyR * 0.65, color, alpha));
 
@@ -406,11 +427,14 @@ public static class FishingRenderer
         double pulse  = Math.Sin(state.BobberAnimMs * 0.004);
         double alpha  = 0.18 + pulse * 0.07;
 
-        cmds.Add(FishDrawCmd.Circle(BobberX + bodyR * 0.3, fishY, bodyR,        "#0a1a28", alpha));
-        cmds.Add(FishDrawCmd.Circle(BobberX + bodyR * 0.9, fishY, bodyR * 0.65, "#0a1a28", alpha));
+        var (_, glowColor, hasGlow, _) = GetRarityStyle(fish);
+        string hintColor = hasGlow ? BlendTowardDark(glowColor) : "#0a1a28";
+
+        cmds.Add(FishDrawCmd.Circle(BobberX + bodyR * 0.3, fishY, bodyR,        hintColor, alpha));
+        cmds.Add(FishDrawCmd.Circle(BobberX + bodyR * 0.9, fishY, bodyR * 0.65, hintColor, alpha));
         double tx = BobberX + bodyR * 1.65;
-        cmds.Add(FishDrawCmd.Line(tx, fishY, tx + bodyR * 0.7, fishY - bodyR * 0.75, "#0a1a28", 1.5));
-        cmds.Add(FishDrawCmd.Line(tx, fishY, tx + bodyR * 0.7, fishY + bodyR * 0.75, "#0a1a28", 1.5));
+        cmds.Add(FishDrawCmd.Line(tx, fishY, tx + bodyR * 0.7, fishY - bodyR * 0.75, hintColor, 1.5));
+        cmds.Add(FishDrawCmd.Line(tx, fishY, tx + bodyR * 0.7, fishY + bodyR * 0.75, hintColor, 1.5));
     }
 
     // ── Shared drawing helpers ────────────────────────────────────────────────
@@ -459,5 +483,27 @@ public static class FishingRenderer
             cmds.Add(FishDrawCmd.Line(px, py, nx, ny, data.WaterSurfaceColor, 6.0));
             px = nx; py = ny;
         }
+    }
+
+    // ── Rarity helpers ────────────────────────────────────────────────────────
+
+    // Returns (bodyColor, glowColor, hasGlow, isLegendary)
+    private static (string, string, bool, bool) GetRarityStyle(FishDefinition fish)
+    {
+        double rw = fish.RarityWeight;
+        if (rw < 0.25) return ("#1a0824", "#cc88ff", true,  true);   // legendary — purple
+        if (rw < 0.80) return ("#1e1400", "#ffcc44", true,  false);  // rare      — gold
+        if (rw < 2.00) return ("#0a2222", "#44ddaa", true,  false);  // uncommon  — teal
+        return                ("#0e2a3a", "",         false, false);  // common
+    }
+
+    // Darkens a hex color for use as the depth-hint silhouette tint
+    private static string BlendTowardDark(string hex)
+    {
+        if (hex.Length != 7 || hex[0] != '#') return "#0a1a28";
+        int r = Convert.ToInt32(hex[1..3], 16) / 4;
+        int g = Convert.ToInt32(hex[3..5], 16) / 4;
+        int b = Convert.ToInt32(hex[5..7], 16) / 4;
+        return $"#{r:x2}{g:x2}{b:x2}";
     }
 }

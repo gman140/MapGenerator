@@ -709,6 +709,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .admin-combat-btn:hover:not(:disabled) { background: rgba(110,30,30,.8) !important; }
 
 .inv-modal-buff { font-size: .73rem; color: #7ab0d4; font-style: italic; margin: 0; }
+.fish-world-record { color: #d4a840; font-style: normal; }
 
 /* ── Inventory Modal — tabs ──────────────────────────────────────────────── */
 .inv-tabs { display: flex; gap: .3rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; margin-bottom: .4rem; }

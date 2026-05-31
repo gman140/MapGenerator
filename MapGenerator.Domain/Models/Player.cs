@@ -70,4 +70,7 @@ public class Player
 
     // Fishing journal — keyed by fish/chain-material ID
     public Dictionary<string, FishLogEntry> FishLog { get; set; } = new();
+
+    // Consecutive successful catches; resets on line break or escaped fish
+    public int FishingStreak { get; set; }
 }

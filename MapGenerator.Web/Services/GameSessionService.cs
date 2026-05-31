@@ -1087,18 +1087,49 @@ public class GameSessionService : IAsyncDisposable
         await _playerRepo.UpdateAsync(Player!);
     }
 
-    public async Task RecordFishCatchAsync(string fishId)
+    public async Task<bool> RecordFishCatchAsync(string fishId, double weightKg)
     {
         Player!.Inventory[fishId] = Player.Inventory.GetValueOrDefault(fishId) + 1;
+        bool newRecord = false;
         if (Player.FishLog.TryGetValue(fishId, out var entry))
         {
             entry.TotalCaught++;
+            if (weightKg > entry.PersonalBestWeightKg)
+            {
+                entry.PersonalBestWeightKg = weightKg;
+                newRecord = true;
+            }
         }
         else
         {
-            Player.FishLog[fishId] = new() { FirstCaughtAt = DateTime.UtcNow, TotalCaught = 1 };
+            Player.FishLog[fishId] = new() { FirstCaughtAt = DateTime.UtcNow, TotalCaught = 1, PersonalBestWeightKg = weightKg };
+            newRecord = true;
         }
+        Player!.FishingStreak++;
         await _playerRepo.UpdateAsync(Player!);
+        return newRecord;
+    }
+
+    public async Task ResetFishingStreakAsync()
+    {
+        if (Player == null || Player.FishingStreak == 0) return;
+        Player.FishingStreak = 0;
+        await _playerRepo.UpdateAsync(Player);
+    }
+
+    public async Task<Dictionary<string, (string PlayerName, double WeightKg)>> GetFishWorldRecordsAsync()
+    {
+        var players = await _playerRepo.GetAllAsync();
+        var result  = new Dictionary<string, (string PlayerName, double WeightKg)>();
+        foreach (var player in players)
+        {
+            foreach (var (fishId, entry) in player.FishLog)
+            {
+                if (!result.TryGetValue(fishId, out var current) || entry.PersonalBestWeightKg > current.WeightKg)
+                    result[fishId] = (player.Username, entry.PersonalBestWeightKg);
+            }
+        }
+        return result;
     }
 
     // ── Dispose ───────────────────────────────────────────────────────────────

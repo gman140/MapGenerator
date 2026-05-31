@@ -37,10 +37,11 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
-            Id          = "ReinforcedRod",
-            Name        = "Reinforced Rod",
-            Description = "A fishing rod rebuilt with iridescent river scale. The line is stronger, the hook-set window wider. Unlocks mountain and reef fishing.",
-            Ingredients =
+            Id               = "ReinforcedRod",
+            Name             = "Reinforced Rod",
+            Description      = "A fishing rod rebuilt with iridescent river scale. The line is stronger, the hook-set window wider. Unlocks mountain and reef fishing.",
+            RequiresWorkshop = true,
+            Ingredients      =
             [
                 new() { ResourceId = "FishingRod",  Quantity = 1 },
                 new() { ResourceId = "RiverScale",  Quantity = 1 },
@@ -50,10 +51,11 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
-            Id          = "LightLure",
-            Name        = "Light Lure",
-            Description = "A rod fitted with a pale blue lure carved from a deepwater pearl. Fish bite faster. Unlocks kelp forest and hot spring fishing.",
-            Ingredients =
+            Id               = "LightLure",
+            Name             = "Light Lure",
+            Description      = "A rod fitted with a pale blue lure carved from a deepwater pearl. Fish bite faster. Unlocks kelp forest and hot spring fishing.",
+            RequiresWorkshop = true,
+            Ingredients      =
             [
                 new() { ResourceId = "ReinforcedRod",   Quantity = 1 },
                 new() { ResourceId = "DeepwaterPearl",  Quantity = 1 },
@@ -63,10 +65,11 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
-            Id          = "LuckyRod",
-            Name        = "Lucky Rod",
-            Description = "A light lure enhanced with a coral chip that hums faintly. Rare fish appear more often. Unlocks bioluminescent deep fishing.",
-            Ingredients =
+            Id               = "LuckyRod",
+            Name             = "Lucky Rod",
+            Description      = "A light lure enhanced with a coral chip that hums faintly. Rare fish appear more often. Unlocks bioluminescent deep fishing.",
+            RequiresWorkshop = true,
+            Ingredients      =
             [
                 new() { ResourceId = "LightLure",   Quantity = 1 },
                 new() { ResourceId = "CoralChip",   Quantity = 1 },
@@ -76,10 +79,11 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
-            Id          = "IceAuger",
-            Name        = "Ice Auger",
-            Description = "A lucky rod fitted with an ancient lure that cuts through ice and draws creatures from frozen depths. Unlocks glacier and frozen shrine fishing.",
-            Ingredients =
+            Id               = "IceAuger",
+            Name             = "Ice Auger",
+            Description      = "A lucky rod fitted with an ancient lure that cuts through ice and draws creatures from frozen depths. Unlocks glacier and frozen shrine fishing.",
+            RequiresWorkshop = true,
+            Ingredients      =
             [
                 new() { ResourceId = "LuckyRod",    Quantity = 1 },
                 new() { ResourceId = "AncientLure", Quantity = 1 },
