@@ -1173,6 +1173,39 @@ public class GameSessionService : IAsyncDisposable
         return newRecord;
     }
 
+    public async Task<bool> RecordFishReleaseAsync(string fishId, double weightKg)
+    {
+        bool newRecord = false;
+        if (Player!.FishLog.TryGetValue(fishId, out var entry))
+        {
+            entry.TotalCaught++;
+            if (weightKg > entry.PersonalBestWeightKg)
+            {
+                entry.PersonalBestWeightKg = weightKg;
+                newRecord = true;
+            }
+        }
+        else
+        {
+            Player.FishLog[fishId] = new() { FirstCaughtAt = DateTime.UtcNow, TotalCaught = 1, PersonalBestWeightKg = weightKg };
+            newRecord = true;
+        }
+        Player.FishingStreak++;
+
+        BuffService.ConsumeFishingRarityCharge(Player!);
+        BuffService.ConsumeFishingStrikeCharge(Player!);
+
+        var fishDef = _fishDefProvider.GetById(fishId);
+        if (fishDef != null)
+        {
+            int baseXp = FishingRankService.GetCatchXp(fishDef.RarityWeight, fishDef.IsChainMaterial);
+            Player.FishingRankXp += (int)Math.Ceiling(baseXp * 1.5);
+        }
+
+        await _playerRepo.UpdateAsync(Player!);
+        return newRecord;
+    }
+
     private static readonly Random _rng = new();
     private static bool RollChance(double probability) => _rng.NextDouble() < probability;
 

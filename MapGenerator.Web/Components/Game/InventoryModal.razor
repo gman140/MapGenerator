@@ -6,6 +6,7 @@
 @inject IItemRegistry Items
 @inject ICraftingRecipeProvider RecipeProvider
 @inject IFishDefinitionProvider FishProvider
+@inject IFeatureDefinitionProvider FeatureProvider
 
 @{
     int totalItems = Inventory.Where(kv => kv.Value > 0).Sum(kv => kv.Value)
@@ -41,6 +42,12 @@
     var armorItems  = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Armor").OrderBy(kv => kv.Key).ToList();
     var hatItems    = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Hat").OrderBy(kv => kv.Key).ToList();
     var lureItems   = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Lure").OrderBy(kv => kv.Key).ToList();
+
+    var allFishDefs  = FishProvider.All.Where(f => !f.IsChainMaterial).OrderBy(f => FishCategoryOrder(f.FishCategory)).ThenBy(f => f.Name).ToList();
+    var allChainDefs = FishProvider.All.Where(f => f.IsChainMaterial).OrderBy(f => f.Name).ToList();
+    int caughtFishCount  = allFishDefs.Count(f => FishLog.ContainsKey(f.Id));
+    int caughtChainCount = allChainDefs.Count(f => FishLog.ContainsKey(f.Id));
+    var locationMap  = BuildLocationMap();
 }
 @if (_open)
 {
@@ -232,65 +239,78 @@
                     </div>
                 </div>
 
-                @if (FishLog.Count == 0)
-                {
-                    <p class="inventory-empty">No fish caught yet. Find a fishing spot to get started.</p>
-                }
-                else
-                {
-                    var fishEntries = FishLog
-                        .OrderByDescending(kv => kv.Value.FirstCaughtAt)
-                        .ToList();
-                    var regularFish   = fishEntries.Where(kv => FishProvider.GetById(kv.Key) is { IsChainMaterial: false }).ToList();
-                    var chainMaterials = fishEntries.Where(kv => FishProvider.GetById(kv.Key) is { IsChainMaterial: true }).ToList();
-
-                    @if (regularFish.Count > 0)
+                <p class="inventory-section-label">Fish Caught — @caughtFishCount / @allFishDefs.Count species</p>
+                <div class="inv-modal-list">
+                    @foreach (var def in allFishDefs)
                     {
-                        <p class="inventory-section-label">Fish Caught — @regularFish.Count species</p>
-                        <div class="inv-modal-list">
-                            @foreach (var (id, entry) in regularFish)
+                        bool caught = FishLog.TryGetValue(def.Id, out var fishEntry);
+                        bool isRare = def.RarityWeight < 0.5;
+                        locationMap.TryGetValue(def.Id, out var fishLocs);
+                        <div class="inv-modal-item @(!caught ? "fish-journal-unknown" : "")">
+                            <div class="inv-modal-item-header">
+                                <span class="inv-modal-name">@(caught ? (isRare ? "★ " : "") + def.Name : "???")</span>
+                                @if (!string.IsNullOrEmpty(def.FishCategory))
+                                {
+                                    <span class="inv-modal-buff fish-category-tag fish-category-@def.FishCategory.ToLower()">@def.FishCategory</span>
+                                }
+                                @if (caught && fishEntry != null)
+                                {
+                                    <span class="inv-modal-qty">×@fishEntry.TotalCaught caught</span>
+                                }
+                            </div>
+                            @if (caught)
                             {
-                                var def = FishProvider.GetById(id)!;
-                                bool isRare = def.RarityWeight < 0.5;
-                                <div class="inv-modal-item">
-                                    <div class="inv-modal-item-header">
-                                        <span class="inv-modal-name">@(isRare ? "★ " : "")@def.Name</span>
-                                        @if (!string.IsNullOrEmpty(def.FishCategory))
-                                        {
-                                            <span class="inv-modal-buff fish-category-tag fish-category-@def.FishCategory.ToLower()">@def.FishCategory</span>
-                                        }
-                                        <span class="inv-modal-qty">×@entry.TotalCaught caught</span>
-                                    </div>
-                                    <p class="inv-modal-desc">First caught @entry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
-                                    @if (entry.PersonalBestWeightKg > 0)
+                                @if (!string.IsNullOrEmpty(def.Description))
+                                {
+                                    <p class="inv-modal-desc">@def.Description</p>
+                                }
+                                @if (fishEntry != null)
+                                {
+                                    <p class="inv-modal-desc">First caught @fishEntry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
+                                    @if (fishEntry.PersonalBestWeightKg > 0)
                                     {
-                                        <p class="inv-modal-buff">Personal best: @FormatWeight(entry.PersonalBestWeightKg)</p>
+                                        <p class="inv-modal-buff">Personal best: @FormatWeight(fishEntry.PersonalBestWeightKg)</p>
                                     }
-                                    @if (WorldRecords.TryGetValue(id, out var wr) && wr.WeightKg > 0)
+                                    @if (WorldRecords.TryGetValue(def.Id, out var wr) && wr.WeightKg > 0)
                                     {
                                         <p class="inv-modal-buff fish-world-record">🏆 Record: @wr.PlayerName — @FormatWeight(wr.WeightKg)</p>
                                     }
-                                </div>
+                                }
                             }
-                        </div>
-                    }
-                    @if (chainMaterials.Count > 0)
-                    {
-                        <p class="inventory-section-label">Rare Materials</p>
-                        <div class="inv-modal-list">
-                            @foreach (var (id, entry) in chainMaterials)
+                            @if (fishLocs != null && fishLocs.Count > 0)
                             {
-                                var def = FishProvider.GetById(id)!;
-                                <div class="inv-modal-item">
-                                    <div class="inv-modal-item-header">
-                                        <span class="inv-modal-name">@def.Name</span>
-                                        <span class="inv-modal-qty">×@entry.TotalCaught found</span>
-                                    </div>
-                                    <p class="inv-modal-desc">First found @entry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
-                                </div>
+                                <p class="fish-journal-location">📍 @string.Join(", ", fishLocs)</p>
                             }
                         </div>
                     }
+                </div>
+                @if (allChainDefs.Count > 0)
+                {
+                    <p class="inventory-section-label">Rare Materials — @caughtChainCount / @allChainDefs.Count found</p>
+                    <div class="inv-modal-list">
+                        @foreach (var def in allChainDefs)
+                        {
+                            bool found = FishLog.TryGetValue(def.Id, out var chainEntry);
+                            locationMap.TryGetValue(def.Id, out var chainLocs);
+                            <div class="inv-modal-item @(!found ? "fish-journal-unknown" : "")">
+                                <div class="inv-modal-item-header">
+                                    <span class="inv-modal-name">@(found ? def.Name : "???")</span>
+                                    @if (found && chainEntry != null)
+                                    {
+                                        <span class="inv-modal-qty">×@chainEntry.TotalCaught found</span>
+                                    }
+                                </div>
+                                @if (found && chainEntry != null)
+                                {
+                                    <p class="inv-modal-desc">First found @chainEntry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
+                                }
+                                @if (chainLocs != null && chainLocs.Count > 0)
+                                {
+                                    <p class="fish-journal-location">📍 @string.Join(", ", chainLocs)</p>
+                                }
+                            </div>
+                        }
+                    </div>
                 }
             }
         </div>
@@ -324,6 +344,37 @@
         : $"{FishingRankService.GetXpInRank(FishingRankXp)} / {FishingRankService.GetXpRangeForRank(FishingRankXp)} XP";
 
     public void Open() { _open = true; StateHasChanged(); }
+
+    private static int FishCategoryOrder(string? cat) => cat switch
+    {
+        "Freshwater" => 0,
+        "Saltwater"  => 1,
+        "Cold"       => 2,
+        "Deep"       => 3,
+        _            => 4,
+    };
+
+    private Dictionary<string, List<string>>? _locationMap;
+    private Dictionary<string, List<string>> BuildLocationMap()
+    {
+        if (_locationMap != null) return _locationMap;
+        _locationMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var feature in FeatureProvider.All)
+        {
+            if (feature.FishingConfig == null) continue;
+            foreach (var fishId in feature.FishingConfig.FishIds)
+            {
+                if (!_locationMap.TryGetValue(fishId, out var list))
+                {
+                    list = [];
+                    _locationMap[fishId] = list;
+                }
+                if (!list.Contains(feature.FishingConfig.LocationLabel))
+                    list.Add(feature.FishingConfig.LocationLabel);
+            }
+        }
+        return _locationMap;
+    }
 
     private static string FormatWeight(double kg) =>
         kg < 0.1 ? $"{kg * 1000:F0} g" : $"{kg:F2} kg";

@@ -741,6 +741,9 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .fish-category-saltwater  { background: rgba(40,180,140,.18); color: #50d0b0; }
 .fish-category-deep       { background: rgba(80,40,160,.18);  color: #a080e0; }
 .fish-category-cold       { background: rgba(160,220,255,.18); color: #a8d8f8; }
+.fish-journal-unknown { opacity: .65; }
+.fish-journal-unknown .inv-modal-name { color: var(--text-dim); font-style: italic; letter-spacing: .08em; }
+.fish-journal-location { font-size: .68rem; color: var(--text-dim); margin: .1rem 0 0; }
 
 /* ── Inventory Modal — tabs ──────────────────────────────────────────────── */
 .inv-tabs { display: flex; gap: .3rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; margin-bottom: .4rem; }

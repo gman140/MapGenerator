@@ -476,6 +476,12 @@ OnDance="HandleDanceAsync"
             await HandleFishReturnAsync(fishId.ToString(), w);
             Nav.NavigateTo("/game", replace: true);
         }
+        if (query.TryGetValue("fr", out _) && query.TryGetValue("fc", out var releasedFishId))
+        {
+            double w = query.TryGetValue("fw", out var fw2) && double.TryParse(fw2.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var wp2) ? wp2 : 0;
+            await HandleFishReleaseAsync(releasedFishId.ToString(), w);
+            Nav.NavigateTo("/game", replace: true);
+        }
         if (query.TryGetValue("fq", out _))
         {
             await Session.ResetFishingStreakAsync();
@@ -503,6 +509,15 @@ OnDance="HandleDanceAsync"
             _ = InvokeAsync(async () =>
             {
                 await HandleFishReturnAsync(fishId.ToString(), w);
+                Nav.NavigateTo("/game", replace: true);
+            });
+        }
+        if (query.TryGetValue("fr", out _) && query.TryGetValue("fc", out var releasedFishId))
+        {
+            double w = query.TryGetValue("fw", out var fw2) && double.TryParse(fw2.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var wp2) ? wp2 : 0;
+            _ = InvokeAsync(async () =>
+            {
+                await HandleFishReleaseAsync(releasedFishId.ToString(), w);
                 Nav.NavigateTo("/game", replace: true);
             });
         }
@@ -893,6 +908,21 @@ OnDance="HandleDanceAsync"
         ShowToast(newRecord && weightKg > 0
             ? $"🏆 New personal best! {fishDef.Name}{weightStr}"
             : $"You caught a {fishDef.Name}!{weightStr}");
+        if (Session.Player.FishingStreak == 3)
+            ShowToast("🔥 3-catch streak! Fishing bonus active.");
+    }
+
+    private async Task HandleFishReleaseAsync(string fishId, double weightKg = 0)
+    {
+        if (string.IsNullOrEmpty(fishId) || Session.Player == null) return;
+        fishId = Uri.UnescapeDataString(fishId);
+        var fishDef = FishProvider.GetById(fishId);
+        if (fishDef == null) return;
+        bool newRecord = await Session.RecordFishReleaseAsync(fishId, weightKg);
+        string weightStr = weightKg > 0 ? $" ({FormatFishWeight(weightKg)})" : "";
+        ShowToast(newRecord && weightKg > 0
+            ? $"🏆 New personal best! Released a {fishDef.Name}{weightStr} (+50% XP)"
+            : $"Released a {fishDef.Name}!{weightStr} (+50% XP)");
         if (Session.Player.FishingStreak == 3)
             ShowToast("🔥 3-catch streak! Fishing bonus active.");
     }

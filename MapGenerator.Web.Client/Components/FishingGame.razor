@@ -51,7 +51,10 @@
                     <span> (@FormatWeight(_result.CaughtWeightKg))</span>
                 }
             </p>
-            <button class="runner-done-btn" @onclick="Finish">Keep it</button>
+            <div class="runner-result-actions">
+                <button class="runner-done-btn" @onclick="Finish">Keep it</button>
+                <button class="runner-done-btn runner-done-btn-secondary" @onclick="Release">Release (+50% XP)</button>
+            </div>
         </div>
     }
     else if (_state.Phase == FishingPhase.LineBroke)
@@ -188,6 +191,15 @@
         else
         {
             Nav.NavigateTo("/game?fq=1", replace: false);
+        }
+    }
+
+    private void Release()
+    {
+        if (_result?.Success == true)
+        {
+            string weight = _result.CaughtWeightKg.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            Nav.NavigateTo($"/game?fr=1&fc={Uri.EscapeDataString(_result.CaughtFishId!)}&fw={weight}", replace: false);
         }
     }
 
