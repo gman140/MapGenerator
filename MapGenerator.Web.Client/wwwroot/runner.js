@@ -117,6 +117,21 @@ export function renderFrame(canvasId, commandsJson) {
                 ctx.stroke();
                 ctx.restore();
                 break;
+
+            case 'poly': {
+                const pts = c.pts;
+                if (!pts || pts.length < 4) break;
+                ctx.save();
+                ctx.globalAlpha = c.alpha ?? 1;
+                ctx.beginPath();
+                ctx.moveTo(pts[0], pts[1]);
+                for (let i = 2; i < pts.length; i += 2)
+                    ctx.lineTo(pts[i], pts[i + 1]);
+                ctx.closePath();
+                if (c.c) { ctx.fillStyle = c.c; ctx.fill(); }
+                ctx.restore();
+                break;
+            }
         }
     }
 }

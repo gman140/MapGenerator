@@ -24,6 +24,10 @@ public static class RunnerEngine
     private const double AttackCooldownMs = 500.0;
     private const double CompanionAttackCooldownMs = 2200.0;
     private const double SpeedAcceleration = 8.0; // px/s per second
+    public  const double ChestWidth  = 30.0;
+    public  const double ChestHeight = 32.0;
+    // Chest spawns this many pixels ahead of the player's screen position when all enemies fall
+    private const double ChestSpawnAheadPx = 680.0;
 
     public static RunnerGameState Initialize(RunnerInitData data)
     {
@@ -282,13 +286,22 @@ public static class RunnerEngine
         }
         state.FloatingTexts.RemoveAll(ft => ft.LifetimeMs <= 0);
 
-        // Win / lose — win requires all enemies defeated (obstacles keep coming until then)
+        // Spawn chest once all enemies are defeated; obstacles already stop via enemiesRemain check above
+        bool allDefeated = state.PendingEnemyTriggers.Count == 0 &&
+                           state.Enemies.Count > 0 &&
+                           !state.Enemies.Any(e => !e.IsDefeated);
+        if (allDefeated && state.Chest == null)
+            state.Chest = new RunnerChest { WorldX = state.WorldOffset + ChestSpawnAheadPx };
+
+        // Win / lose
         if (state.PlayerHp <= 0)
             state.Phase = RunnerPhase.Failed;
-        else if (state.PendingEnemyTriggers.Count == 0 &&
-                 state.Enemies.Count > 0 &&
-                 !state.Enemies.Any(e => !e.IsDefeated))
-            state.Phase = RunnerPhase.Complete;
+        else if (state.Chest != null)
+        {
+            double chestScreenX = state.Chest.WorldX - state.WorldOffset;
+            if (chestScreenX <= PlayerScreenX + PlayerWidth)
+                state.Phase = RunnerPhase.Complete;
+        }
     }
 
     public static void Jump(RunnerGameState state)
