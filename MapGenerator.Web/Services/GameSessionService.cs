@@ -740,26 +740,51 @@ public class GameSessionService : IAsyncDisposable
     public async Task<(bool success, string message)> UseAsync(string itemId)
     {
         if (Player == null) return (false, "Not logged in.");
+
+        // Check consumable definition first
         var def = _consumableProvider.GetById(itemId);
-        if (def == null || def.SatietyRestore <= 0) return (false, "You cannot eat that.");
+        if (def != null && def.SatietyRestore > 0)
+        {
+            Player.Inventory.TryGetValue(itemId, out int qty);
+            if (qty <= 0) return (false, $"You don't have any {def.Name}.");
+            if (qty == 1) Player.Inventory.Remove(itemId);
+            else Player.Inventory[itemId] = qty - 1;
 
-        Player.Inventory.TryGetValue(itemId, out int qty);
-        if (qty <= 0) return (false, $"You don't have any {def.Name}.");
+            Player.Satiety = Math.Min(100, Player.Satiety + def.SatietyRestore);
+            if (def.Buff != null)
+                BuffService.ApplyBuff(Player, def.Buff);
+            Player.LastSeen = DateTime.UtcNow;
+            await _playerRepo.UpdateAsync(Player);
 
-        if (qty == 1) Player.Inventory.Remove(itemId);
-        else Player.Inventory[itemId] = qty - 1;
+            var rng = new Random();
+            var message = def.UseMessages.Length > 0
+                ? def.UseMessages[rng.Next(def.UseMessages.Length)]
+                : $"You eat the {def.Name}.";
+            return (true, message);
+        }
 
-        Player.Satiety = Math.Min(100, Player.Satiety + def.SatietyRestore);
-        if (def.Buff != null)
-            BuffService.ApplyBuff(Player, def.Buff);
-        Player.LastSeen = DateTime.UtcNow;
-        await _playerRepo.UpdateAsync(Player);
+        // Raw fish fallback — any caught fish is edible raw for modest satiety
+        var fishDef = _fishDefProvider.GetById(itemId);
+        if (fishDef != null && !fishDef.IsChainMaterial)
+        {
+            int qty = Player.Inventory.GetValueOrDefault(itemId);
+            if (qty <= 0) return (false, $"You don't have any {fishDef.Name}.");
+            if (qty == 1) Player.Inventory.Remove(itemId);
+            else Player.Inventory[itemId] = qty - 1;
 
-        var rng = new Random();
-        var message = def.UseMessages.Length > 0
-            ? def.UseMessages[rng.Next(def.UseMessages.Length)]
-            : $"You eat the {def.Name}.";
-        return (true, message);
+            double satiety = fishDef.RarityWeight switch
+            {
+                >= 2.0f => 12,
+                >= 1.0f => 18,
+                _       => 25,
+            };
+            Player.Satiety = Math.Min(100, Player.Satiety + satiety);
+            Player.LastSeen = DateTime.UtcNow;
+            await _playerRepo.UpdateAsync(Player);
+            return (true, $"You eat the {fishDef.Name} raw. It is not good. It is sufficient.");
+        }
+
+        return (false, "You cannot eat that.");
     }
 
     // ── Dungeon ───────────────────────────────────────────────────────────────
@@ -1117,6 +1142,10 @@ public class GameSessionService : IAsyncDisposable
             newRecord = true;
         }
         Player!.FishingStreak++;
+
+        // Consume one charge from any active fishing food buffs
+        BuffService.ConsumeFishingRarityCharge(Player!);
+        BuffService.ConsumeFishingStrikeCharge(Player!);
 
         // Byproduct drops tied to fish rarity
         var fishDef = _fishDefProvider.GetById(fishId);

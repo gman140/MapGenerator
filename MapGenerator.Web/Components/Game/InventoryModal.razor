@@ -127,7 +127,8 @@
                     <div class="inv-modal-list">
                         @foreach (var (id, qty) in fish)
                         {
-                            var def = FishProvider.GetById(id)!;
+                            var def        = FishProvider.GetById(id)!;
+                            var capturedId = id;
                             <div class="inv-modal-item">
                                 <div class="inv-modal-item-header">
                                     <span class="inv-modal-name">@def.Name</span>
@@ -136,6 +137,10 @@
                                         <span class="inv-modal-buff">Crafting Material</span>
                                     }
                                     <span class="inv-modal-qty">×@qty</span>
+                                    @if (!def.IsChainMaterial)
+                                    {
+                                        <button class="eat-btn" @onclick="() => OnUse.InvokeAsync(capturedId)">Eat raw</button>
+                                    }
                                 </div>
                                 @if (!string.IsNullOrEmpty(def.Description))
                                 {

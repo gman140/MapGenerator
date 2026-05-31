@@ -328,6 +328,348 @@ public class InMemoryConsumableDefinitionProvider : IConsumableDefinitionProvide
             UsableInCombat = true, CombatBuffLabel = "Cure Burn/Curse",
             ClearsStatuses = [ModifierStat.Burn, ModifierStat.StaminaDrain],
         },
+        // ── Cooked fish recipes ───────────────────────────────────────────────
+
+        // ── Tier 0 ───────────────────────────────────────────────────────────
+        new()
+        {
+            Id = "GrilledRiverTrout", Name = "Grilled River Trout", SatietyRestore = 35,
+            Description = "Simple fish over a simple fire. The trout is everything it needed to be.",
+            UseMessages = ["The trout is charred and flaky. A small, uncomplicated pleasure.", "Simple and good. You eat it in silence and feel the better for it."],
+            UsableInCombat = true, CombatHpRestore = 25, CombatBuffLabel = "Heal +25",
+        },
+        new()
+        {
+            Id = "PanFriedPerch", Name = "Pan-Fried Perch", SatietyRestore = 28,
+            Description = "Crispy-edged and soft in the middle. Quick to make, quicker to eat.",
+            UseMessages = ["The perch crisps up nicely. Something in the fat sharpens your step.", "Eaten fast, as the perch would have wanted. You feel light afterward."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Speed, CombatBuffValue = 2f, CombatBuffTurns = 2, CombatBuffLabel = "Spd +2",
+        },
+        new()
+        {
+            Id = "CatfishStew", Name = "Catfish Stew", SatietyRestore = 55,
+            Description = "Dense with garlic and root. The kind of stew that settles in and stays.",
+            UseMessages = ["It is heavy and rich and exactly right. Your hunger retreats and does not immediately return.", "The catfish has surrendered completely to the stew. You are grateful for this."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.55, Charges = 30 },
+        },
+        new()
+        {
+            Id = "SmokedRiverEel", Name = "Smoked River Eel", SatietyRestore = 32,
+            Description = "Long strips of eel slow-smoked over herbs. Stronger than it looks.",
+            UseMessages = ["The smoke got into it deeply. You finish it and feel ready for something physical.", "Oily and savory and good. Your arms feel heavier in a useful way."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 4f, CombatBuffTurns = 2, CombatBuffLabel = "Atk +4",
+        },
+        new()
+        {
+            Id = "CrabBisque", Name = "Crab Bisque", SatietyRestore = 38,
+            Description = "Salt-simmered crab in its own shell. The shell did the work the pot couldn't.",
+            UseMessages = ["Rich and slightly briny. Something in the shell-broth settles around you like armor.", "You drink it hot. The salt and mineral linger. Your stance feels lower, more rooted."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 5f, CombatBuffTurns = 3, CombatBuffLabel = "Def +5",
+        },
+        new()
+        {
+            Id = "GiantCarpRoast", Name = "Giant Carp Roast", SatietyRestore = 70,
+            Description = "The whole fish, roasted whole, yields enough to feel like a proper meal. You take your time with it.",
+            UseMessages = ["You eat more than you expected to. The carp gives generously.", "Dense and slow and deeply filling. The hunger does not return quickly."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.60, Charges = 40 },
+        },
+        new()
+        {
+            Id = "SaltedSandfish", Name = "Salted Sandfish", SatietyRestore = 25,
+            Description = "Pressed flat and salted, then cured over the fire. Your hands feel capable afterward.",
+            UseMessages = ["Salty and dense. You eat it slowly and feel a sharpening of purpose.", "The salt does something to you. Your eyes are clearer than they were."],
+            Buff = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.30, Charges = 10 },
+        },
+        new()
+        {
+            Id = "GrilledMullet", Name = "Grilled Mullet", SatietyRestore = 28,
+            Description = "Thin fish over a hot fire. Done quickly and eaten the same way.",
+            UseMessages = ["Light and slightly smoky. Your feet move easier for a while afterward.", "You finish it in a few bites. Something in it settles your pace."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.80, Charges = 12 },
+        },
+        new()
+        {
+            Id = "ShoreCrabSoup", Name = "Shore Crab Soup", SatietyRestore = 32,
+            Description = "Salt-water crab simmered until the shell gives up its secrets.",
+            UseMessages = ["Briney and good. The minerals from the shell settle into your shoulders.", "You finish the soup and feel a subtle solidity."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 3f, CombatBuffTurns = 2, CombatBuffLabel = "Def +3",
+        },
+        new()
+        {
+            Id = "SteamedFlounder", Name = "Steamed Flounder", SatietyRestore = 30,
+            Description = "Steamed over herbs until it flakes apart at a look. Restorative.",
+            UseMessages = ["Delicate and soft. You eat it carefully. The herbs did their part.", "The flounder gives easily to the heat. So, in a small way, do your aches."],
+            UsableInCombat = true, CombatHpRestore = 20, CombatBuffLabel = "Heal +20",
+        },
+        new()
+        {
+            Id = "SeahorseBroth", Name = "Seahorse Broth", SatietyRestore = 18,
+            Description = "A pale broth from a tiny creature. Unexpectedly restorative.",
+            UseMessages = ["The broth is almost nothing — and then it keeps working.", "Thin and clear and quietly effective. Small things, done well."],
+            UsableInCombat = true, CombatHpRestore = 15, CombatBuffLabel = "Heal +15",
+        },
+        new()
+        {
+            Id = "SwampEelStew", Name = "Swamp Eel Stew", SatietyRestore = 35,
+            Description = "Garlic-rich stew that cuts through the murk of the eel's flavor entirely.",
+            UseMessages = ["The garlic won. The eel contributed. You feel resistant to several things.", "Heavy and pungent. Something in it sits at the edges of you, pushing back."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Resistance, CombatBuffValue = 3f, CombatBuffTurns = 2, CombatBuffLabel = "Res +3",
+        },
+        new()
+        {
+            Id = "MudfishPatties", Name = "Mudfish Patties", SatietyRestore = 30,
+            Description = "Ground and formed with grain into something more than the sum of its parts.",
+            UseMessages = ["Better than expected, which is its own kind of achievement.", "You eat them without complaint. They sit in you quietly and sustain."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.65, Charges = 20 },
+        },
+        new()
+        {
+            Id = "MarshCrabCakes", Name = "Marsh Crab Cakes", SatietyRestore = 30,
+            Description = "The marsh crab did not go quietly. The grain helped.",
+            UseMessages = ["Dense and satisfying. Something crunchy in the shell bits adds texture and grit.", "You eat them by the fire. Your limbs feel settled, braced."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 4f, CombatBuffTurns = 2, CombatBuffLabel = "Def +4",
+        },
+
+        // ── Tier 1 ───────────────────────────────────────────────────────────
+        new()
+        {
+            Id = "MountainTroutBraise", Name = "Mountain Trout Braise", SatietyRestore = 40,
+            Description = "Salt-braised over low heat until the mountain cold seems less relevant.",
+            UseMessages = ["The salt and slow heat made something of it. Your legs move more freely.", "Dense and clean-tasting. The cold biome seems a smaller obstacle."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.70, Charges = 18 },
+        },
+        new()
+        {
+            Id = "SmokedSalmon", Name = "Smoked Salmon", SatietyRestore = 45,
+            Description = "Slow-smoked over herbs until the flesh turns deep orange and pulls clean.",
+            UseMessages = ["Rich and oily and exactly what the smoke promised. Your hands feel quick.", "You eat it in unhurried strips. Something sharpens behind the eyes."],
+            Buff = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.40, Charges = 18 },
+        },
+        new()
+        {
+            Id = "GlacialCharFillet", Name = "Glacial Char Fillet", SatietyRestore = 35,
+            Description = "Cold-adapted fish over cold fire. Salt was all it needed.",
+            UseMessages = ["The char is cold-tolerant by nature. Something transfers. The cold feels navigable.", "Lean and clean. The cold biome seems more familiar after."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.60, Charges = 22 },
+        },
+        new()
+        {
+            Id = "GoldenTroutTartare", Name = "Golden Trout Tartare", SatietyRestore = 25,
+            Description = "Raw golden trout pressed with salt. Precious and deliberate.",
+            UseMessages = ["You eat it slowly. The gold of it is in the taste too, somehow. The water seems to yield more.", "Something in the rarity of the fish passes to you. The unusual seems more findable."],
+            Buff = new BuffDefinition { Type = BuffType.FishingRarityBonus, Magnitude = 2.00, Charges = 8 },
+        },
+        new()
+        {
+            Id = "ClownfishSkewers", Name = "Clownfish Skewers", SatietyRestore = 28,
+            Description = "Bright little fish on a stick. The color survives the fire, mostly.",
+            UseMessages = ["Unexpectedly good. Something in the reef-flavor unlocks something behind your eyes.", "The vivid taste of it is unusual. Your focus sharpens in a strange direction."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Magic, CombatBuffValue = 4f, CombatBuffTurns = 2, CombatBuffLabel = "Mag +4",
+        },
+        new()
+        {
+            Id = "ParrotfishCurry", Name = "Parrotfish Curry", SatietyRestore = 42,
+            Description = "Garlic and herb curry built around the dense, sweet meat of the parrotfish.",
+            UseMessages = ["The curry is bright and fragrant and the parrotfish gives it body. You feel capable of pace.", "Hot from the fire, pungent with garlic. Your feet remember what they are for."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Speed, CombatBuffValue = 3f, CombatBuffTurns = 3, CombatBuffLabel = "Spd +3",
+        },
+        new()
+        {
+            Id = "TriggersteakFillet", Name = "Triggerfish Steak", SatietyRestore = 38,
+            Description = "The triggerfish resisted being caught. It resisted the fire too, briefly.",
+            UseMessages = ["Firm and rich. Something of the trigger's aggression passes to you.", "The fight it gave was part of the flavour. You feel the benefit of it."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 5f, CombatBuffTurns = 2, CombatBuffLabel = "Atk +5",
+        },
+        new()
+        {
+            Id = "MorayEelSaute", Name = "Moray Eel Sauté", SatietyRestore = 35,
+            Description = "Garlic and heat transformed the eel's hostility into something almost admirable.",
+            UseMessages = ["The garlic did what the hook couldn't — made the eel agreeable. You eat it and feel dangerous.", "Dense and pungent and satisfying. Something in you sharpens to a point."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 6f, CombatBuffTurns = 3, CombatBuffLabel = "Atk +6",
+        },
+        new()
+        {
+            Id = "LionfishFillet", Name = "Lionfish Fillet", SatietyRestore = 30,
+            Description = "Carefully deboned and herb-pressed. The venom sac, notably, is not included.",
+            UseMessages = ["The danger was handled before the cooking. What remains is the aggression, applied usefully.", "You eat it knowing what it was. The body absorbs the lesson."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 7f, CombatBuffTurns = 2, CombatBuffLabel = "Atk +7",
+            ClearsStatuses = [ModifierStat.Venom],
+        },
+        new()
+        {
+            Id = "MirrorCarpBraise", Name = "Mirror Carp Braise", SatietyRestore = 65,
+            Description = "Slow-braised until the flesh falls apart. The most sustaining meal the lake offers.",
+            UseMessages = ["You eat it over a long time and feel it working just as long. Hunger becomes distant.", "The carp gave everything to the pot. You take everything from it. This feels right."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.50, Charges = 36 },
+        },
+        new()
+        {
+            Id = "LakeBassStew", Name = "Lake Bass Stew", SatietyRestore = 40,
+            Description = "Root and fish in slow water, made into something steady and filling.",
+            UseMessages = ["The cattail root thickened it properly. You eat it and feel grounded.", "Simple and reliable, like the lake itself. It sustains without drama."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.60, Charges = 24 },
+        },
+        new()
+        {
+            Id = "SearedMoonfish", Name = "Seared Moonfish", SatietyRestore = 40,
+            Description = "Herb-pressed and seared at the right moment. The fish still carries something of the dusk in it.",
+            UseMessages = ["The moonfish gives a strange clarity. The water seems to offer more.", "You eat it as the fire dims. The rare seems closer now."],
+            Buff = new BuffDefinition { Type = BuffType.FishingRarityBonus, Magnitude = 1.50, Charges = 16 },
+        },
+        new()
+        {
+            Id = "LegendaryMoonfishBroth", Name = "Legendary Moonfish Broth", SatietyRestore = 55,
+            Description = "From the rarest fish in the lake — a broth that tastes like something earned.",
+            UseMessages = ["You made something remarkable from something remarkable. The water feels different after.", "It heals and opens something. The rare seems very close now. The world offers more."],
+            Buff = new BuffDefinition { Type = BuffType.FishingRarityBonus, Magnitude = 2.50, Charges = 24 },
+            UsableInCombat = true, CombatHpRestore = 40, CombatBuffLabel = "Heal +40",
+        },
+
+        // ── Tier 2 ───────────────────────────────────────────────────────────
+        new()
+        {
+            Id = "KelpWrappedGrouper", Name = "Kelp-Wrapped Grouper", SatietyRestore = 40,
+            Description = "Wrapped in kelp and slow-cooked until the sea soaks through entirely.",
+            UseMessages = ["The kelp steamed through it. You eat it and feel the ocean settle around you.", "Dense and briny. Something about the wrapping concentrated it. You feel armored."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 5f, CombatBuffTurns = 3, CombatBuffLabel = "Def +5",
+        },
+        new()
+        {
+            Id = "RockfishChowder", Name = "Rockfish Chowder", SatietyRestore = 48,
+            Description = "A rockfish that survived centuries ended its run in a chowder. It is very good chowder.",
+            UseMessages = ["Dense and mineral and deeply satisfying. Something about its age carries through.", "You eat every last drop. The endurance of the fish becomes yours, briefly."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.55, Charges = 28 },
+        },
+        new()
+        {
+            Id = "OctopusStew", Name = "Octopus Stew", SatietyRestore = 45,
+            Description = "Eight arms simmered until tender. The garlic had its work cut out for it.",
+            UseMessages = ["The octopus gives up its resilience to the pot. Some of it transfers to you.", "Garlic and salt and something the sea did to the meat. Your mind feels sharper."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Magic, CombatBuffValue = 5f, CombatBuffTurns = 3, CombatBuffLabel = "Mag +5",
+        },
+        new()
+        {
+            Id = "SeaBassFillet", Name = "Sea Bass Fillet", SatietyRestore = 42,
+            Description = "Herb-crusted and reliable. The sea bass was always going to end up like this.",
+            UseMessages = ["Clean and good. A reliable fish makes a reliable meal. Your hands feel able.", "The herbs did their part. Something practical sharpens in you."],
+            Buff = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.50, Charges = 20 },
+        },
+        new()
+        {
+            Id = "SquidInkStew", Name = "Squid Ink Stew", SatietyRestore = 55,
+            Description = "The ink turned everything black. This is correct. It tastes of deep water and precision.",
+            UseMessages = ["The stew is black and heavy and tastes of the abyss. You eat it all. Your timing improves.", "Something about the ink. The strike window feels longer now. More time in it."],
+            Buff = new BuffDefinition { Type = BuffType.FishingStrikeBonus, Magnitude = 1.40, Charges = 20 },
+        },
+        new()
+        {
+            Id = "AnglerFishFillets", Name = "Anglerfish Fillets", SatietyRestore = 35,
+            Description = "The lure is removed first. The fish that used it to hunt is now herb-dressed and useful.",
+            UseMessages = ["The irony of being lured in is noted. The fillets are excellent regardless.", "Dense, deep-water meat pressed with herbs. Your hands feel sharp afterward."],
+            Buff = new BuffDefinition { Type = BuffType.GatherBonus, Magnitude = 1.50, Charges = 16 },
+        },
+        new()
+        {
+            Id = "GhostfishSashimi", Name = "Ghostfish Sashimi", SatietyRestore = 30,
+            Description = "Raw and translucent and dressed in salt. You can see through it, almost.",
+            UseMessages = ["You eat something that was practically invisible. You feel difficult to miss afterward, which is strange.", "The translucence stays on the tongue. Your aim feels informed by it."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Accuracy, CombatBuffValue = 0.15f, CombatBuffTurns = 3, CombatBuffLabel = "Acc +15%",
+        },
+        new()
+        {
+            Id = "AbyssalEelRoast", Name = "Abyssal Eel Roast", SatietyRestore = 38,
+            Description = "From very deep water, roasted until the discomfort of both parties was resolved.",
+            UseMessages = ["The depth of it carries through. Something old and strong in the meat.", "You eat something that lived below light. The darkness doesn't feel like yours to own."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Attack, CombatBuffValue = 8f, CombatBuffTurns = 2, CombatBuffLabel = "Atk +8",
+        },
+        new()
+        {
+            Id = "CaveFishBroth", Name = "Cave Fish Broth", SatietyRestore = 28,
+            Description = "A pale broth from a pale fish. Quiet and efficient.",
+            UseMessages = ["It tastes of dark water and very little else. You move more easily afterward.", "Something about the cave-adapted fish. The cool dark no longer slows you."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.70, Charges = 20 },
+        },
+        new()
+        {
+            Id = "VolcanicEelRoast", Name = "Volcanic Eel Roast", SatietyRestore = 38,
+            Description = "Roasted with sulfur, as it would have wanted. The heat stays in it.",
+            UseMessages = ["The sulfur did something to it. The heat of the biome feels less like a wall.", "You eat something that lived in near-boiling water. The warmth becomes yours."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.55, Charges = 24 },
+        },
+        new()
+        {
+            Id = "SpicedShrimp", Name = "Spiced Shrimp", SatietyRestore = 22,
+            Description = "Herb-pressed shrimp that lived at temperatures most things avoid. Small and fast.",
+            UseMessages = ["Tiny and flavored with heat. You eat them quickly and move the same way.", "The shrimp was faster than anything had a right to be. Something transfers."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Speed, CombatBuffValue = 4f, CombatBuffTurns = 3, CombatBuffLabel = "Spd +4",
+        },
+
+        // ── Tier 3 ───────────────────────────────────────────────────────────
+        new()
+        {
+            Id = "BioluminescentBroth", Name = "Bioluminescent Broth", SatietyRestore = 18,
+            Description = "A broth that still faintly glows. You drink it in the dark and feel it moving.",
+            UseMessages = ["It pulses faintly as it cools. You drink it and move like water afterward.", "The glow is gone from it but something else remains. Your stride lengthens."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.50, Charges = 40 },
+        },
+        new()
+        {
+            Id = "AbyssalAnglerStew", Name = "Abyssal Anglerfish Stew", SatietyRestore = 45,
+            Description = "The deep-sea anglerfish, patient as it was, contributes to a stew that feels ancient.",
+            UseMessages = ["The light of its lure is gone but something remains in the meat. Your focus deepens strangely.", "Dark and rich and from somewhere very far down. Something in you opens."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Magic, CombatBuffValue = 7f, CombatBuffTurns = 3, CombatBuffLabel = "Mag +7",
+        },
+        new()
+        {
+            Id = "GlowingSquidBroth", Name = "Glowing Squid Broth", SatietyRestore = 30,
+            Description = "The ink glows even after cooking. The broth is the color of cold bioluminescence.",
+            UseMessages = ["You drink something that was still glowing an hour ago. Your reaction time improves noticeably.", "The glow transferred somewhere. The strike window feels wider, more visible."],
+            Buff = new BuffDefinition { Type = BuffType.FishingStrikeBonus, Magnitude = 1.50, Charges = 16 },
+        },
+
+        // ── Tier 4 ───────────────────────────────────────────────────────────
+        new()
+        {
+            Id = "IceShrimpBisque", Name = "Ice Shrimp Bisque", SatietyRestore = 25,
+            Description = "Tiny shrimp from near-frozen water, pressed into a pale bisque. Cold and clarifying.",
+            UseMessages = ["Almost flavorless, but clarifying. The cold environments feel more navigable.", "It tastes of glacier water. The cold biome opens a little."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.60, Charges = 20 },
+        },
+        new()
+        {
+            Id = "CrystalFishSashimi", Name = "Crystal Fish Sashimi", SatietyRestore = 28,
+            Description = "Thin-sliced raw crystal fish with salt. Each cut reveals more light.",
+            UseMessages = ["The flesh is almost glass. You eat it in careful slices. The hook window seems to extend.", "Crystalline and cold and precise. The strike feels like something you knew before."],
+            Buff = new BuffDefinition { Type = BuffType.FishingStrikeBonus, Magnitude = 1.60, Charges = 12 },
+        },
+        new()
+        {
+            Id = "FrozenEelStew", Name = "Frozen Eel Stew", SatietyRestore = 45,
+            Description = "The frozen eel required patience to prepare. It rewards that patience directly.",
+            UseMessages = ["Dense and heavy as glacier ice once was. Your defenses feel layered.", "You eat something that fought slowly but for a very long time. The endurance transfers."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 8f, CombatBuffTurns = 3, CombatBuffLabel = "Def +8",
+        },
+        new()
+        {
+            Id = "ArcticTartare", Name = "Arctic Tartare", SatietyRestore = 20,
+            Description = "Raw arctic trout pressed with salt. Cold-adapted. So are you, briefly.",
+            UseMessages = ["The cold of it goes in and stays. The frozen biomes feel less like barriers.", "You eat something built for extreme cold. Briefly, you understand why it managed."],
+            Buff = new BuffDefinition { Type = BuffType.CooldownReduction, Magnitude = 0.40, Charges = 20 },
+        },
+        new()
+        {
+            Id = "PolarStarBroth", Name = "Polar Star Broth", SatietyRestore = 22,
+            Description = "The polar star held on to things with remarkable commitment. The broth carries that.",
+            UseMessages = ["Mineral and cold and strangely fortifying. Something about the arctic shelf.", "You eat something that persisted. Your body takes note."],
+            UsableInCombat = true, CombatBuffStat = ModifierStat.Defense, CombatBuffValue = 6f, CombatBuffTurns = 2, CombatBuffLabel = "Def +6",
+        },
+        new()
+        {
+            Id = "AncientFishStew", Name = "Ancient Fish Stew", SatietyRestore = 70,
+            Description = "From a species unchanged for fifty million years, a stew that feels like it has survived everything.",
+            UseMessages = ["You eat something fifty million years in the making. Your hunger does not return for a very long time.", "The ancient fish gives everything. The stew is the most sustaining thing you have ever eaten."],
+            Buff = new BuffDefinition { Type = BuffType.HungerDrainReduction, Magnitude = 0.40, Charges = 60 },
+        },
     ];
 
     private static readonly Dictionary<string, ConsumableDefinition> _byId =

@@ -807,6 +807,10 @@ OnDance="HandleDanceAsync"
             _ => (1.0,  1.0,  1.0),
         };
 
+        // Stack food buff multipliers (peek without consuming — consumed when fish is caught)
+        strikeMultiplier  *= BuffService.PeekFishingStrikeMultiplier(Session.Player);
+        rarityMultiplier  *= BuffService.PeekFishingRarityMultiplier(Session.Player);
+
         var companion = Session.Companion;
         var equippedLure = Session.Player.EquippedLureId != null
             ? EquipmentProvider.GetById(Session.Player.EquippedLureId) : null;

@@ -32,6 +32,18 @@ public static class BuffService
     public static double ConsumeHungerDrainMultiplier(Player player) =>
         ConsumeCharge(player, BuffType.HungerDrainReduction);
 
+    public static double PeekFishingRarityMultiplier(Player player) =>
+        player.ActiveBuffs.FirstOrDefault(b => b.Type == BuffType.FishingRarityBonus)?.Magnitude ?? 1.0;
+
+    public static double PeekFishingStrikeMultiplier(Player player) =>
+        player.ActiveBuffs.FirstOrDefault(b => b.Type == BuffType.FishingStrikeBonus)?.Magnitude ?? 1.0;
+
+    public static double ConsumeFishingRarityCharge(Player player) =>
+        ConsumeCharge(player, BuffType.FishingRarityBonus);
+
+    public static double ConsumeFishingStrikeCharge(Player player) =>
+        ConsumeCharge(player, BuffType.FishingStrikeBonus);
+
     private static double ConsumeCharge(Player player, BuffType type)
     {
         var buff = player.ActiveBuffs.FirstOrDefault(b => b.Type == type);
