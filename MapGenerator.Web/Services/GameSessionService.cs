@@ -130,7 +130,7 @@ public class GameSessionService : IAsyncDisposable
                 Player.SpritePixels = GenerateDefaultSprite(Player.Color);
                 await _playerRepo.UpdateAsync(Player);
             }
-            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed, Player.CompanionId != null);
+            _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed, Player.CompanionId != null, FishingRankService.GetRank(Player.FishingRankXp));
 
             if (Player.CompanionId != null)
                 await LoadCompanionAsync(Player.CompanionId);
@@ -153,7 +153,7 @@ public class GameSessionService : IAsyncDisposable
             Player.SpritePixels = GenerateDefaultSprite(Player.Color);
             await _playerRepo.UpdateAsync(Player);
         }
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed, false, FishingRankService.GetRank(Player.FishingRankXp));
         return (true, null);
     }
 
@@ -191,7 +191,7 @@ public class GameSessionService : IAsyncDisposable
         if (updated == null) return;
         Player = updated;
         await _visitRepo.RecordArrivalAsync(Player.Id, Player.Q, Player.R);
-        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed);
+        _broadcast.PlayerCameOnline(Player.Id, Player.Username, Player.Q, Player.R, Player.Color, Player.SpritePixels, Player.EggsDestroyed, Player.CompanionId != null, FishingRankService.GetRank(Player.FishingRankXp));
     }
 
     public async Task<(bool success, string kisserMsg)> KissAsync(string targetId, string targetName)
@@ -1147,19 +1147,25 @@ public class GameSessionService : IAsyncDisposable
         BuffService.ConsumeFishingRarityCharge(Player!);
         BuffService.ConsumeFishingStrikeCharge(Player!);
 
-        // Byproduct drops tied to fish rarity
+        // Fishing rank XP
         var fishDef = _fishDefProvider.GetById(fishId);
+        if (fishDef != null)
+            Player.FishingRankXp += FishingRankService.GetCatchXp(fishDef.RarityWeight, fishDef.IsChainMaterial);
+
+        // Byproduct drops — base chance scaled by rank drop rate multiplier
+        int rank         = FishingRankService.GetRank(Player.FishingRankXp);
+        double dropScale = FishingRankService.GetDropRateMultiplier(rank);
         if (fishDef != null && !fishDef.IsChainMaterial)
         {
             string? drop = fishDef.RarityWeight switch
             {
-                >= 2.0f => RollChance(0.35) ? "FishScale" : null,
-                >= 1.0f => RollChance(0.25) ? "FishFin" : null,
-                _       => RollChance(0.30) ? "FishFin" : null,
+                >= 2.0f => RollChance(0.35 * dropScale) ? "FishScale" : null,
+                >= 1.0f => RollChance(0.25 * dropScale) ? "FishFin" : null,
+                _       => RollChance(0.30 * dropScale) ? "FishFin" : null,
             };
             if (drop != null)
                 Player.Inventory[drop] = Player.Inventory.GetValueOrDefault(drop) + 1;
-            if ((fishDef.FishCategory == "Saltwater" || fishDef.FishCategory == "Deep") && RollChance(0.20))
+            if ((fishDef.FishCategory == "Saltwater" || fishDef.FishCategory == "Deep") && RollChance(0.20 * dropScale))
                 Player.Inventory["BrineCrystal"] = Player.Inventory.GetValueOrDefault("BrineCrystal") + 1;
         }
 

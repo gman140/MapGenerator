@@ -710,7 +710,33 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 
 .inv-modal-buff { font-size: .73rem; color: #7ab0d4; font-style: italic; margin: 0; }
 .fish-world-record { color: #d4a840; font-style: normal; }
+
+/* ── Fishing rank badges ─────────────────────────────────────────────────── */
+.fishing-rank-badge { font-size: .65rem; font-weight: 700; border-radius: 10px; padding: 1px 8px; white-space: nowrap; letter-spacing: .04em; }
+.fishing-rank-chip  { font-size: .6rem;  font-weight: 700; border-radius: 8px;  padding: 1px 5px; margin-left: 2px; cursor: default; }
+.rank-1  { background: rgba(120,120,120,.2); color: #909090; }
+.rank-2  { background: rgba(80,160,80,.2);  color: #70c070; }
+.rank-3  { background: rgba(80,160,80,.2);  color: #70c070; }
+.rank-4  { background: rgba(60,120,200,.2); color: #70a8e8; }
+.rank-5  { background: rgba(60,120,200,.2); color: #70a8e8; }
+.rank-6  { background: rgba(160,80,200,.2); color: #c080e8; }
+.rank-7  { background: rgba(160,80,200,.2); color: #c080e8; }
+.rank-8  { background: rgba(200,140,30,.2); color: #e0a840; }
+.rank-9  { background: rgba(200,140,30,.2); color: #e0a840; }
+.rank-10 { background: rgba(220,180,60,.3); color: #f0d060; border: 1px solid rgba(220,180,60,.4); }
 .fish-category-tag { display: inline-block; font-size: .65rem; font-style: normal; font-weight: 600; border-radius: 8px; padding: 1px 7px; letter-spacing: .04em; }
+
+/* ── Journal fishing rank card ───────────────────────────────────────────── */
+.fishing-rank-card { border-radius: 6px; padding: .6rem .8rem; margin-bottom: .6rem; background: var(--bg); border: 1px solid var(--border); }
+.fishing-rank-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem; }
+.fishing-rank-title { font-weight: 700; font-size: .85rem; }
+.fishing-rank-xp    { font-size: .72rem; color: var(--text-dim); }
+.fishing-rank-bar-bg   { height: 5px; background: rgba(255,255,255,.08); border-radius: 3px; margin-bottom: .45rem; overflow: hidden; }
+.fishing-rank-bar-fill { height: 100%; background: linear-gradient(90deg, #40a060, #60d080); border-radius: 3px; transition: width .3s; }
+.fishing-rank-bonuses  { display: flex; flex-direction: column; gap: .18rem; }
+.fishing-rank-unlock   { font-size: .68rem; }
+.fishing-rank-unlock.unlocked { color: #70c880; }
+.fishing-rank-unlock.locked   { color: var(--text-dim); opacity: .55; }
 .fish-category-freshwater { background: rgba(40,120,200,.18); color: #70b8f0; }
 .fish-category-saltwater  { background: rgba(40,180,140,.18); color: #50d0b0; }
 .fish-category-deep       { background: rgba(80,40,160,.18);  color: #a080e0; }

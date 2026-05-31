@@ -102,6 +102,7 @@ else
                             Inventory="Session.Player.Inventory"
                             CraftedItems="Session.Player.CraftedItems"
                             FishLog="Session.Player.FishLog"
+                            FishingRankXp="Session.Player.FishingRankXp"
                             WorldRecords="_fishWorldRecords"
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
                             EquippedArmorId="@Session.Player.EquippedArmorId"
@@ -811,11 +812,21 @@ OnDance="HandleDanceAsync"
         strikeMultiplier  *= BuffService.PeekFishingStrikeMultiplier(Session.Player);
         rarityMultiplier  *= BuffService.PeekFishingRarityMultiplier(Session.Player);
 
+        // Stack fishing rank bonuses
+        int fishingRank    = FishingRankService.GetRank(Session.Player.FishingRankXp);
+        strikeMultiplier  *= FishingRankService.GetStrikeMultiplier(fishingRank);
+        waitMultiplier    *= FishingRankService.GetWaitMultiplier(fishingRank);
+        rarityMultiplier  *= FishingRankService.GetRarityMultiplier(fishingRank);
+
         var companion = Session.Companion;
         var equippedLure = Session.Player.EquippedLureId != null
             ? EquipmentProvider.GetById(Session.Player.EquippedLureId) : null;
 
-        var companionBonus = new CompanionFishingBonus();
+        var companionBonus = new CompanionFishingBonus
+        {
+            TensionMultiplier = FishingRankService.GetTensionMultiplier(fishingRank),
+            ChainBoost        = FishingRankService.GetChainBoost(fishingRank),
+        };
         if (companion != null)
         {
             var td = TemperamentRegistry.Get(companion.Temperament);
@@ -830,12 +841,12 @@ OnDance="HandleDanceAsync"
             {
                 StrikeMultiplier       = 1.0 + eFoc * CompanionFishingBonus.FocPerPoint,
                 WaitMultiplier         = Math.Max(0.30, 1.0 - eSpd * CompanionFishingBonus.SpdPerPoint),
-                TensionMultiplier      = Math.Max(0.30, 1.0 - eVit * CompanionFishingBonus.VitPerPoint),
+                TensionMultiplier      = Math.Max(0.30, 1.0 - eVit * CompanionFishingBonus.VitPerPoint) * FishingRankService.GetTensionMultiplier(fishingRank),
                 BurstMultiplier        = Math.Max(0.30, 1.0 - eDef * CompanionFishingBonus.DefPerPoint),
                 TapBonus               = eAtk * CompanionFishingBonus.AtkPerPoint,
                 TensionBreakThreshold  = 1.0 + eRes * CompanionFishingBonus.ResPerPoint,
                 RarityBoost            = companion.Temperament == CompanionTemperament.Bold    ? 1.10 : 1.0,
-                ChainBoost             = companion.Temperament == CompanionTemperament.Cunning ? 1.30 : 1.0,
+                ChainBoost             = (companion.Temperament == CompanionTemperament.Cunning ? 1.30 : 1.0) * FishingRankService.GetChainBoost(fishingRank),
                 BurstSuppressChance    = companion.Temperament == CompanionTemperament.Careful  ? 0.15 : 0.0,
                 FreeTapChance          = companion.Temperament == CompanionTemperament.Playful  ? 0.20 : 0.0,
                 StoicHook              = companion.Temperament == CompanionTemperament.Stoic,

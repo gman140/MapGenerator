@@ -1,3 +1,4 @@
+@using MapGenerator.Application.Services
 @using MapGenerator.Domain.Enums
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
@@ -203,6 +204,34 @@
             }
             else
             {
+                @* ── Fishing rank card ── *@
+                <div class="fishing-rank-card rank-@RankNumber">
+                    <div class="fishing-rank-card-header">
+                        <span class="fishing-rank-title">🎣 @FishingRankService.GetRankName(FishingRankXp)</span>
+                        <span class="fishing-rank-xp">@RankXpText</span>
+                    </div>
+                    @if (RankNumber < FishingRankService.MaxRank)
+                    {
+                        <div class="fishing-rank-bar-bg">
+                            <div class="fishing-rank-bar-fill" style="width: @($"{RankPct * 100:F1}")%"></div>
+                        </div>
+                    }
+                    <div class="fishing-rank-bonuses">
+                        @for (int r = 2; r <= FishingRankService.MaxRank; r++)
+                        {
+                            int capturedR = r;
+                            bool unlocked = RankNumber >= capturedR;
+                            string? desc  = FishingRankService.GetUnlockDescription(capturedR);
+                            if (desc != null)
+                            {
+                                <span class="fishing-rank-unlock @(unlocked ? "unlocked" : "locked")">
+                                    @(unlocked ? "✓" : "○") Rank @capturedR: @desc
+                                </span>
+                            }
+                        }
+                    </div>
+                </div>
+
                 @if (FishLog.Count == 0)
                 {
                     <p class="inventory-empty">No fish caught yet. Find a fishing spot to get started.</p>
@@ -272,6 +301,7 @@
     [Parameter, EditorRequired] public Dictionary<string, int> Inventory { get; set; } = null!;
     [Parameter] public Dictionary<string, int> CraftedItems { get; set; } = new();
     [Parameter] public Dictionary<string, FishLogEntry> FishLog { get; set; } = new();
+    [Parameter] public int FishingRankXp { get; set; }
     [Parameter] public Dictionary<string, (string PlayerName, double WeightKg)> WorldRecords { get; set; } = new();
     [Parameter] public string? EquippedWeaponId { get; set; }
     [Parameter] public string? EquippedArmorId { get; set; }
@@ -284,6 +314,14 @@
 
     private bool _open;
     private int _tab;
+
+    private int    RankNumber => FishingRankService.GetRank(FishingRankXp);
+    private double RankPct    => FishingRankService.GetXpRangeForRank(FishingRankXp) > 0
+        ? (double)FishingRankService.GetXpInRank(FishingRankXp) / FishingRankService.GetXpRangeForRank(FishingRankXp)
+        : 0;
+    private string RankXpText => RankNumber >= FishingRankService.MaxRank
+        ? "MAX"
+        : $"{FishingRankService.GetXpInRank(FishingRankXp)} / {FishingRankService.GetXpRangeForRank(FishingRankXp)} XP";
 
     public void Open() { _open = true; StateHasChanged(); }
 

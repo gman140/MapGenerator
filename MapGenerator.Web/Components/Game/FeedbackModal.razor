@@ -3,6 +3,7 @@
 @using MapGenerator.Domain.Models
 @using MapGenerator.Web.Services
 @using static MapGenerator.Application.Services.DanceService
+@using static MapGenerator.Application.Services.FishingRankService
 @inject IFeedbackRepository FeedbackRepo
 @inject IPlayerRepository PlayerRepo
 @inject ICompanionRepository CompanionRepo
@@ -59,6 +60,11 @@
                                         @p.Username
                                         @if (title != null) { <span class="egg-title-small">@title</span> }
                                         @if (p.IsAdmin) { <span class="admin-badge">admin</span> }
+                                        @if (p.FishingRankXp > 0)
+                                        {
+                                            int pRank = GetRank(p.FishingRankXp);
+                                            <span class="fishing-rank-badge rank-@pRank">🎣 @GetRankName(p.FishingRankXp)</span>
+                                        }
                                     </div>
                                     <div class="player-row-meta">
                                         <span class="player-row-coords">(@p.Q, @p.R)</span>

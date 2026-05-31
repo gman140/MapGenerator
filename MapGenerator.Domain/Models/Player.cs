@@ -74,4 +74,7 @@ public class Player
 
     // Consecutive successful catches; resets on line break or escaped fish
     public int FishingStreak { get; set; }
+
+    // Cumulative fishing XP — rank is derived from this
+    public int FishingRankXp { get; set; }
 }

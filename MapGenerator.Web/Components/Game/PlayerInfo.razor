@@ -3,6 +3,7 @@
 @using MapGenerator.Domain.Interfaces
 @using MapGenerator.Domain.Models
 @using static MapGenerator.Application.Services.DanceService
+@using static MapGenerator.Application.Services.FishingRankService
 @implements IDisposable
 
 <div class="player-info">
@@ -16,6 +17,11 @@
                 @if (Player.IsAdmin) { <span class="admin-badge">admin</span> }
                 @{ var selfTitle = GetTitle(Player.EggsDestroyed); }
                 @if (selfTitle != null) { <span class="egg-title">@selfTitle</span> }
+                @{ int selfRank = GetRank(Player.FishingRankXp); }
+                @if (selfRank > 1 || Player.FishingRankXp > 0)
+                {
+                    <span class="fishing-rank-badge rank-@selfRank">🎣 @GetRankName(Player.FishingRankXp)</span>
+                }
             </div>
         </div>
         @if (Companion != null)
@@ -40,7 +46,7 @@
     {
         <div class="players-here">
             <span class="section-label">Here:</span>
-            @foreach (var (id, username, eggsDestroyed, otherHasCompanion) in OnlinePlayers)
+            @foreach (var (id, username, eggsDestroyed, otherHasCompanion, otherFishingRank) in OnlinePlayers)
             {
                 <span class="player-chip @(id == Player.Id ? "self" : "")">
                     @username
@@ -77,7 +83,7 @@
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public long CooldownUntil { get; set; }
     [Parameter] public DateTime? LastKissedAt { get; set; }
-    [Parameter] public List<(string Id, string Username, int EggsDestroyed, bool HasCompanion)> OnlinePlayers { get; set; } = [];
+    [Parameter] public List<(string Id, string Username, int EggsDestroyed, bool HasCompanion, int FishingRank)> OnlinePlayers { get; set; } = [];
     [Parameter] public EventCallback OnEditSprite { get; set; }
     [Parameter] public PlayerCompanion? Companion { get; set; }
     [Parameter] public bool HasCompanion { get; set; }

@@ -24,15 +24,15 @@ public class GameBroadcastService
     public event Action<string>? CompanionChallengeDeclined;                            // challengerId
     public event Action<string, CompanionBattleResult>? CompanionBattleCompleted;       // playerId, result
 
-    // playerId -> (username, q, r, color, spritePixels, eggsDestroyed, hasCompanion)
-    private readonly Dictionary<string, (string Username, int Q, int R, string Color, string[] SpritePixels, int EggsDestroyed, bool HasCompanion)> _online = [];
+    // playerId -> (username, q, r, color, spritePixels, eggsDestroyed, hasCompanion, fishingRank)
+    private readonly Dictionary<string, (string Username, int Q, int R, string Color, string[] SpritePixels, int EggsDestroyed, bool HasCompanion, int FishingRank)> _online = [];
     private readonly Lock _lock = new();
 
     public GameBroadcastService(IHubContext<GameHub> hub) => _hub = hub;
 
-    public void PlayerCameOnline(string playerId, string username, int q, int r, string color, string[] spritePixels, int eggsDestroyed = 0, bool hasCompanion = false)
+    public void PlayerCameOnline(string playerId, string username, int q, int r, string color, string[] spritePixels, int eggsDestroyed = 0, bool hasCompanion = false, int fishingRank = 1)
     {
-        lock (_lock) _online[playerId] = (username, q, r, color, spritePixels, eggsDestroyed, hasCompanion);
+        lock (_lock) _online[playerId] = (username, q, r, color, spritePixels, eggsDestroyed, hasCompanion, fishingRank);
         PlayerConnected?.Invoke(playerId, username);
     }
 
@@ -47,7 +47,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, color, p.SpritePixels, p.EggsDestroyed, p.HasCompanion);
+                _online[playerId] = (p.Username, p.Q, p.R, color, p.SpritePixels, p.EggsDestroyed, p.HasCompanion, p.FishingRank);
         }
         PlayerColorChanged?.Invoke(playerId, color);
     }
@@ -57,7 +57,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, p.Color, pixels, p.EggsDestroyed, p.HasCompanion);
+                _online[playerId] = (p.Username, p.Q, p.R, p.Color, pixels, p.EggsDestroyed, p.HasCompanion, p.FishingRank);
         }
         PlayerColorChanged?.Invoke(playerId, string.Empty);
     }
@@ -67,7 +67,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, p.Color, p.SpritePixels, eggsDestroyed, p.HasCompanion);
+                _online[playerId] = (p.Username, p.Q, p.R, p.Color, p.SpritePixels, eggsDestroyed, p.HasCompanion, p.FishingRank);
         }
     }
 
@@ -76,7 +76,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, p.Q, p.R, p.Color, p.SpritePixels, p.EggsDestroyed, hasCompanion);
+                _online[playerId] = (p.Username, p.Q, p.R, p.Color, p.SpritePixels, p.EggsDestroyed, hasCompanion, p.FishingRank);
         }
     }
 
@@ -85,12 +85,12 @@ public class GameBroadcastService
         lock (_lock) return _online.Select(kv => (kv.Key, kv.Value.Username, kv.Value.Q, kv.Value.R, kv.Value.Color, kv.Value.SpritePixels)).ToList();
     }
 
-    public List<(string Id, string Username, int EggsDestroyed, bool HasCompanion)> GetOnlinePlayersOnTile(int q, int r)
+    public List<(string Id, string Username, int EggsDestroyed, bool HasCompanion, int FishingRank)> GetOnlinePlayersOnTile(int q, int r)
     {
         lock (_lock)
             return _online
                 .Where(kv => kv.Value.Q == q && kv.Value.R == r)
-                .Select(kv => (kv.Key, kv.Value.Username, kv.Value.EggsDestroyed, kv.Value.HasCompanion))
+                .Select(kv => (kv.Key, kv.Value.Username, kv.Value.EggsDestroyed, kv.Value.HasCompanion, kv.Value.FishingRank))
                 .ToList();
     }
 
@@ -99,7 +99,7 @@ public class GameBroadcastService
         lock (_lock)
         {
             if (_online.TryGetValue(playerId, out var p))
-                _online[playerId] = (p.Username, newQ, newR, p.Color, p.SpritePixels, p.EggsDestroyed, p.HasCompanion);
+                _online[playerId] = (p.Username, newQ, newR, p.Color, p.SpritePixels, p.EggsDestroyed, p.HasCompanion, p.FishingRank);
         }
         PlayerMoved?.Invoke(playerId, oldQ, oldR, newQ, newR);
 
