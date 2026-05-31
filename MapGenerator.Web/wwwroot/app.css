@@ -1146,6 +1146,23 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .combat-btn.spell:hover:not(:disabled)   { background: rgba(140,60,220,.15); }
 .combat-btn.refocus { border-color: rgba(100,60,180,.5); color: #9070d0; }
 .combat-btn.refocus:hover:not(:disabled) { background: rgba(100,60,180,.15); }
+/* ── Combat picker modals ────────────────────────────────────────────────── */
+.combat-picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 600; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.combat-picker-modal   { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; width: 100%; max-width: 360px; max-height: 70vh; display: flex; flex-direction: column; overflow: hidden; }
+.combat-picker-header  { display: flex; align-items: center; justify-content: space-between; padding: .6rem .9rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.combat-picker-title   { font-weight: 700; font-size: .95rem; color: var(--text); }
+.combat-picker-close   { background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer; padding: .1rem .3rem; line-height: 1; }
+.combat-picker-close:hover { color: var(--text); }
+.combat-picker-list    { display: flex; flex-direction: column; gap: .35rem; padding: .6rem; overflow-y: auto; }
+.combat-picker-option  { display: flex; flex-direction: column; gap: .2rem; padding: .65rem .8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; text-align: left; transition: background .1s; }
+.combat-picker-option:hover:not(:disabled) { background: rgba(255,255,255,.06); }
+.combat-picker-option:disabled { opacity: .45; cursor: default; }
+.picker-option-top     { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.picker-option-name    { font-size: .88rem; font-weight: 600; color: var(--text); }
+.picker-option-cost    { font-size: .78rem; color: var(--text-dim); white-space: nowrap; }
+.picker-option-desc    { font-size: .74rem; color: var(--text-dim); line-height: 1.35; }
+.picker-insufficient   { border-color: rgba(255,80,80,.25) !important; }
+.picker-insufficient .picker-option-name { color: #e07070; }
 .combat-spell-picker { display: flex; flex-direction: column; gap: .3rem; padding: .3rem 0 0; }
 .combat-spell-btn { display: flex; align-items: baseline; gap: .4rem; font-size: .75rem; padding: .3rem .6rem; border-radius: 4px; border: 1px solid rgba(140,60,220,.4); background: rgba(140,60,220,.1); color: #b080f0; cursor: pointer; text-align: left; }
 .combat-spell-btn:hover:not(:disabled) { background: rgba(140,60,220,.2); }

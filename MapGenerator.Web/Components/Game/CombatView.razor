@@ -208,7 +208,7 @@
         {
             <div class="combat-actions">
                 <button class="combat-btn attack" disabled="@CannotTakeAction()"
-                        @onclick="() => { _showAttackPicker = !_showAttackPicker; _showSpellPicker = false; _showItemPicker = false; }">
+                        @onclick="() => _showAttackPicker = true">
                     ⚔ Attack
                 </button>
                 <button class="combat-btn steady" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
@@ -220,7 +220,7 @@
                     🛡 Defend <span class="cost">(+2⚡)</span>
                 </button>
                 <button class="combat-btn spell" disabled="@CannotTakeAction()"
-                        @onclick="() => { _showSpellPicker = !_showSpellPicker; _showItemPicker = false; }">
+                        @onclick="() => _showSpellPicker = true">
                     ✦ Spells
                 </button>
                 <button class="combat-btn refocus" disabled="@CannotTakeAction()"
@@ -230,7 +230,7 @@
                 @if (HasCombatItems)
                 {
                     <button class="combat-btn item" disabled="@(Session.PlayerStamina < 1 || CannotTakeAction())"
-                            @onclick="() => { _showItemPicker = !_showItemPicker; _showSpellPicker = false; }">
+                            @onclick="() => _showItemPicker = true">
                         🎒 Item <span class="cost">(1)</span>
                     </button>
                 }
@@ -242,54 +242,85 @@
 
             @if (_showAttackPicker)
             {
-                <div class="combat-attack-picker">
-                    @foreach (var atk in AvailableAttacks)
-                    {
-                        var capturedAtk = atk;
-                        <button class="combat-attack-btn @(Session.PlayerStamina < capturedAtk.StaminaCost ? "attack-insufficient" : "")"
-                                disabled="@(Session.PlayerStamina < capturedAtk.StaminaCost || CannotTakeAction())"
-                                title="@capturedAtk.Description"
-                                @onclick="() => UseAttack(capturedAtk.Id)">
-                            <span class="attack-name">@capturedAtk.Name</span>
-                            <span class="attack-cost">⚡@capturedAtk.StaminaCost</span>
-                            <span class="attack-desc">@capturedAtk.Description</span>
-                        </button>
-                    }
+                <div class="combat-picker-overlay" @onclick="() => _showAttackPicker = false">
+                    <div class="combat-picker-modal" @onclick:stopPropagation>
+                        <div class="combat-picker-header">
+                            <span class="combat-picker-title">⚔ Choose Attack</span>
+                            <button class="combat-picker-close" @onclick="() => _showAttackPicker = false">✕</button>
+                        </div>
+                        <div class="combat-picker-list">
+                            @foreach (var atk in AvailableAttacks)
+                            {
+                                var capturedAtk = atk;
+                                bool insufficient = Session.PlayerStamina < capturedAtk.StaminaCost;
+                                <button class="combat-picker-option @(insufficient ? "picker-insufficient" : "")"
+                                        disabled="@(insufficient || CannotTakeAction())"
+                                        @onclick="() => UseAttack(capturedAtk.Id)">
+                                    <div class="picker-option-top">
+                                        <span class="picker-option-name">@capturedAtk.Name</span>
+                                        <span class="picker-option-cost">⚡@capturedAtk.StaminaCost</span>
+                                    </div>
+                                    <span class="picker-option-desc">@capturedAtk.Description</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
                 </div>
             }
 
             @if (_showSpellPicker)
             {
-                <div class="combat-spell-picker">
-                    @foreach (var spell in SpellProvider.All)
-                    {
-                        bool canCast = Session.PlayerMana >= spell.ManaCost;
-                        <button class="combat-spell-btn @(!canCast ? "spell-insufficient" : "")"
-                                disabled="@(!canCast || CannotTakeAction())"
-                                @onclick="() => CastSpell(spell.Id)">
-                            <span class="spell-name">@spell.Name</span>
-                            <span class="spell-cost">✦@spell.ManaCost</span>
-                            <span class="spell-desc">@spell.Description</span>
-                        </button>
-                    }
+                <div class="combat-picker-overlay" @onclick="() => _showSpellPicker = false">
+                    <div class="combat-picker-modal" @onclick:stopPropagation>
+                        <div class="combat-picker-header">
+                            <span class="combat-picker-title">✦ Choose Spell</span>
+                            <button class="combat-picker-close" @onclick="() => _showSpellPicker = false">✕</button>
+                        </div>
+                        <div class="combat-picker-list">
+                            @foreach (var spell in SpellProvider.All)
+                            {
+                                bool canCast = Session.PlayerMana >= spell.ManaCost;
+                                <button class="combat-picker-option @(!canCast ? "picker-insufficient" : "")"
+                                        disabled="@(!canCast || CannotTakeAction())"
+                                        @onclick="() => CastSpell(spell.Id)">
+                                    <div class="picker-option-top">
+                                        <span class="picker-option-name">@spell.Name</span>
+                                        <span class="picker-option-cost">✦@spell.ManaCost</span>
+                                    </div>
+                                    <span class="picker-option-desc">@spell.Description</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
                 </div>
             }
 
             @if (_showItemPicker && HasCombatItems)
             {
-                <div class="combat-item-picker">
-                    @foreach (var (id, qty) in CombatItems)
-                    {
-                        var def = ConsumableProvider.GetById(id);
-                        <button class="combat-item-btn" @onclick="() => UseItem(id)">
-                            <span class="item-name">@(def?.Name ?? id)</span>
-                            @if (def?.CombatBuffLabel != null)
+                <div class="combat-picker-overlay" @onclick="() => _showItemPicker = false">
+                    <div class="combat-picker-modal" @onclick:stopPropagation>
+                        <div class="combat-picker-header">
+                            <span class="combat-picker-title">🎒 Choose Item</span>
+                            <button class="combat-picker-close" @onclick="() => _showItemPicker = false">✕</button>
+                        </div>
+                        <div class="combat-picker-list">
+                            @foreach (var (id, qty) in CombatItems)
                             {
-                                <span class="item-effect">@def.CombatBuffLabel</span>
+                                var capturedId = id;
+                                var def = ConsumableProvider.GetById(id);
+                                <button class="combat-picker-option" @onclick="() => UseItem(capturedId)">
+                                    <div class="picker-option-top">
+                                        <span class="picker-option-name">@(def?.Name ?? id)</span>
+                                        <span class="picker-option-cost">×@qty</span>
+                                    </div>
+                                    @if (def?.CombatBuffLabel != null)
+                                    {
+                                        <span class="picker-option-desc">@def.CombatBuffLabel</span>
+                                    }
+                                </button>
                             }
-                            <span class="qty">×@qty</span>
-                        </button>
-                    }
+                        </div>
+                    </div>
                 </div>
             }
         }
