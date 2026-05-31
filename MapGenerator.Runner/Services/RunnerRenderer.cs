@@ -53,21 +53,12 @@ public static class RunnerRenderer
             double ey = GroundY - eh;
             bool isShooter = enemy.Type == EnemyType.Shooter;
 
-            // Body
-            cmds.Add(DrawCmd.Fill(ex, ey, ew, eh, enemy.Color));
-            cmds.Add(DrawCmd.Fill(ex, ey, ew, 4, isShooter ? "#ffcc55" : "#dd6666"));
+            string spriteKey = isShooter ? "shooter-enemy" : "melee-enemy";
+            cmds.Add(DrawCmd.Sprite(spriteKey, ex, ey, ew, eh));
 
-            // Shooter: draw a small barrel pointing left
-            if (isShooter)
-                cmds.Add(DrawCmd.Fill(ex - 8, ey + eh / 2 - 4, 8, 6, "#ffcc55"));
-
-            // HP bar
+            // HP bar above sprite
             double hpPct = (double)enemy.Hp / enemy.MaxHp;
-            cmds.Add(DrawCmd.Bar(ex, ey - 10, ew, 5, hpPct, "#cc3333"));
-
-            // Label
-            string label = isShooter ? "»" : "!";
-            cmds.Add(DrawCmd.Text(label, ex + ew / 2, ey + eh / 2 + 5, "#fff", "bold 18px monospace", "center"));
+            cmds.Add(DrawCmd.Bar(ex, ey - 8, ew, 4, hpPct, "#cc3333"));
         }
 
         // Projectiles

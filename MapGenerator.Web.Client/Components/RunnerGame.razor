@@ -74,6 +74,8 @@
             await _js.InvokeVoidAsync("buildSprite", "player", InitData.PlayerSprite, 6);
         if (InitData.CompanionSprite.Length > 0)
             await _js.InvokeVoidAsync("buildSprite", "companion", InitData.CompanionSprite, 4);
+        await _js.InvokeVoidAsync("buildSprite", "melee-enemy",   RunnerSprites.Warrior, 4);
+        await _js.InvokeVoidAsync("buildSprite", "shooter-enemy", RunnerSprites.Archer,  4);
 
         StartRun();
         _self = DotNetObjectReference.Create(this);
