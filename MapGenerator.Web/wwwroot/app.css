@@ -1576,6 +1576,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .tut-section-title { font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: .35rem; }
 .tut-section-body { font-size: .8rem; color: var(--text-dim); line-height: 1.55; margin: 0; }
 .tut-section-body strong { color: var(--text); }
+.tut-section-body svg { overflow: visible; vertical-align: middle; }
 .tut-action-list { display: flex; flex-direction: column; gap: .5rem; }
 .tut-action { font-size: .78rem; color: var(--text-dim); line-height: 1.45; }
 .tut-action-name { font-weight: 700; color: var(--text); margin-right: .3rem; }
