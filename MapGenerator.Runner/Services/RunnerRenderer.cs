@@ -25,7 +25,7 @@ public static class RunnerRenderer
         cmds.Add(DrawCmd.Fill(0, GroundY, CanvasW, CanvasH - GroundY, cfg.GroundColor));
 
         // Obstacles
-        foreach (var obs in state.Obstacles.Where(o => o.IsActive))
+        foreach (var obs in state.Obstacles)
         {
             double sx = obs.WorldX - state.WorldOffset;
             if (sx > CanvasW + 50 || sx + obs.Width < -50) continue;
@@ -51,17 +51,31 @@ public static class RunnerRenderer
 
             double ew = 36, eh = 46;
             double ey = GroundY - eh;
+            bool isShooter = enemy.Type == EnemyType.Shooter;
 
             // Body
             cmds.Add(DrawCmd.Fill(ex, ey, ew, eh, enemy.Color));
-            cmds.Add(DrawCmd.Fill(ex, ey, ew, 4, "#dd6666"));
+            cmds.Add(DrawCmd.Fill(ex, ey, ew, 4, isShooter ? "#ffcc55" : "#dd6666"));
+
+            // Shooter: draw a small barrel pointing left
+            if (isShooter)
+                cmds.Add(DrawCmd.Fill(ex - 8, ey + eh / 2 - 4, 8, 6, "#ffcc55"));
 
             // HP bar
             double hpPct = (double)enemy.Hp / enemy.MaxHp;
             cmds.Add(DrawCmd.Bar(ex, ey - 10, ew, 5, hpPct, "#cc3333"));
 
             // Label
-            cmds.Add(DrawCmd.Text("!", ex + ew / 2, ey + eh / 2 + 5, "#fff", "bold 18px monospace", "center"));
+            string label = isShooter ? "»" : "!";
+            cmds.Add(DrawCmd.Text(label, ex + ew / 2, ey + eh / 2 + 5, "#fff", "bold 18px monospace", "center"));
+        }
+
+        // Projectiles
+        foreach (var proj in state.Projectiles)
+        {
+            if (proj.X + 22 < 0 || proj.X > CanvasW + 10) continue;
+            cmds.Add(DrawCmd.Fill(proj.X - 12, proj.Y - 5, 22, 10, proj.Color));
+            cmds.Add(DrawCmd.Fill(proj.X - 14, proj.Y - 4, 5, 8, "#ffffff"));
         }
 
         // Player: walk bob + squash/stretch

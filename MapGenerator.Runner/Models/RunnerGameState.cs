@@ -35,6 +35,7 @@ public class RunnerGameState
     // Entities
     public List<RunnerObstacle> Obstacles { get; set; } = [];
     public List<RunnerEnemy> Enemies { get; set; } = [];
+    public List<RunnerProjectile> Projectiles { get; set; } = [];
     public List<double> PendingEnemyTriggers { get; set; } = [];
     public List<FloatingText> FloatingTexts { get; set; } = [];
     public double NextObstacleWorldX { get; set; }

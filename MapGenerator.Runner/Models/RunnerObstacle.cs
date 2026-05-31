@@ -9,5 +9,5 @@ public class RunnerObstacle
     /// <summary>True = gap in the ground; false = solid boulder.</summary>
     public bool IsGap { get; init; }
     public string Color { get; init; } = "#808090";
-    public bool IsActive { get; set; } = true;
+    public double HitCooldownMs { get; set; }
 }

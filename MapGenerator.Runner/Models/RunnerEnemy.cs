@@ -1,5 +1,7 @@
 namespace MapGenerator.Runner.Models;
 
+public enum EnemyType { Melee, Shooter }
+
 public class RunnerEnemy
 {
     /// <summary>Screen-space X. Enemies walk left across the screen independently of world scroll.</summary>
@@ -12,4 +14,7 @@ public class RunnerEnemy
     public double WalkSpeedPx { get; init; } = 80.0;
     public string Color { get; init; } = "#c04040";
     public bool IsDefeated => Hp <= 0;
+    public EnemyType Type { get; init; } = EnemyType.Melee;
+    public double ProjectileIntervalMs { get; init; } = 1800.0;
+    public double ProjectileCooldownMs { get; set; } = 1800.0;
 }

@@ -20,6 +20,7 @@ public static class RunnerEngine
     private const double BoulderHeight = 50.0;
     private const double GapWidth = 60.0;
     private const double AttackRange = 90.0;
+    private const double ProjectileY = GroundY - 28;     // flies at mid-body height; player must jump to dodge
     private const double AttackCooldownMs = 500.0;
     private const double CompanionAttackCooldownMs = 2200.0;
     private const double SpeedAcceleration = 8.0; // px/s per second
@@ -66,13 +67,15 @@ public static class RunnerEngine
         {
             if (state.WorldOffset >= state.PendingEnemyTriggers[i])
             {
+                bool isShooter = state.Enemies.Count % 2 == 1;
                 state.Enemies.Add(new RunnerEnemy
                 {
                     ScreenX = CanvasWidth + 20,
                     Hp = cfg.EnemyHp,
                     MaxHp = cfg.EnemyHp,
                     Damage = cfg.EnemyDamage,
-                    Color = cfg.EnemyColor,
+                    Color = isShooter ? "#c07820" : cfg.EnemyColor,
+                    Type = isShooter ? EnemyType.Shooter : EnemyType.Melee,
                 });
                 state.PendingEnemyTriggers.RemoveAt(i);
             }
@@ -157,12 +160,16 @@ public static class RunnerEngine
         // Remove obstacles that have scrolled fully off-screen to the left
         state.Obstacles.RemoveAll(o => o.WorldX + o.Width < state.WorldOffset - 80);
 
+        // Tick hit cooldowns so each obstacle can only damage the player once per crossing
+        foreach (var obs in state.Obstacles)
+            obs.HitCooldownMs = Math.Max(0, obs.HitCooldownMs - deltaMs);
+
         // Obstacle collision
         double playerLeft = PlayerScreenX;
         double playerRight = PlayerScreenX + PlayerWidth;
         double playerBottom = state.PlayerY + PlayerHeight;
 
-        foreach (var obs in state.Obstacles.Where(o => o.IsActive))
+        foreach (var obs in state.Obstacles.Where(o => o.HitCooldownMs <= 0))
         {
             double obsLeft = obs.WorldX - state.WorldOffset;
             double obsRight = obsLeft + obs.Width;
@@ -175,7 +182,7 @@ public static class RunnerEngine
                 if (state.IsGrounded)
                 {
                     DamagePlayer(state, cfg.EnemyDamage * 2, "#ff8844");
-                    obs.IsActive = false;
+                    obs.HitCooldownMs = 600.0;
                 }
             }
             else
@@ -184,7 +191,7 @@ public static class RunnerEngine
                 if (playerBottom > obstacleTop + 4 && state.PlayerY < GroundY)
                 {
                     DamagePlayer(state, cfg.EnemyDamage, "#ff8844");
-                    obs.IsActive = false;
+                    obs.HitCooldownMs = 600.0;
                 }
             }
         }
@@ -198,7 +205,25 @@ public static class RunnerEngine
                                       enemy.ScreenX > PlayerScreenX - 20;
 
             if (!playerInEnemyRange)
+            {
                 enemy.ScreenX -= enemy.WalkSpeedPx * dt;
+
+                // Shooter enemies fire projectiles while walking toward the player
+                if (enemy.Type == EnemyType.Shooter)
+                {
+                    enemy.ProjectileCooldownMs -= deltaMs;
+                    if (enemy.ProjectileCooldownMs <= 0)
+                    {
+                        state.Projectiles.Add(new RunnerProjectile
+                        {
+                            X = enemy.ScreenX - 4,
+                            Y = ProjectileY,
+                            Damage = enemy.Damage,
+                        });
+                        enemy.ProjectileCooldownMs = enemy.ProjectileIntervalMs;
+                    }
+                }
+            }
             else
             {
                 enemy.AttackCooldownMs -= deltaMs;
@@ -207,6 +232,29 @@ public static class RunnerEngine
                     DamagePlayer(state, enemy.Damage, "#ff4444");
                     enemy.AttackCooldownMs = enemy.AttackIntervalMs;
                 }
+            }
+        }
+
+        // Projectile movement and collision
+        for (int i = state.Projectiles.Count - 1; i >= 0; i--)
+        {
+            var proj = state.Projectiles[i];
+            proj.X -= proj.SpeedPx * dt;
+
+            if (proj.X + 12 < 0)
+            {
+                state.Projectiles.RemoveAt(i);
+                continue;
+            }
+
+            // Collision with player (±10 horizontal, ±5 vertical around projectile center)
+            if (proj.X + 10 > playerLeft &&
+                proj.X - 10 < playerRight &&
+                proj.Y + 5  > state.PlayerY &&
+                proj.Y - 5  < playerBottom)
+            {
+                DamagePlayer(state, proj.Damage, "#ffaa00");
+                state.Projectiles.RemoveAt(i);
             }
         }
 
