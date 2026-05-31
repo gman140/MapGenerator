@@ -810,6 +810,37 @@ OnDance="HandleDanceAsync"
         var companion = Session.Companion;
         var equippedLure = Session.Player.EquippedLureId != null
             ? EquipmentProvider.GetById(Session.Player.EquippedLureId) : null;
+
+        var companionBonus = new CompanionFishingBonus();
+        if (companion != null)
+        {
+            var td = TemperamentRegistry.Get(companion.Temperament);
+            var fd = FormRegistry.Get(companion.Form);
+            int eFoc = companion.Stats.GetValueOrDefault("FOC") + td.FocBonus + fd.FocBonus;
+            int eSpd = companion.Stats.GetValueOrDefault("SPD") + td.SpdBonus + fd.SpdBonus;
+            int eVit = companion.Stats.GetValueOrDefault("VIT") + td.VitBonus + fd.VitBonus;
+            int eDef = companion.Stats.GetValueOrDefault("DEF") + td.DefBonus + fd.DefBonus;
+            int eAtk = companion.Stats.GetValueOrDefault("ATK") + td.AtkBonus + fd.AtkBonus;
+            int eRes = companion.Stats.GetValueOrDefault("RES") + td.ResBonus + fd.ResBonus;
+            companionBonus = new()
+            {
+                StrikeMultiplier       = 1.0 + eFoc * CompanionFishingBonus.FocPerPoint,
+                WaitMultiplier         = Math.Max(0.30, 1.0 - eSpd * CompanionFishingBonus.SpdPerPoint),
+                TensionMultiplier      = Math.Max(0.30, 1.0 - eVit * CompanionFishingBonus.VitPerPoint),
+                BurstMultiplier        = Math.Max(0.30, 1.0 - eDef * CompanionFishingBonus.DefPerPoint),
+                TapBonus               = eAtk * CompanionFishingBonus.AtkPerPoint,
+                TensionBreakThreshold  = 1.0 + eRes * CompanionFishingBonus.ResPerPoint,
+                RarityBoost            = companion.Temperament == CompanionTemperament.Bold    ? 1.10 : 1.0,
+                ChainBoost             = companion.Temperament == CompanionTemperament.Cunning ? 1.30 : 1.0,
+                BurstSuppressChance    = companion.Temperament == CompanionTemperament.Careful  ? 0.15 : 0.0,
+                FreeTapChance          = companion.Temperament == CompanionTemperament.Playful  ? 0.20 : 0.0,
+                StoicHook              = companion.Temperament == CompanionTemperament.Stoic,
+                TimidFirstStrike       = companion.Temperament == CompanionTemperament.Timid,
+                CursorSpeedMultiplier  = companion.Temperament == CompanionTemperament.Reckless ? 1.20 : 1.0,
+                MissTensionBonus       = companion.Temperament == CompanionTemperament.Fierce   ? 0.05 : 0.0,
+            };
+        }
+
         var initData = new FishingInitData
         {
             LocationLabel          = config.LocationLabel,
@@ -825,6 +856,7 @@ OnDance="HandleDanceAsync"
             LureCategoryBoost      = equippedLure?.LureCategoryBoost ?? 1.0,
             LureRarityBoost        = equippedLure?.LureRarityBoost ?? 1.0,
             LureName               = equippedLure?.Name,
+            CompanionBonus         = companionBonus,
             FishPool               = [.. fishPool],
             PlayerSprite           = Session.Player.SpritePixels,
             CompanionSprite        = companion?.SpritePixels ?? [],

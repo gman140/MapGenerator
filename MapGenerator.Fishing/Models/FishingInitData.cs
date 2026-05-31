@@ -40,6 +40,9 @@ public class FishingInitData
     /// <summary>Display name of the equipped lure for the fishing UI. Null when no lure equipped.</summary>
     public string? LureName { get; init; }
 
+    /// <summary>Passive fishing bonuses derived from the companion's stats and temperament.</summary>
+    public CompanionFishingBonus CompanionBonus { get; init; } = new();
+
     /// <summary>Fish pool for this location, filtered to the player's pole tier.</summary>
     public FishDefinition[] FishPool { get; init; } = [];
 

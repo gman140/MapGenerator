@@ -1484,6 +1484,11 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .companion-stat-item { display: flex; align-items: center; gap: .35rem; background: var(--bg); border-radius: 4px; padding: .25rem .5rem; font-size: .82rem; }
 .companion-stat-item .companion-stat-label { color: var(--text-dim); width: 2.8rem; flex-shrink: 0; }
 .companion-stat-value { flex: 1; font-weight: 600; color: var(--text); }
+.companion-fishing-section { margin-top: .6rem; border-top: 1px solid var(--border); padding-top: .5rem; }
+.companion-fishing-label { font-size: .72rem; font-weight: 600; color: #50d0b0; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .35rem; }
+.companion-fishing-section .companion-stat-item .companion-stat-label { width: 6rem; }
+.fishing-bonus-pos { color: #60e890 !important; }
+.fishing-bonus-neg { color: #e87060 !important; }
 .companion-alloc-btn { width: 18px; height: 18px; padding: 0; border-radius: 50%; background: rgba(80,120,220,.25); border: 1px solid rgba(80,120,220,.5); color: #80a8ff; font-size: .75rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .12s; }
 .companion-alloc-btn:hover { background: rgba(80,120,220,.5); }
 .companion-alloc-spacer { width: 18px; flex-shrink: 0; }

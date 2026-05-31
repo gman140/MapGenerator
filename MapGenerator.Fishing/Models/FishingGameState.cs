@@ -19,6 +19,7 @@ public class FishingGameState
     // Active fish
     public FishDefinition? ActiveFish { get; set; }
     public int MissedStrikes { get; set; }
+    public bool TimidStrikeForgiven { get; set; }
 
     // Timing counters
     public double PhaseElapsedMs { get; set; }

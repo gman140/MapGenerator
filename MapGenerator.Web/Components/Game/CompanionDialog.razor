@@ -3,6 +3,7 @@
 @using MapGenerator.Combat.Interfaces
 @using MapGenerator.Domain.Models
 @using MapGenerator.Domain.Enums
+@using MapGenerator.Fishing.Models
 @using MapGenerator.Web.Services
 @inject ICompanionMoveProvider MoveProvider
 @inject ICompanionDefinitionProvider DefProvider
@@ -84,6 +85,26 @@
                         </div>
                     }
                 </div>
+
+                @* ── Fishing bonuses ── *@
+                @{
+                    var fishingRows = FishingBonusRows.ToList();
+                }
+                @if (fishingRows.Count > 0)
+                {
+                    <div class="companion-fishing-section">
+                        <div class="companion-fishing-label">🎣 Fishing Bonuses</div>
+                        <div class="companion-stat-grid">
+                            @foreach (var (label, value, positive) in fishingRows)
+                            {
+                                <div class="companion-stat-item">
+                                    <span class="companion-stat-label">@label</span>
+                                    <span class="companion-stat-value @(positive ? "fishing-bonus-pos" : "fishing-bonus-neg")">@value</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
 
                 @* ── Items section ── *@
                 @{
@@ -399,6 +420,43 @@
 
     private int EffectiveAttack =>
         GetStat("ATK") + TempDef.AtkBonus + FormDef.AtkBonus;
+
+    // (label, formatted value, isPositive)
+    private IEnumerable<(string Label, string Value, bool Positive)> FishingBonusRows
+    {
+        get
+        {
+            int eFoc = GetStat("FOC") + TempDef.FocBonus + FormDef.FocBonus;
+            int eSpd = GetStat("SPD") + TempDef.SpdBonus + FormDef.SpdBonus;
+            int eVit = GetStat("VIT") + TempDef.VitBonus + FormDef.VitBonus;
+            int eDef = GetStat("DEF") + TempDef.DefBonus + FormDef.DefBonus;
+            int eAtk = GetStat("ATK") + TempDef.AtkBonus + FormDef.AtkBonus;
+            int eRes = GetStat("RES") + TempDef.ResBonus + FormDef.ResBonus;
+
+            if (eFoc > 0) yield return ("Strike window", $"+{(int)(eFoc * CompanionFishingBonus.FocPerPoint * 100)}%", true);
+            if (eSpd > 0) yield return ("Bite speed",    $"-{(int)(eSpd * CompanionFishingBonus.SpdPerPoint * 100)}% wait", true);
+            if (eVit > 0) yield return ("Tension drain", $"-{(int)(eVit * CompanionFishingBonus.VitPerPoint * 100)}%", true);
+            if (eDef > 0) yield return ("Burst strength",$"-{(int)(eDef * CompanionFishingBonus.DefPerPoint * 100)}%", true);
+            if (eAtk > 0) yield return ("Tap power",     $"+{(int)(eAtk * CompanionFishingBonus.AtkPerPoint * 100)}%", true);
+            if (eRes > 0) yield return ("Line strength",  $"+{(int)(eRes * CompanionFishingBonus.ResPerPoint * 100)}% threshold", true);
+
+            // Temperament-specific bonus
+            var tempLine = Companion.Temperament switch
+            {
+                CompanionTemperament.Bold     => ("Rare fish",       "+10% chance",    true),
+                CompanionTemperament.Cunning  => ("Chain materials", "+30% chance",    true),
+                CompanionTemperament.Careful  => ("Burst suppress",  "15% chance",     true),
+                CompanionTemperament.Playful  => ("Free tap",        "20% chance",     true),
+                CompanionTemperament.Stoic    => ("Hook tension",    "starts at 0%",   true),
+                CompanionTemperament.Timid    => ("Missed strike",   "1 forgiven",     true),
+                CompanionTemperament.Reckless => ("Cursor speed",    "+20%",           false),
+                CompanionTemperament.Fierce   => ("Miss tension",    "+5% extra",      false),
+                _                            => ((string?)null, (string?)null, false),
+            };
+            if (tempLine.Item1 != null)
+                yield return (tempLine.Item1, tempLine.Item2!, tempLine.Item3);
+        }
+    }
 
     protected override void OnInitialized()
     {

@@ -89,7 +89,7 @@ public static class FishingEngine
         if (state.Phase != FishingPhase.Striking) return;
         state.Phase           = FishingPhase.Reeling;
         state.PhaseElapsedMs  = 0;
-        state.TensionPct         = 0.15;
+        state.TensionPct         = data.CompanionBonus.StoicHook ? 0.0 : 0.15;
         state.ReelProgressPct    = 0;
         state.ReelDisplayProgress = 0;
         state.BurstCooldownMs    = BurstCooldownBaseMs;
@@ -116,22 +116,23 @@ public static class FishingEngine
         double effectiveZoneW = baseZoneW * (1.0 - state.TensionPct * 0.45);
         bool inZone           = state.ReelCursorPos >= state.ReelZoneStart &&
                                 state.ReelCursorPos <= state.ReelZoneStart + effectiveZoneW;
+        bool treatAsHit       = inZone || _rng.NextDouble() < data.CompanionBonus.FreeTapChance;
 
-        if (inZone)
+        if (treatAsHit)
         {
-            state.ReelProgressPct = Math.Clamp(state.ReelProgressPct + 0.10 + (1 - state.TensionPct) * 0.05, 0, 1);
+            state.ReelProgressPct = Math.Clamp(state.ReelProgressPct + 0.10 + (1 - state.TensionPct) * 0.05 + data.CompanionBonus.TapBonus, 0, 1);
             state.TensionPct      = Math.Max(0, state.TensionPct - 0.06);
             state.TapFlashMs      = 260;
         }
         else
         {
-            state.TensionPct = Math.Clamp(state.TensionPct + 0.14, 0, 1);
+            state.TensionPct = Math.Clamp(state.TensionPct + 0.14 + data.CompanionBonus.MissTensionBonus, 0, 1);
             state.MissTapFlashMs = 220;
         }
 
         // Check terminal conditions immediately — the next tick's passive slip runs before
         // TickReeling's own check and would pull ReelProgressPct back below 1.0 before it fires.
-        if (state.TensionPct >= 1.0)
+        if (state.TensionPct >= data.CompanionBonus.TensionBreakThreshold)
         {
             state.Phase = FishingPhase.LineBroke;
         }
@@ -170,17 +171,18 @@ public static class FishingEngine
         state.Phase          = FishingPhase.Waiting;
         state.PhaseElapsedMs = 0;
         double baseWait      = 3000.0 + _rng.NextDouble() * 5000.0;
-        state.BiteWaitMs     = baseWait * data.WaitTimeMultiplier;
+        state.BiteWaitMs     = baseWait * data.WaitTimeMultiplier * data.CompanionBonus.WaitMultiplier;
         state.ActiveFish     = null;
         TriggerCall(state, data, CallsWaiting);
     }
 
     private static void EnterNibbling(FishingGameState state, FishingInitData data)
     {
-        state.Phase          = FishingPhase.Nibbling;
-        state.PhaseElapsedMs = 0;
-        state.MissedStrikes  = 0;
-        state.ActiveFish     = PickFish(data);
+        state.Phase               = FishingPhase.Nibbling;
+        state.PhaseElapsedMs      = 0;
+        state.MissedStrikes       = 0;
+        state.TimidStrikeForgiven = false;
+        state.ActiveFish          = PickFish(data);
         TriggerCall(state, data, CallsNibbling);
     }
 
@@ -190,12 +192,20 @@ public static class FishingEngine
         state.PhaseElapsedMs    = 0;
         double window           = state.ActiveFish?.StrikeWindowMs ?? 700;
         double streakBonus      = data.StreakBonusActive ? 1.25 : 1.0;
-        state.StrikeRemainingMs = window * data.StrikeWindowMultiplier * streakBonus;
+        state.StrikeRemainingMs = window * data.StrikeWindowMultiplier * streakBonus * data.CompanionBonus.StrikeMultiplier;
         TriggerCall(state, data, CallsStriking);
     }
 
     private static void HandleMissedStrike(FishingGameState state, FishingInitData data)
     {
+        if (data.CompanionBonus.TimidFirstStrike && !state.TimidStrikeForgiven)
+        {
+            state.TimidStrikeForgiven = true;
+            state.Phase               = FishingPhase.Nibbling;
+            state.PhaseElapsedMs      = 0;
+            TriggerCall(state, data, CallsNibbling);
+            return;
+        }
         state.MissedStrikes++;
         if (state.MissedStrikes >= (state.ActiveFish?.MaxMissedStrikes ?? 2))
         {
@@ -225,7 +235,7 @@ public static class FishingEngine
         if (fish == null) { state.Phase = FishingPhase.EscapedFish; return; }
 
         // ── Rhythm cursor ─────────────────────────────────────────────────────
-        double cursorSpeed = 0.50 + fish.TensionDrainRate * 5.5;
+        double cursorSpeed = (0.50 + fish.TensionDrainRate * 5.5) * data.CompanionBonus.CursorSpeedMultiplier;
         state.ReelCursorPos += state.ReelCursorDir * cursorSpeed * dt;
         if (state.ReelCursorPos >= 1.0) { state.ReelCursorPos = 1.0; state.ReelCursorDir = -1; }
         if (state.ReelCursorPos <= 0.0) { state.ReelCursorPos = 0.0; state.ReelCursorDir  =  1; }
@@ -255,7 +265,7 @@ public static class FishingEngine
 
         // ── Passive forces ────────────────────────────────────────────────────
         double prevTension        = state.TensionPct;
-        double tensionMult        = data.StreakBonusActive ? 0.70 : 1.0;
+        double tensionMult        = (data.StreakBonusActive ? 0.70 : 1.0) * data.CompanionBonus.TensionMultiplier;
         state.ReelProgressPct     = Math.Max(0, state.ReelProgressPct - 0.020 * dt);
         state.TensionPct          = Math.Clamp(state.TensionPct + fish.TensionDrainRate * 0.40 * tensionMult * dt, 0, 1);
 
@@ -263,7 +273,8 @@ public static class FishingEngine
         state.BurstCooldownMs = Math.Max(0, state.BurstCooldownMs - deltaMs);
         if (state.BurstCooldownMs <= 0 && _rng.NextDouble() < fish.BurstChancePerSec * dt)
         {
-            state.TensionPct      = Math.Clamp(state.TensionPct + fish.BurstStrength, 0, 1);
+            if (_rng.NextDouble() >= data.CompanionBonus.BurstSuppressChance)
+                state.TensionPct = Math.Clamp(state.TensionPct + fish.BurstStrength * data.CompanionBonus.BurstMultiplier, 0, 1);
             state.BurstCooldownMs = BurstCooldownBaseMs;
         }
 
@@ -295,7 +306,7 @@ public static class FishingEngine
 
         state.PreviousTensionPct = state.TensionPct;
 
-        if (state.TensionPct >= 1.0)
+        if (state.TensionPct >= data.CompanionBonus.TensionBreakThreshold)
         {
             state.Phase = FishingPhase.LineBroke;
         }
@@ -347,6 +358,14 @@ public static class FishingEngine
         // Streak bonus: boosts chain materials so skilled players progress faster
         if (data.StreakBonusActive && fish.IsChainMaterial)
             w *= 1.5;
+
+        // Companion Cunning: additional chain material boost
+        if (fish.IsChainMaterial)
+            w *= data.CompanionBonus.ChainBoost;
+
+        // Companion Bold: additional rare fish boost (stacks with pole and lure)
+        if (fish.RarityWeight < 1.5f)
+            w *= data.CompanionBonus.RarityBoost;
 
         return w;
     }
