@@ -118,6 +118,7 @@ public static class FishingEngine
                                 state.ReelCursorPos <= state.ReelZoneStart + effectiveZoneW;
         bool treatAsHit       = inZone || _rng.NextDouble() < data.CompanionBonus.FreeTapChance;
 
+        double tensionCap = data.CompanionBonus.TensionBreakThreshold;
         if (treatAsHit)
         {
             state.ReelProgressPct = Math.Clamp(state.ReelProgressPct + 0.10 + (1 - state.TensionPct) * 0.05 + data.CompanionBonus.TapBonus, 0, 1);
@@ -126,7 +127,7 @@ public static class FishingEngine
         }
         else
         {
-            state.TensionPct = Math.Clamp(state.TensionPct + 0.14 + data.CompanionBonus.MissTensionBonus, 0, 1);
+            state.TensionPct = Math.Clamp(state.TensionPct + 0.14 + data.CompanionBonus.MissTensionBonus, 0, tensionCap);
             state.MissTapFlashMs = 220;
         }
 
@@ -266,15 +267,16 @@ public static class FishingEngine
         // ── Passive forces ────────────────────────────────────────────────────
         double prevTension        = state.TensionPct;
         double tensionMult        = (data.StreakBonusActive ? 0.70 : 1.0) * data.CompanionBonus.TensionMultiplier;
+        double cap                = data.CompanionBonus.TensionBreakThreshold;
         state.ReelProgressPct     = Math.Max(0, state.ReelProgressPct - 0.020 * dt);
-        state.TensionPct          = Math.Clamp(state.TensionPct + fish.TensionDrainRate * 0.40 * tensionMult * dt, 0, 1);
+        state.TensionPct          = Math.Clamp(state.TensionPct + fish.TensionDrainRate * 0.40 * tensionMult * dt, 0, cap);
 
         // Fish burst
         state.BurstCooldownMs = Math.Max(0, state.BurstCooldownMs - deltaMs);
         if (state.BurstCooldownMs <= 0 && _rng.NextDouble() < fish.BurstChancePerSec * dt)
         {
             if (_rng.NextDouble() >= data.CompanionBonus.BurstSuppressChance)
-                state.TensionPct = Math.Clamp(state.TensionPct + fish.BurstStrength * data.CompanionBonus.BurstMultiplier, 0, 1);
+                state.TensionPct = Math.Clamp(state.TensionPct + fish.BurstStrength * data.CompanionBonus.BurstMultiplier, 0, cap);
             state.BurstCooldownMs = BurstCooldownBaseMs;
         }
 

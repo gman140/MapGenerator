@@ -23,7 +23,8 @@
         </div>
         <canvas id="fishing-canvas" class="runner-canvas"
                 width="@((int)FishingRenderer.CanvasWidth)"
-                height="@((int)FishingRenderer.CanvasHeight)"></canvas>
+                height="@((int)FishingRenderer.CanvasHeight)"
+                @onpointerdown="OnHook"></canvas>
 
         <div class="runner-controls">
             @if (_state.Phase is FishingPhase.Striking or FishingPhase.Reeling)
@@ -37,7 +38,7 @@
                 <button class="runner-btn" disabled>@PhaseLabel</button>
             }
         </div>
-        <p class="runner-hint">Keyboard: <strong>Space</strong> to hook · <strong>Space</strong> to tap</p>
+        <p class="runner-hint">Tap the screen or press <strong>Space</strong> to hook &amp; reel</p>
     }
     else if (_result?.Success == true)
     {

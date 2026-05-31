@@ -64,6 +64,8 @@
     border-radius: 6px;
     image-rendering: pixelated;
     display: block;
+    touch-action: manipulation;
+    cursor: pointer;
 }
 
 .runner-controls {
