@@ -93,6 +93,63 @@ public class InMemoryCraftingRecipeProvider : ICraftingRecipeProvider
         },
         new()
         {
+            Id          = "FreshwaterJig",
+            Name        = "Freshwater Jig",
+            Description = "Wound from river fiber and a river scale sliver. Draws freshwater fish to the surface.",
+            Ingredients =
+            [
+                new() { ResourceId = "FishScale", Quantity = 3 },
+                new() { ResourceId = "Fiber",     Quantity = 2 },
+            ],
+        },
+        new()
+        {
+            Id          = "PearlSpinner",
+            Name        = "Pearl Spinner",
+            Description = "A sliver of deepwater pearl set on a wire frame. Catches light the way rare fish notice.",
+            Ingredients =
+            [
+                new() { ResourceId = "FishScale", Quantity = 2 },
+                new() { ResourceId = "FishFin",   Quantity = 2 },
+            ],
+        },
+        new()
+        {
+            Id          = "ReefLure",
+            Name        = "Reef Lure",
+            Description = "Carved from salt crystal and threaded with brine. Saltwater fish take it for something familiar.",
+            Ingredients =
+            [
+                new() { ResourceId = "FishScale",    Quantity = 2 },
+                new() { ResourceId = "BrineCrystal", Quantity = 2 },
+            ],
+        },
+        new()
+        {
+            Id               = "AbyssalHook",
+            Name             = "Abyssal Hook",
+            Description      = "An old hook set with a pearl fragment that glows faintly in darkness. Deep things come to look.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "FishFin",        Quantity = 3 },
+                new() { ResourceId = "DeepwaterPearl", Quantity = 1 },
+            ],
+        },
+        new()
+        {
+            Id               = "GlacialBarb",
+            Name             = "Glacial Barb",
+            Description      = "A shard of glacier ice bound in brine-cured cord. Cold-water fish mistake it for home.",
+            RequiresWorkshop = true,
+            Ingredients      =
+            [
+                new() { ResourceId = "BrineCrystal", Quantity = 2 },
+                new() { ResourceId = "GlacierShard", Quantity = 1 },
+            ],
+        },
+        new()
+        {
             Id          = "WarmCloak",
             Name        = "Warm Cloak",
             Description = "Fiber and feathers and moss, layered and stitched. Something between wearing a blanket and wearing a small animal. Warm, regardless.",

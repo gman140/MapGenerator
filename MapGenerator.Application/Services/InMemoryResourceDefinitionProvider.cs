@@ -69,6 +69,11 @@ public class InMemoryResourceDefinitionProvider : IResourceDefinitionProvider
         new() { Id = "DrownedKey",  Name = "Drowned Key",  Description = "Heavy with water it has never lost. The lock it fits has been underwater for a very long time." },
         new() { Id = "MillKey",     Name = "Miller's Key", Description = "Still smells faintly of flour and cold stone. Someone kept it carefully for a long time." },
 
+        // ── Fishing byproducts ────────────────────────────────────────────────
+        new() { Id = "FishScale",    Name = "Fish Scale",    Description = "A single scale, caught up in the line. Iridescent and faintly tough." },
+        new() { Id = "FishFin",      Name = "Fish Fin",      Description = "Stiff and translucent. Left behind after a fight on the line." },
+        new() { Id = "BrineCrystal", Name = "Brine Crystal", Description = "Salt crystallized from deep water. Carries a faint smell of the ocean floor." },
+
         // ── Dungeon-exclusive resources ───────────────────────────────────────
         new() { Id = "CaveCrystal",    Name = "Cave Crystal",    Description = "It grew in the dark over a very long time. It does not know what sunlight is." },
         new() { Id = "GlowingMoss",    Name = "Glowing Moss",    Description = "Bioluminescent and cold to the touch. It illuminates nothing useful." },

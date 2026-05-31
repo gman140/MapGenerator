@@ -171,6 +171,42 @@ public class InMemoryEquipmentDefinitionProvider : IEquipmentDefinitionProvider
             Description = "Herb-soaked linen wound tight around the head. Every remedy you apply works better than it should.",
             Affixes     = [new(ModifierStat.HealBonus, 0.20f)],
         },
+
+        // ── Fishing lures ─────────────────────────────────────────────────────
+        new()
+        {
+            Id = "FreshwaterJig", Name = "Freshwater Jig", EquipmentSlot = "Lure",
+            Description        = "Wound from river fiber and a river scale sliver. Draws freshwater fish to the surface.",
+            LureCategory       = "Freshwater",
+            LureCategoryBoost  = 2.0,
+        },
+        new()
+        {
+            Id = "PearlSpinner", Name = "Pearl Spinner", EquipmentSlot = "Lure",
+            Description      = "A sliver of deepwater pearl set on a wire frame. Catches light the way rare fish notice.",
+            LureRarityBoost  = 1.4,
+        },
+        new()
+        {
+            Id = "ReefLure", Name = "Reef Lure", EquipmentSlot = "Lure",
+            Description       = "Carved from salt crystal and threaded with brine. Saltwater fish take it for something familiar.",
+            LureCategory      = "Saltwater",
+            LureCategoryBoost = 2.0,
+        },
+        new()
+        {
+            Id = "AbyssalHook", Name = "Abyssal Hook", EquipmentSlot = "Lure",
+            Description       = "An old hook set with a pearl fragment that glows faintly in darkness. Deep things come to look.",
+            LureCategory      = "Deep",
+            LureCategoryBoost = 2.5,
+        },
+        new()
+        {
+            Id = "GlacialBarb", Name = "Glacial Barb", EquipmentSlot = "Lure",
+            Description       = "A shard of glacier ice bound in brine-cured cord. Cold-water fish mistake it for home.",
+            LureCategory      = "Cold",
+            LureCategoryBoost = 2.5,
+        },
     ];
 
     private static readonly Dictionary<string, EquipmentDefinition> _byId =

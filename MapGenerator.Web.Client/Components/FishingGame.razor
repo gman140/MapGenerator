@@ -12,6 +12,10 @@
     {
         <div class="runner-label">
             @InitData.LocationLabel
+            @if (!string.IsNullOrEmpty(InitData.LureName))
+            {
+                <span class="fishing-lure-badge">🎣 @InitData.LureName</span>
+            }
             @if (InitData.StreakBonusActive)
             {
                 <span class="fishing-streak-badge">🔥 @InitData.FishingStreak-catch streak bonus</span>

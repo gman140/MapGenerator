@@ -318,17 +318,37 @@ public static class FishingEngine
         var pool = data.FishPool;
         if (pool.Length == 0) return null;
 
-        double totalWeight = pool.Sum(f =>
-            f.RarityWeight < 1.5 ? f.RarityWeight * data.RarityMultiplier : f.RarityWeight);
-
-        double roll = _rng.NextDouble() * totalWeight;
+        double totalWeight = pool.Sum(f => FishWeight(f, data));
+        double roll        = _rng.NextDouble() * totalWeight;
         foreach (var f in pool)
         {
-            double w = f.RarityWeight < 1.5 ? f.RarityWeight * data.RarityMultiplier : f.RarityWeight;
-            roll -= w;
+            roll -= FishWeight(f, data);
             if (roll <= 0) return f;
         }
         return pool[^1];
+    }
+
+    private static double FishWeight(FishDefinition fish, FishingInitData data)
+    {
+        double w = fish.RarityWeight;
+
+        // Pole rarity multiplier — applies only to rare entries (RarityWeight < 1.5)
+        if (fish.RarityWeight < 1.5f)
+            w *= data.RarityMultiplier;
+
+        // Pearl Spinner: boosts all rare entries
+        if (fish.RarityWeight < 1.5f)
+            w *= data.LureRarityBoost;
+
+        // Category lure: boosts matching habitat
+        if (data.LureCategory != null && fish.FishCategory == data.LureCategory)
+            w *= data.LureCategoryBoost;
+
+        // Streak bonus: boosts chain materials so skilled players progress faster
+        if (data.StreakBonusActive && fish.IsChainMaterial)
+            w *= 1.5;
+
+        return w;
     }
 
     private static void TriggerCall(FishingGameState state, FishingInitData data, string[] options)

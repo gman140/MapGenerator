@@ -19,6 +19,9 @@ public class FishDefinition
     /// <summary>True for pole-upgrade chain materials (e.g. River Scale). Not a fish to eat.</summary>
     public bool IsChainMaterial { get; init; }
 
+    /// <summary>Habitat category used by lures: "Freshwater", "Saltwater", "Deep", or "Cold". Null for chain materials.</summary>
+    public string? FishCategory { get; init; }
+
     // ── Fight parameters ────────────────────────────────────────────────────
 
     /// <summary>Seconds between bobber appearing and fish striking.</summary>

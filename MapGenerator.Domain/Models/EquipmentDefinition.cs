@@ -11,4 +11,9 @@ public class EquipmentDefinition
     public DamageType WeaponDamageType { get; init; } = DamageType.Bludgeoning;
     public IReadOnlyList<StatAffix> Affixes { get; init; } = [];
     public IReadOnlyList<string> WeaponAttackIds { get; init; } = [];
+
+    // Lure-specific fishing effects (only used when EquipmentSlot == "Lure")
+    public string? LureCategory { get; init; }          // "Freshwater", "Saltwater", "Deep", "Cold"
+    public double LureCategoryBoost { get; init; } = 1.0;
+    public double LureRarityBoost { get; init; } = 1.0;
 }

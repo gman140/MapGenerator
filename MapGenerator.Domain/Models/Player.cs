@@ -50,6 +50,7 @@ public class Player
     public string? EquippedWeaponId { get; set; }
     public string? EquippedArmorId { get; set; }
     public string? EquippedHatId { get; set; }
+    public string? EquippedLureId { get; set; }
 
     // Combat session
     public string? ActiveCombatSessionId { get; set; }

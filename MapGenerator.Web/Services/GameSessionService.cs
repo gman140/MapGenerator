@@ -5,6 +5,7 @@ using MapGenerator.Combat.Models;
 using MapGenerator.Domain.Enums;
 using MapGenerator.Domain.Interfaces;
 using MapGenerator.Domain.Models;
+using MapGenerator.Fishing.Interfaces;
 
 namespace MapGenerator.Web.Services;
 
@@ -42,6 +43,7 @@ public class GameSessionService : IAsyncDisposable
     private readonly ICompanionMoveProvider _companionMoveProvider;
     private readonly CompanionBattleService _battleSvc;
     private readonly CompanionService _companionSvc;
+    private readonly IFishDefinitionProvider _fishDefProvider;
 
     public Player? Player { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -80,7 +82,8 @@ public class GameSessionService : IAsyncDisposable
         ICompanionDefinitionProvider companionDefProvider,
         ICompanionMoveProvider companionMoveProvider,
         CompanionBattleService battleSvc,
-        CompanionService companionSvc)
+        CompanionService companionSvc,
+        IFishDefinitionProvider fishDefProvider)
     {
         _playerSvc       = playerSvc;
         _chatSvc         = chatSvc;
@@ -114,6 +117,7 @@ public class GameSessionService : IAsyncDisposable
         _companionMoveProvider = companionMoveProvider;
         _battleSvc            = battleSvc;
         _companionSvc         = companionSvc;
+        _fishDefProvider      = fishDefProvider;
     }
 
     public async Task InitAsync(string browserId)
@@ -906,6 +910,11 @@ public class GameSessionService : IAsyncDisposable
             await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, Player.EquippedArmorId, 1);
             Player.EquippedArmorId = null;
         }
+        if (Player.EquippedLureId != null)
+        {
+            await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, Player.EquippedLureId, 1);
+            Player.EquippedLureId = null;
+        }
         if (Player.EquippedHatId != null)
         {
             await _tileInventoryRepo.AddItemsAsync(dropQ, dropR, Player.EquippedHatId, 1);
@@ -1057,6 +1066,7 @@ public class GameSessionService : IAsyncDisposable
             case "Weapon": Player.EquippedWeaponId = itemId; break;
             case "Armor":  Player.EquippedArmorId  = itemId; break;
             case "Hat":    Player.EquippedHatId     = itemId; break;
+            case "Lure":   Player.EquippedLureId    = itemId; break;
             default: return "Unknown equipment slot.";
         }
 
@@ -1072,6 +1082,7 @@ public class GameSessionService : IAsyncDisposable
             case "Weapon": Player.EquippedWeaponId = null; break;
             case "Armor":  Player.EquippedArmorId  = null; break;
             case "Hat":    Player.EquippedHatId    = null; break;
+            case "Lure":   Player.EquippedLureId   = null; break;
             default: return "Unknown slot.";
         }
         await _playerRepo.UpdateAsync(Player);
@@ -1106,9 +1117,29 @@ public class GameSessionService : IAsyncDisposable
             newRecord = true;
         }
         Player!.FishingStreak++;
+
+        // Byproduct drops tied to fish rarity
+        var fishDef = _fishDefProvider.GetById(fishId);
+        if (fishDef != null && !fishDef.IsChainMaterial)
+        {
+            string? drop = fishDef.RarityWeight switch
+            {
+                >= 2.0f => RollChance(0.35) ? "FishScale" : null,
+                >= 1.0f => RollChance(0.25) ? "FishFin" : null,
+                _       => RollChance(0.30) ? "FishFin" : null,
+            };
+            if (drop != null)
+                Player.Inventory[drop] = Player.Inventory.GetValueOrDefault(drop) + 1;
+            if ((fishDef.FishCategory == "Saltwater" || fishDef.FishCategory == "Deep") && RollChance(0.20))
+                Player.Inventory["BrineCrystal"] = Player.Inventory.GetValueOrDefault("BrineCrystal") + 1;
+        }
+
         await _playerRepo.UpdateAsync(Player!);
         return newRecord;
     }
+
+    private static readonly Random _rng = new();
+    private static bool RollChance(double probability) => _rng.NextDouble() < probability;
 
     public async Task ResetFishingStreakAsync()
     {

@@ -710,6 +710,11 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 
 .inv-modal-buff { font-size: .73rem; color: #7ab0d4; font-style: italic; margin: 0; }
 .fish-world-record { color: #d4a840; font-style: normal; }
+.fish-category-tag { display: inline-block; font-size: .65rem; font-style: normal; font-weight: 600; border-radius: 8px; padding: 1px 7px; letter-spacing: .04em; }
+.fish-category-freshwater { background: rgba(40,120,200,.18); color: #70b8f0; }
+.fish-category-saltwater  { background: rgba(40,180,140,.18); color: #50d0b0; }
+.fish-category-deep       { background: rgba(80,40,160,.18);  color: #a080e0; }
+.fish-category-cold       { background: rgba(160,220,255,.18); color: #a8d8f8; }
 
 /* ── Inventory Modal — tabs ──────────────────────────────────────────────── */
 .inv-tabs { display: flex; gap: .3rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; margin-bottom: .4rem; }

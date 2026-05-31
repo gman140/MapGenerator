@@ -11,6 +11,7 @@
 @inject ChallengeSessionService ChallengeSession
 @inject FishingSessionService FishingSession
 @inject MapGenerator.Fishing.Interfaces.IFishDefinitionProvider FishProvider
+@inject MapGenerator.Domain.Interfaces.IEquipmentDefinitionProvider EquipmentProvider
 @using MapGenerator.Application.Services
 @using MapGenerator.Combat.Enums
 @using MapGenerator.Combat.Models
@@ -105,6 +106,7 @@ else
                             EquippedWeaponId="@Session.Player.EquippedWeaponId"
                             EquippedArmorId="@Session.Player.EquippedArmorId"
                             EquippedHatId="@Session.Player.EquippedHatId"
+                            EquippedLureId="@Session.Player.EquippedLureId"
                             OnUse="HandleUseAsync"
                             OnEquip="HandleEquipAsync"
                             OnUnequip="HandleUnequipAsync"
@@ -806,6 +808,8 @@ OnDance="HandleDanceAsync"
         };
 
         var companion = Session.Companion;
+        var equippedLure = Session.Player.EquippedLureId != null
+            ? EquipmentProvider.GetById(Session.Player.EquippedLureId) : null;
         var initData = new FishingInitData
         {
             LocationLabel          = config.LocationLabel,
@@ -817,6 +821,10 @@ OnDance="HandleDanceAsync"
             RarityMultiplier       = rarityMultiplier,
             WaitTimeMultiplier     = waitMultiplier,
             FishingStreak          = Session.Player.FishingStreak,
+            LureCategory           = equippedLure?.LureCategory,
+            LureCategoryBoost      = equippedLure?.LureCategoryBoost ?? 1.0,
+            LureRarityBoost        = equippedLure?.LureRarityBoost ?? 1.0,
+            LureName               = equippedLure?.Name,
             FishPool               = [.. fishPool],
             PlayerSprite           = Session.Player.SpritePixels,
             CompanionSprite        = companion?.SpritePixels ?? [],

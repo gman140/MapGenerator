@@ -28,6 +28,18 @@ public class FishingInitData
 
     public bool StreakBonusActive => FishingStreak >= 3;
 
+    /// <summary>Fish category the equipped lure boosts (e.g. "Freshwater"). Null when no category lure equipped.</summary>
+    public string? LureCategory { get; init; }
+
+    /// <summary>Pool weight multiplier for fish matching LureCategory.</summary>
+    public double LureCategoryBoost { get; init; } = 1.0;
+
+    /// <summary>Additional rarity multiplier applied to rare fish (Pearl Spinner boon).</summary>
+    public double LureRarityBoost { get; init; } = 1.0;
+
+    /// <summary>Display name of the equipped lure for the fishing UI. Null when no lure equipped.</summary>
+    public string? LureName { get; init; }
+
     /// <summary>Fish pool for this location, filtered to the player's pole tier.</summary>
     public FishDefinition[] FishPool { get; init; } = [];
 

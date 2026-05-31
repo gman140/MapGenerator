@@ -39,6 +39,7 @@
     var weaponItems = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Weapon").OrderBy(kv => kv.Key).ToList();
     var armorItems  = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Armor").OrderBy(kv => kv.Key).ToList();
     var hatItems    = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Hat").OrderBy(kv => kv.Key).ToList();
+    var lureItems   = allItems.Where(kv => kv.Value > 0 && Items.FindEquipment(kv.Key)?.EquipmentSlot == "Lure").OrderBy(kv => kv.Key).ToList();
 }
 @if (_open)
 {
@@ -106,11 +107,11 @@
                             <div class="inv-modal-item">
                                 <div class="inv-modal-item-header">
                                     <span class="inv-modal-name">@name</span>
-                                    <span class="inv-modal-qty">×@qty</span>
                                     @if (!string.IsNullOrEmpty(def.CombatBuffLabel))
                                     {
                                         <span class="inv-modal-buff">@def.CombatBuffLabel</span>
                                     }
+                                    <span class="inv-modal-qty">×@qty</span>
                                 </div>
                                 @if (!string.IsNullOrEmpty(desc))
                                 {
@@ -130,11 +131,11 @@
                             <div class="inv-modal-item">
                                 <div class="inv-modal-item-header">
                                     <span class="inv-modal-name">@def.Name</span>
-                                    <span class="inv-modal-qty">×@qty</span>
                                     @if (def.IsChainMaterial)
                                     {
                                         <span class="inv-modal-buff">Crafting Material</span>
                                     }
+                                    <span class="inv-modal-qty">×@qty</span>
                                 </div>
                                 @if (!string.IsNullOrEmpty(def.Description))
                                 {
@@ -192,6 +193,7 @@
                     @RenderEquipSlot("Weapon", "⚔ Weapon", EquippedWeaponId, weaponItems)
                     @RenderEquipSlot("Armor", "🛡 Armor", EquippedArmorId, armorItems)
                     @RenderEquipSlot("Hat", "🎩 Hat", EquippedHatId, hatItems)
+                    @RenderEquipSlot("Lure", "🎣 Lure", EquippedLureId, lureItems)
                 </div>
             }
             else
@@ -219,6 +221,10 @@
                                 <div class="inv-modal-item">
                                     <div class="inv-modal-item-header">
                                         <span class="inv-modal-name">@(isRare ? "★ " : "")@def.Name</span>
+                                        @if (!string.IsNullOrEmpty(def.FishCategory))
+                                        {
+                                            <span class="inv-modal-buff fish-category-tag fish-category-@def.FishCategory.ToLower()">@def.FishCategory</span>
+                                        }
                                         <span class="inv-modal-qty">×@entry.TotalCaught caught</span>
                                     </div>
                                     <p class="inv-modal-desc">First caught @entry.FirstCaughtAt.ToString("MMM d, yyyy")</p>
@@ -265,6 +271,7 @@
     [Parameter] public string? EquippedWeaponId { get; set; }
     [Parameter] public string? EquippedArmorId { get; set; }
     [Parameter] public string? EquippedHatId { get; set; }
+    [Parameter] public string? EquippedLureId { get; set; }
     [Parameter] public EventCallback<string> OnUse { get; set; }
     [Parameter] public EventCallback<string> OnEquip { get; set; }
     [Parameter] public EventCallback<string> OnUnequip { get; set; }
@@ -331,7 +338,7 @@
                 __builder.AddAttribute(seq++, "class", "inv-modal-name");
                 __builder.AddContent(seq++, name);
                 __builder.CloseElement();
-                if (def != null && def.Affixes.Count > 0)
+                if (def != null && (def.Affixes.Count > 0 || def.EquipmentSlot == "Lure"))
                 {
                     __builder.OpenElement(seq++, "span");
                     __builder.AddAttribute(seq++, "class", "equip-stat-hint");
@@ -374,6 +381,18 @@
         }
         if (def.EquipmentSlot == "Weapon")
             parts.Add(FormatDamageType(def.WeaponDamageType));
+        if (def.EquipmentSlot == "Lure")
+        {
+            if (def.LureCategory != null)
+            {
+                string mult = def.LureCategoryBoost % 1 == 0
+                    ? $"{def.LureCategoryBoost:F0}×"
+                    : $"{def.LureCategoryBoost:F1}×";
+                parts.Add($"{mult} {def.LureCategory} fish");
+            }
+            if (def.LureRarityBoost > 1.0)
+                parts.Add($"+{(def.LureRarityBoost - 1.0) * 100:F0}% rare fish chance");
+        }
         return string.Join(" · ", parts);
     }
 
