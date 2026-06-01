@@ -94,6 +94,22 @@ public static class RunnerRenderer
             }
             double drawEx = ex + leanOffset;
 
+            bool isBlocking = enemy.CanBlock
+                && enemy.BlockRecoveryMs <= 0
+                && enemy.AttackCooldownMs > threshold
+                && enemy.AttackAnimMs <= 0;
+
+            // Block aura (drawn behind body)
+            if (isBlocking)
+            {
+                double auraCx = ex + enemyW / 2;
+                double auraCy = ey + enemyH / 2;
+                double auraR  = (isBoss ? 44.0 : 30.0);
+                var aura = DrawCmd.Circle(auraCx, auraCy, auraR, "#2255bb");
+                aura.Alpha = 0.25;
+                cmds.Add(aura);
+            }
+
             // Draw body (at leaned position)
             if (isBoss)
                 DrawBoss(cmds, drawEx, ey);
@@ -158,12 +174,30 @@ public static class RunnerRenderer
             if (isBoss)
                 cmds.Add(DrawCmd.Text("BOSS", ex + enemyW / 2 - 9, barY - 2, "#ff4444", "bold 10px monospace"));
 
-            // Windup "!" indicator (hidden while swipe is playing)
-            if ((windingUp || bossWindup) && enemy.AttackAnimMs <= 0)
+            double indX = ex + enemyW * 0.5 - (isBoss ? 0 : 2);
+            double indY = barY - 14;
+
+            if (isBlocking)
             {
+                // Shield icon
+                double shX = indX, shY = indY - 4;
+                cmds.Add(DrawCmd.Poly([
+                    shX - 6, shY - 5,  shX + 6, shY - 5,
+                    shX + 7, shY + 0,  shX + 5, shY + 5,
+                    shX,     shY + 9,
+                    shX - 5, shY + 5,  shX - 7, shY + 0,
+                ], "#3377dd"));
+                cmds.Add(DrawCmd.Poly([
+                    shX - 3, shY - 3,  shX + 3, shY - 3,
+                    shX + 4, shY + 1,  shX + 2, shY + 5,
+                    shX,     shY + 7,
+                    shX - 2, shY + 5,  shX - 4, shY + 1,
+                ], "#88bbff"));
+            }
+            else if ((windingUp || bossWindup) && enemy.AttackAnimMs <= 0)
+            {
+                // Windup "!" indicator
                 double windAlpha = 1.0 - enemy.AttackCooldownMs / threshold;
-                double indX = ex + enemyW * 0.5 - (isBoss ? 0 : 2);
-                double indY = barY - 14;
                 cmds.Add(DrawCmd.Arc(indX, indY, 9, 0, Math.PI * 2, "#ff2200", 2, windAlpha * 0.9));
                 var excl = DrawCmd.Text("!", indX, indY + 5, "#ff4444", "bold 14px monospace", "center");
                 excl.Alpha = windAlpha;
@@ -816,4 +850,7 @@ public class DrawCmd
 
     public static DrawCmd Arc(double cx, double cy, double radius, double a1, double a2, string color, double lineWidth, double alpha) =>
         new() { T = "arc", X = cx, Y = cy, W = radius, A1 = a1, A2 = a2, C = color, H = lineWidth, Alpha = alpha };
+
+    public static DrawCmd Circle(double cx, double cy, double radius, string color) =>
+        new() { T = "circle", X = cx, Y = cy, W = radius, C = color };
 }

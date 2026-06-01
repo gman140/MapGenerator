@@ -131,6 +131,7 @@ public static class RunnerEngine
                                         : type == EnemyType.Thief ? ThiefSpeedPx : 80.0,
                     AttackIntervalMs    = type == EnemyType.Boss ? 1500.0 : type == EnemyType.Thief ? 2000.0 : 2500.0,
                     AttackCooldownMs    = type == EnemyType.Boss ? 1500.0 : type == EnemyType.Thief ? 2000.0 : 2500.0,
+                    CanBlock            = type == EnemyType.Melee || type == EnemyType.Boss,
                     ShockwaveIntervalMs = type == EnemyType.Boss ? BossShockwaveInterval : double.MaxValue,
                     ShockwaveCooldownMs = type == EnemyType.Boss ? 3000.0 : 0.0, // first shockwave after 3 s
                     Color = type switch
@@ -210,7 +211,8 @@ public static class RunnerEngine
         state.AttackBoostMs         = Math.Max(0, state.AttackBoostMs - deltaMs);
         foreach (var e in state.Enemies)
         {
-            e.AttackAnimMs = Math.Max(0, e.AttackAnimMs - deltaMs);
+            e.AttackAnimMs    = Math.Max(0, e.AttackAnimMs - deltaMs);
+            e.BlockRecoveryMs = Math.Max(0, e.BlockRecoveryMs - deltaMs);
             if (e.IsDefeated)
             {
                 if (e.DefeatedAnimMs < 0)       e.DefeatedAnimMs = 600.0;
@@ -332,6 +334,7 @@ public static class RunnerEngine
                 {
                     enemy.AttackAnimMs      = 200.0;
                     enemy.HasAttacked       = true;
+                    enemy.BlockRecoveryMs   = 400.0;
                     state.SoundEnemyAttack  = true;
                     DamagePlayer(state, enemy.Damage, "#ff4444");
                     enemy.AttackCooldownMs  = enemy.AttackIntervalMs;
@@ -522,10 +525,28 @@ public static class RunnerEngine
 
         int dmg = Math.Max(1, playerAttackStat / 2 + 5);
         if (state.AttackBoostMs > 0) dmg *= 2;
+
+        double windupThreshold = target.Type == EnemyType.Boss ? 600.0 : 450.0;
+        bool isBlocking = target.CanBlock
+            && target.BlockRecoveryMs <= 0
+            && target.AttackCooldownMs > windupThreshold
+            && target.AttackAnimMs <= 0;
+
+        if (isBlocking) dmg = Math.Max(1, dmg / 4);
+
         target.Hp = Math.Max(0, target.Hp - dmg);
         state.AttackCooldownMs = AttackCooldownMs;
-        state.AttackAnimMs = 220.0;
-        AddFloat(state, target.ScreenX + 18, GroundY - 70, $"-{dmg}", "#ffdd44");
+        state.AttackAnimMs     = 220.0;
+
+        if (isBlocking)
+        {
+            AddFloat(state, target.ScreenX + 18, GroundY - 70, $"-{dmg}", "#6699cc");
+            AddFloat(state, target.ScreenX + 18, GroundY - 85, "BLOCK!", "#4488ff");
+        }
+        else
+        {
+            AddFloat(state, target.ScreenX + 18, GroundY - 70, $"-{dmg}", "#ffdd44");
+        }
 
         // Parry sweet-spot: player strikes within 400 ms of the enemy's last attack → knockback
         const double ParryWindowMs = 400.0;

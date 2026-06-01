@@ -21,6 +21,8 @@ public class RunnerEnemy
     public double AttackAnimMs { get; set; }  // > 0 while the attack swipe is playing
     public bool HasAttacked { get; set; }
     public double DefeatedAnimMs { get; set; } = -1.0; // -1 = not yet triggered; >0 = ghost playing
+    public bool CanBlock { get; init; }
+    public double BlockRecoveryMs { get; set; }         // >0 = block is down after attacking
     public double ShockwaveIntervalMs { get; init; } = double.MaxValue; // only used by Boss
     public double ShockwaveCooldownMs { get; set; }
 }

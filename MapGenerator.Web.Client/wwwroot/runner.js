@@ -112,6 +112,16 @@ export function renderFrame(canvasId, commandsJson) {
                 break;
             }
 
+            case 'circle':
+                ctx.save();
+                ctx.globalAlpha = c.alpha ?? 1;
+                ctx.fillStyle = c.c;
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.w, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                break;
+
             case 'arc':
                 ctx.save();
                 ctx.globalAlpha = c.alpha ?? 1;
