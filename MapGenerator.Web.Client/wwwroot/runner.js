@@ -50,6 +50,9 @@ export function initKeyHandler(dotnetRef) {
         } else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
             e.preventDefault();
             dotnetRef.invokeMethodAsync('AttackKey');
+        } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyX') {
+            e.preventDefault();
+            dotnetRef.invokeMethodAsync('DodgeKey');
         }
     };
     document.addEventListener('keydown', window._runnerKeyHandler);
@@ -100,8 +103,11 @@ export function renderFrame(canvasId, commandsJson) {
             case 'sprite': {
                 const img = _sprites[c.s];
                 if (img) {
+                    ctx.save();
+                    ctx.globalAlpha = c.alpha ?? 1;
                     ctx.imageSmoothingEnabled = false;
                     ctx.drawImage(img, c.x, c.y, c.w, c.h);
+                    ctx.restore();
                 }
                 break;
             }
@@ -142,6 +148,68 @@ function getAudio() {
     if (!_audio) _audio = new (window.AudioContext || window.webkitAudioContext)();
     if (_audio.state === 'suspended') _audio.resume();
     return _audio;
+}
+
+export function playDamageSound() {
+    try {
+        const ctx = getAudio();
+        // Short low-frequency thud with noise burst
+        const len = Math.floor(ctx.sampleRate * 0.14);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++)
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 0.7);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'lowpass';
+        filt.frequency.value = 500;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.55, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+        src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+        src.start();
+    } catch (_) {}
+}
+
+export function playDodgeSound() {
+    try {
+        const ctx = getAudio();
+        // Quick descending whoosh
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.14);
+        g.gain.setValueAtTime(0.18, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.14);
+    } catch (_) {}
+}
+
+export function playEnemyAttackSound() {
+    try {
+        const ctx = getAudio();
+        // Heavy bandpass noise burst — heavier than the player attack
+        const len = Math.floor(ctx.sampleRate * 0.10);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++)
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.1);
+        const src  = ctx.createBufferSource();
+        src.buffer = buf;
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'bandpass';
+        filt.frequency.value = 700;
+        filt.Q.value = 0.7;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.50, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+        src.start();
+    } catch (_) {}
 }
 
 export function playJumpSound() {

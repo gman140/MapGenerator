@@ -22,8 +22,13 @@
                     disabled="@(_state.AttackCooldownMs > 0)">
                 ⚔ Attack
             </button>
+            <button class="runner-btn runner-btn-dodge"
+                    @onpointerdown="OnDodge"
+                    disabled="@(_state.DodgeCooldownMs > 0 || _state.DodgeMs > 0)">
+                ⚡ Dodge
+            </button>
         </div>
-        <p class="runner-hint">Keyboard: <strong>Space</strong> to jump · <strong>Enter</strong> to attack</p>
+        <p class="runner-hint">Keyboard: <strong>Space</strong> to jump · <strong>Enter</strong> to attack · <strong>Shift/X</strong> to dodge</p>
     }
     else if (_state.Phase == RunnerPhase.Complete)
     {
@@ -96,6 +101,9 @@
 
         RunnerEngine.Tick(_state, InitData.Config, timestamp);
 
+        if (_state.SoundDamage)      { _state.SoundDamage = false;      _ = _js?.InvokeVoidAsync("playDamageSound"); }
+        if (_state.SoundEnemyAttack) { _state.SoundEnemyAttack = false; _ = _js?.InvokeVoidAsync("playEnemyAttackSound"); }
+
         if (_state.Phase != RunnerPhase.Playing)
         {
             await _js!.InvokeVoidAsync("stopLoop");
@@ -123,8 +131,17 @@
         _ = _js?.InvokeVoidAsync("playAttackSound");
     }
 
-    [JSInvokable] public void JumpKey() => OnJump();
+    private void OnDodge()
+    {
+        bool wasActive = _state.DodgeMs > 0;
+        RunnerEngine.Dodge(_state);
+        if (_state.DodgeMs > 0 && !wasActive)
+            _ = _js?.InvokeVoidAsync("playDodgeSound");
+    }
+
+    [JSInvokable] public void JumpKey()   => OnJump();
     [JSInvokable] public void AttackKey() => OnAttack();
+    [JSInvokable] public void DodgeKey()  => OnDodge();
 
     private async Task Retry()
     {

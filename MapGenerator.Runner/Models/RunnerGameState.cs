@@ -32,14 +32,30 @@ public class RunnerGameState
     public double TotalDistance { get; set; }
     public double DistanceTraveled => WorldOffset;
 
+    // Player abilities
+    public bool HasDoubleJump { get; set; } = true;
+    public double DodgeMs { get; set; }          // > 0 while invincible
+    public double DodgeCooldownMs { get; set; }  // > 0 while recharging
+
+    // Pickups
+    public List<RunnerPickup> Pickups { get; set; } = [];
+    public double AttackBoostMs { get; set; }       // > 0 while attack is doubled
+    public double PickupSpawnCooldownMs { get; set; }
+
     // Entities
     public List<RunnerObstacle> Obstacles { get; set; } = [];
     public List<RunnerEnemy> Enemies { get; set; } = [];
     public RunnerChest? Chest { get; set; }
     public List<RunnerProjectile> Projectiles { get; set; } = [];
+    public List<RunnerSpider> Spiders { get; set; } = [];
     public List<double> PendingEnemyTriggers { get; set; } = [];
     public List<FloatingText> FloatingTexts { get; set; } = [];
     public double NextObstacleWorldX { get; set; }
+    public double SpiderSpawnCooldownMs { get; set; }
+
+    // One-shot sound triggers — set by engine, cleared by the component after firing
+    public bool SoundDamage { get; set; }
+    public bool SoundEnemyAttack { get; set; }
 
     // Phase
     public RunnerPhase Phase { get; set; } = RunnerPhase.Playing;

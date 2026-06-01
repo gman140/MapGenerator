@@ -10,4 +10,6 @@ public class RunnerObstacle
     public bool IsGap { get; init; }
     public string Color { get; init; } = "#808090";
     public double HitCooldownMs { get; set; }
+    /// <summary>True = floating platform the player can land on; false = boulder or gap.</summary>
+    public bool IsPlatform { get; init; }
 }

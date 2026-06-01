@@ -1,6 +1,6 @@
 namespace MapGenerator.Runner.Models;
 
-public enum EnemyType { Melee, Shooter }
+public enum EnemyType { Melee, Shooter, Thief, Boss }
 
 public class RunnerEnemy
 {
@@ -17,4 +17,10 @@ public class RunnerEnemy
     public EnemyType Type { get; init; } = EnemyType.Melee;
     public double ProjectileIntervalMs { get; init; } = 1800.0;
     public double ProjectileCooldownMs { get; set; } = 1800.0;
+    public double WalkCycleMs { get; set; }
+    public double AttackAnimMs { get; set; }  // > 0 while the attack swipe is playing
+    public bool HasAttacked { get; set; }
+    public double DefeatedAnimMs { get; set; } = -1.0; // -1 = not yet triggered; >0 = ghost playing
+    public double ShockwaveIntervalMs { get; init; } = double.MaxValue; // only used by Boss
+    public double ShockwaveCooldownMs { get; set; }
 }
