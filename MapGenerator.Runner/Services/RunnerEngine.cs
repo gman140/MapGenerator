@@ -21,7 +21,11 @@ public static class RunnerEngine
     private const double GapWidth = 60.0;
     public  const double AttackRange = 90.0;
     private const double ProjectileY = GroundY - 28;     // flies at mid-body height; player must jump to dodge
-    private const double AttackCooldownMs = 500.0;
+    private const double AttackCooldownMs    = 500.0;
+    private const double AxeVelocityX        = 340.0;
+    private const double AxeInitialVelocityY = -200.0;
+    private const double AxeGravity          = 520.0;
+    private const double AxeRotationSpeed    = 6.0;
     private const double CompanionAttackCooldownMs = 2200.0;
     private const double SpeedAcceleration = 8.0;
     public  const double ChestWidth  = 30.0;
@@ -208,6 +212,7 @@ public static class RunnerEngine
         state.CompanionLandImpactMs = Math.Max(0, state.CompanionLandImpactMs - deltaMs);
         state.DodgeMs               = Math.Max(0, state.DodgeMs - deltaMs);
         state.DodgeCooldownMs       = Math.Max(0, state.DodgeCooldownMs - deltaMs);
+        state.DamageInvincibilityMs = Math.Max(0, state.DamageInvincibilityMs - deltaMs);
         state.AttackBoostMs         = Math.Max(0, state.AttackBoostMs - deltaMs);
         foreach (var e in state.Enemies)
         {
@@ -346,22 +351,94 @@ public static class RunnerEngine
         for (int i = state.Projectiles.Count - 1; i >= 0; i--)
         {
             var proj = state.Projectiles[i];
-            proj.X -= proj.SpeedPx * dt;
 
-            if (proj.X + 12 < 0)
+            if (proj.IsPlayerAxe)
             {
-                state.Projectiles.RemoveAt(i);
-                continue;
+                proj.VelocityY += AxeGravity * dt;
+                proj.X         += proj.VelocityX * dt;
+                proj.Y         += proj.VelocityY * dt;
+                proj.Rotation  += AxeRotationSpeed * dt;
+
+                if (proj.X > CanvasWidth + 20 || proj.Y > GroundY + 10)
+                {
+                    state.Projectiles.RemoveAt(i);
+                    continue;
+                }
+
+                bool hit = false;
+                foreach (var enemy in state.Enemies.Where(e => !e.IsDefeated))
+                {
+                    double ew  = enemy.Type == EnemyType.Boss ? 54.0 : 36.0;
+                    double eh  = enemy.Type == EnemyType.Boss ? 68.0 : 46.0;
+                    double ecx = enemy.ScreenX + ew * 0.5;
+                    double ecy = GroundY - eh * 0.5;
+                    double dx  = proj.X - ecx, dy = proj.Y - ecy;
+                    if (dx * dx + dy * dy < ew * 0.55 * (ew * 0.55))
+                    {
+                        double wt       = enemy.Type == EnemyType.Boss ? 600.0 : 450.0;
+                        bool blocking   = enemy.CanBlock && enemy.BlockRecoveryMs <= 0
+                                       && enemy.AttackCooldownMs > wt && enemy.AttackAnimMs <= 0;
+                        int dmg         = blocking ? Math.Max(1, proj.Damage / 4) : proj.Damage;
+                        enemy.Hp        = Math.Max(0, enemy.Hp - dmg);
+                        string col      = blocking ? "#6699cc" : "#ffaa44";
+                        AddFloat(state, enemy.ScreenX + 18, GroundY - 70, $"-{dmg}", col);
+                        if (blocking) AddFloat(state, enemy.ScreenX + 18, GroundY - 85, "BLOCK!", "#4488ff");
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit) state.Projectiles.RemoveAt(i);
             }
-
-            // Collision with player (±10 horizontal, ±5 vertical around projectile center)
-            if (proj.X + 10 > playerLeft &&
-                proj.X - 10 < playerRight &&
-                proj.Y + 5  > state.PlayerY &&
-                proj.Y - 5  < playerBottom)
+            else if (proj.IsCompanionBolt)
             {
-                DamagePlayer(state, proj.Damage, "#ffaa00");
-                state.Projectiles.RemoveAt(i);
+                proj.X += proj.SpeedPx * dt;
+
+                if (proj.X > CanvasWidth + 20)
+                {
+                    state.Projectiles.RemoveAt(i);
+                    continue;
+                }
+
+                bool hit = false;
+                foreach (var enemy in state.Enemies.Where(e => !e.IsDefeated))
+                {
+                    double ew  = enemy.Type == EnemyType.Boss ? 54.0 : 36.0;
+                    double eh  = enemy.Type == EnemyType.Boss ? 68.0 : 46.0;
+                    if (proj.X + 10 > enemy.ScreenX      && proj.X - 10 < enemy.ScreenX + ew &&
+                        proj.Y +  5 > GroundY - eh       && proj.Y -  5 < GroundY)
+                    {
+                        double wt     = enemy.Type == EnemyType.Boss ? 600.0 : 450.0;
+                        bool blocking = enemy.CanBlock && enemy.BlockRecoveryMs <= 0
+                                     && enemy.AttackCooldownMs > wt && enemy.AttackAnimMs <= 0;
+                        int dmg       = blocking ? Math.Max(1, proj.Damage / 4) : proj.Damage;
+                        enemy.Hp      = Math.Max(0, enemy.Hp - dmg);
+                        AddFloat(state, enemy.ScreenX + 18, GroundY - 60, $"-{dmg}", blocking ? "#6699cc" : "#a0e0ff");
+                        if (blocking) AddFloat(state, enemy.ScreenX + 18, GroundY - 75, "BLOCK!", "#4488ff");
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit) state.Projectiles.RemoveAt(i);
+            }
+            else
+            {
+                proj.X -= proj.SpeedPx * dt;
+
+                if (proj.X + 12 < 0)
+                {
+                    state.Projectiles.RemoveAt(i);
+                    continue;
+                }
+
+                // Collision with player
+                if (proj.X + 10 > playerLeft &&
+                    proj.X - 10 < playerRight &&
+                    proj.Y + 5  > state.PlayerY &&
+                    proj.Y - 5  < playerBottom)
+                {
+                    DamagePlayer(state, proj.Damage, "#ffaa00");
+                    state.Projectiles.RemoveAt(i);
+                }
             }
         }
 
@@ -447,18 +524,22 @@ public static class RunnerEngine
             state.Pickups.RemoveAt(i);
         }
 
-        // Companion auto-attack
+        // Companion auto-attack — fires a projectile toward the nearest visible enemy
         state.CompanionAttackCooldownMs -= deltaMs;
         if (state.CompanionAttackCooldownMs <= 0)
         {
-            var target = state.Enemies
-                .Where(e => !e.IsDefeated && e.ScreenX < PlayerScreenX + 180)
-                .MinBy(e => e.ScreenX);
-            if (target != null)
+            bool anyEnemy = state.Enemies.Any(e => !e.IsDefeated && e.ScreenX < CanvasWidth + 10);
+            if (anyEnemy)
             {
                 int dmg = Math.Max(1, cfg.CompanionAttackStat / 3 + 3);
-                target.Hp = Math.Max(0, target.Hp - dmg);
-                AddFloat(state, target.ScreenX + 18, GroundY - 60, $"-{dmg}", "#a0e0ff");
+                state.Projectiles.Add(new RunnerProjectile
+                {
+                    X               = PlayerScreenX - 16,
+                    Y               = ProjectileY,
+                    SpeedPx         = 300.0,
+                    Damage          = dmg,
+                    IsCompanionBolt = true,
+                });
             }
             state.CompanionAttackCooldownMs = CompanionAttackCooldownMs;
         }
@@ -521,7 +602,23 @@ public static class RunnerEngine
             .Where(e => !e.IsDefeated && e.ScreenX < PlayerScreenX + AttackRange && e.ScreenX > PlayerScreenX - 20)
             .MinBy(e => e.ScreenX);
 
-        if (target == null) return;
+        if (target == null)
+        {
+            // No melee target — throw a ranged axe
+            int axeDmg = Math.Max(1, playerAttackStat / 2 + 3);
+            if (state.AttackBoostMs > 0) axeDmg *= 2;
+            state.Projectiles.Add(new RunnerProjectile
+            {
+                X           = PlayerScreenX + PlayerWidth + 4,
+                Y           = state.PlayerY + PlayerHeight * 0.35,
+                IsPlayerAxe = true,
+                VelocityX   = AxeVelocityX,
+                VelocityY   = AxeInitialVelocityY + state.PlayerVelocityY * 0.3,
+                Damage      = axeDmg,
+            });
+            state.AttackCooldownMs = AttackCooldownMs;
+            return;
+        }
 
         int dmg = Math.Max(1, playerAttackStat / 2 + 5);
         if (state.AttackBoostMs > 0) dmg *= 2;
@@ -584,8 +681,11 @@ public static class RunnerEngine
             AddFloat(state, PlayerScreenX, state.PlayerY - 20, "DODGE!", "#44eeff");
             return;
         }
-        state.SoundDamage = true;
-        state.PlayerHp = Math.Max(0, state.PlayerHp - damage);
+        if (state.DamageInvincibilityMs > 0) return;
+
+        state.SoundDamage           = true;
+        state.DamageInvincibilityMs = 800.0;
+        state.PlayerHp              = Math.Max(0, state.PlayerHp - damage);
         AddFloat(state, PlayerScreenX, state.PlayerY - 8, $"-{damage}", color);
     }
 

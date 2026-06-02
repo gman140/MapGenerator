@@ -112,6 +112,17 @@ export function renderFrame(canvasId, commandsJson) {
                 break;
             }
 
+            case 'ctx_save':
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.rot ?? 0);
+                ctx.translate(-c.x, -c.y);
+                break;
+
+            case 'ctx_restore':
+                ctx.restore();
+                break;
+
             case 'circle':
                 ctx.save();
                 ctx.globalAlpha = c.alpha ?? 1;

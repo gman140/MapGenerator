@@ -34,8 +34,9 @@ public class RunnerGameState
 
     // Player abilities
     public bool HasDoubleJump { get; set; } = true;
-    public double DodgeMs { get; set; }          // > 0 while invincible
-    public double DodgeCooldownMs { get; set; }  // > 0 while recharging
+    public double DodgeMs { get; set; }               // > 0 while invincible
+    public double DodgeCooldownMs { get; set; }       // > 0 while recharging
+    public double DamageInvincibilityMs { get; set; } // > 0 after taking damage
 
     // Pickups
     public List<RunnerPickup> Pickups { get; set; } = [];

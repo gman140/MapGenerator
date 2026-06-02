@@ -110,6 +110,14 @@ public static class RunnerRenderer
                 cmds.Add(aura);
             }
 
+            // Attack tilt: lean left (counter-clockwise) on attack, pivoting at feet
+            if (enemy.AttackAnimMs > 0)
+            {
+                double tilt   = -(enemy.AttackAnimMs / 200.0) * 0.22;
+                double pivotX = drawEx + enemyW / 2.0;
+                cmds.Add(DrawCmd.CtxSave(pivotX, GroundY, tilt));
+            }
+
             // Draw body (at leaned position)
             if (isBoss)
                 DrawBoss(cmds, drawEx, ey);
@@ -119,6 +127,8 @@ public static class RunnerRenderer
                 DrawThief(cmds, drawEx, ey);
             else
                 DrawWarrior(cmds, drawEx, ey);
+
+            if (enemy.AttackAnimMs > 0) cmds.Add(DrawCmd.CtxRestore());
 
             // Attack swipe — crescent pointing left, fires when AttackAnimMs > 0
             if (enemy.AttackAnimMs > 0)
@@ -217,7 +227,18 @@ public static class RunnerRenderer
         foreach (var proj in state.Projectiles)
         {
             if (proj.X + 26 < 0 || proj.X > CanvasW + 10) continue;
-            if (proj.IsShockwave)
+            if (proj.IsPlayerAxe)
+            {
+                DrawAxe(cmds, proj.X, proj.Y, proj.Rotation);
+            }
+            else if (proj.IsCompanionBolt)
+            {
+                // Bolt travels right: body extends left from tip, bright point on right
+                cmds.Add(DrawCmd.Fill(proj.X - 22, proj.Y - 5, 22, 10, "#55aadd"));
+                cmds.Add(DrawCmd.Fill(proj.X - 26, proj.Y - 4,  5,  8, "#aaddff")); // tail feather
+                cmds.Add(DrawCmd.Fill(proj.X,      proj.Y - 4,  5,  8, "#ddf4ff")); // bright tip
+            }
+            else if (proj.IsShockwave)
             {
                 // Ground-level shockwave from boss: wider, orange glow
                 cmds.Add(DrawCmd.Fill(proj.X - 16, proj.Y - 10, 32, 18, proj.Color));
@@ -259,12 +280,27 @@ public static class RunnerRenderer
         double playerDrawH = RunnerEngine.PlayerHeight * playerSy;
         double playerDrawY = state.PlayerY + RunnerEngine.PlayerHeight - playerDrawH + playerBob;
 
-        double playerAlpha = state.DodgeMs > 0 ? 0.38 : 1.0;
-        DrawCmd playerCmd  = data.PlayerSprite.Length > 0
+        double playerAlpha = state.DodgeMs > 0               ? 0.38
+            : state.DamageInvincibilityMs > 0
+              && (int)(state.DamageInvincibilityMs / 100) % 2 == 0 ? 0.25
+            : 1.0;
+
+        // Attack tilt: lean forward (clockwise) on attack, pivoting at feet
+        if (state.AttackAnimMs > 0)
+        {
+            double tilt    = state.AttackAnimMs / 220.0 * 0.22;
+            double pivotX  = PlayerX + RunnerEngine.PlayerWidth / 2.0;
+            double pivotY  = playerDrawY + playerDrawH;
+            cmds.Add(DrawCmd.CtxSave(pivotX, pivotY, tilt));
+        }
+
+        DrawCmd playerCmd = data.PlayerSprite.Length > 0
             ? DrawCmd.Sprite("player", PlayerX, playerDrawY, RunnerEngine.PlayerWidth, playerDrawH)
             : DrawCmd.Fill(PlayerX, playerDrawY, RunnerEngine.PlayerWidth, playerDrawH, "#5599ff");
         playerCmd.Alpha = playerAlpha;
         cmds.Add(playerCmd);
+
+        if (state.AttackAnimMs > 0) cmds.Add(DrawCmd.CtxRestore());
 
         // Companion: walk bob (opposite phase) + squash/stretch, 2px/cell = 16px
         const double CompDrawSize = 8 * 4; // 3px/cell = 24px
@@ -801,6 +837,34 @@ public static class RunnerRenderer
         cmds.Add(DrawCmd.Poly([ex-2, ey+26, ex+6, ey+23, ex+6, ey+24], "#ffffff")); // edge highlight
     }
 
+    // ── Axe drawing ───────────────────────────────────────────────────────────────
+
+    private static void DrawAxe(List<DrawCmd> cmds, double cx, double cy, double angle)
+    {
+        // Handle: thin brown rectangle along local Y axis
+        double[] handle = [-1.5, -10,  1.5, -10,  1.5, 8,  -1.5, 8];
+        // Blade: hexagonal axe head at the top of the handle
+        double[] blade  = [-6, -13,  6, -13,  8, -10,  7, -6,  -7, -6,  -8, -10];
+        // Blade highlight
+        double[] shine  = [-4, -12,  4, -12,  5.5, -9,  4.5, -7,  -4.5, -7,  -5.5, -9];
+
+        cmds.Add(DrawCmd.Poly(RotateShape(handle, cx, cy, angle), "#7a4a1e"));
+        cmds.Add(DrawCmd.Poly(RotateShape(blade,  cx, cy, angle), "#9999bb"));
+        cmds.Add(DrawCmd.Poly(RotateShape(shine,  cx, cy, angle), "#ccccee"));
+    }
+
+    private static double[] RotateShape(double[] local, double cx, double cy, double angle)
+    {
+        double cos = Math.Cos(angle), sin = Math.Sin(angle);
+        var pts = new double[local.Length];
+        for (int i = 0; i < local.Length; i += 2)
+        {
+            pts[i]     = cx + local[i] * cos - local[i + 1] * sin;
+            pts[i + 1] = cy + local[i] * sin + local[i + 1] * cos;
+        }
+        return pts;
+    }
+
     private static double WalkBob(double cycleMs, double amplitude, double periodMs) =>
         Math.Sin(cycleMs * 2 * Math.PI / periodMs) * amplitude;
 
@@ -830,6 +894,7 @@ public class DrawCmd
     public string? Al { get; set; }  // text align
     public double Pct { get; set; }  // bar fill fraction
     public double[]? Pts { get; set; }  // polygon point pairs [x0,y0,x1,y1,...]
+    public double Rot { get; set; }  // rotation angle for ctx_save
 
     public static DrawCmd Fill(double x, double y, double w, double h, string color) =>
         new() { T = "fill", X = x, Y = y, W = w, H = h, C = color };
@@ -853,4 +918,10 @@ public class DrawCmd
 
     public static DrawCmd Circle(double cx, double cy, double radius, string color) =>
         new() { T = "circle", X = cx, Y = cy, W = radius, C = color };
+
+    public static DrawCmd CtxSave(double pivotX, double pivotY, double rot) =>
+        new() { T = "ctx_save", X = pivotX, Y = pivotY, Rot = rot };
+
+    public static DrawCmd CtxRestore() =>
+        new() { T = "ctx_restore" };
 }
