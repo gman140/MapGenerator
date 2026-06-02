@@ -573,16 +573,16 @@ OnDance="HandleDanceAsync"
 
         _cooldownUntil = result.CooldownUntil ?? 0;
 
+        _localMessages = await Session.GetTileChatAsync();
+        AddArrivalMessages(Session.Player!.Q, Session.Player.R);
+        await RevealTile(Session.Player.Q, Session.Player.R);
+
         if (result.CombatStarted)
         {
             _combatSession = await Session.GetActiveCombatAsync();
             StateHasChanged();
             return;
         }
-
-        _localMessages = await Session.GetTileChatAsync();
-        AddArrivalMessages(Session.Player!.Q, Session.Player.R);
-        await RevealTile(Session.Player.Q, Session.Player.R);
         await Session.ConsumeGardenProductionAsync();
 
         var (exploded, explosionMsg) = await Session.TryExplodeEggsAsync();
@@ -1009,19 +1009,6 @@ OnDance="HandleDanceAsync"
             return;
         }
 
-        if (result.CombatStarted)
-        {
-            _combatSession = await Session.GetActiveCombatAsync();
-            if (result.RoomMessage != null)
-                _localMessages.Add(new ChatMessage
-                {
-                    SenderName = "World", Content = result.RoomMessage,
-                    IsSystemMessage = true, SentAt = DateTime.UtcNow
-                });
-            StateHasChanged();
-            return;
-        }
-
         if (result.RoomMessage != null)
             _localMessages.Add(new ChatMessage
             {
@@ -1040,6 +1027,17 @@ OnDance="HandleDanceAsync"
             if (result.RevealedRooms != null)
                 foreach (var pos in result.RevealedRooms)
                     _revealedDungeonRooms.Add(pos);
+        }
+
+        if (result.CombatStarted)
+        {
+            _combatSession = await Session.GetActiveCombatAsync();
+            StateHasChanged();
+            return;
+        }
+
+        if (!result.ExitedToSurface)
+        {
 
             // Reload floor data if floor changed
             _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();

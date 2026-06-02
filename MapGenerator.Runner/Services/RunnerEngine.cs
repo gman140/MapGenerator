@@ -557,7 +557,18 @@ public static class RunnerEngine
                            state.Enemies.Count > 0 &&
                            !state.Enemies.Any(e => !e.IsDefeated);
         if (allDefeated && state.Chest == null)
-            state.Chest = new RunnerChest { WorldX = state.WorldOffset + ChestSpawnAheadPx };
+        {
+            double chestX = state.WorldOffset + ChestSpawnAheadPx;
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                bool blocked = state.Obstacles.Any(obs =>
+                    chestX < obs.WorldX + obs.Width &&
+                    chestX + ChestWidth > obs.WorldX);
+                if (!blocked) break;
+                chestX += 50.0;
+            }
+            state.Chest = new RunnerChest { WorldX = chestX };
+        }
 
         // Win / lose
         if (state.PlayerHp <= 0)

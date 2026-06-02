@@ -99,8 +99,8 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 .feature-dot.feature-desert  { fill: #d4a017; }
 .feature-dot.feature-cold    { fill: #85c1e9; }
 .feature-dot.feature-dungeon   { fill: #f0c040; stroke: rgba(120,80,0,0.7);  opacity: 1; animation: dungeon-dot-pulse 2.4s ease-in-out infinite; }
-.feature-dot.feature-challenge { fill: #40d0e0; stroke: rgba(0,100,120,0.7); opacity: 1; animation: challenge-dot-pulse 2.0s ease-in-out infinite; }
-.feature-dot.feature-fishing   { fill: #40e0a0; stroke: rgba(0,100,60,0.7);  opacity: 1; animation: fishing-dot-pulse 2.8s ease-in-out infinite; }
+.feature-dot.feature-challenge { fill: #f07820; stroke: rgba(160,60,0,0.7);  opacity: 1; animation: challenge-dot-pulse 2.0s ease-in-out infinite; }
+.feature-dot.feature-fishing   { fill: #2080c8; stroke: rgba(0,40,120,0.7);  opacity: 1; animation: fishing-dot-pulse 2.8s ease-in-out infinite; }
 
 .feature-dungeon-halo {
     fill: rgba(240, 192, 64, 0.35);
@@ -113,8 +113,8 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 }
 
 .feature-challenge-halo {
-    fill: rgba(64, 208, 224, 0.30);
-    stroke: rgba(64, 208, 224, 0.65);
+    fill: rgba(240, 120, 32, 0.30);
+    stroke: rgba(240, 120, 32, 0.65);
     stroke-width: 0.8;
     pointer-events: none;
     transform-box: fill-box;
@@ -139,12 +139,12 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 
 @keyframes challenge-dot-pulse {
     0%, 100% { opacity: 0.90; }
-    50%       { opacity: 1; filter: drop-shadow(0 0 3px rgba(64, 208, 224, 0.95)); }
+    50%       { opacity: 1; filter: drop-shadow(0 0 3px rgba(240, 120, 32, 0.95)); }
 }
 
 .feature-fishing-halo {
-    fill: rgba(64, 224, 160, 0.28);
-    stroke: rgba(64, 224, 160, 0.55);
+    fill: rgba(32, 128, 200, 0.28);
+    stroke: rgba(32, 128, 200, 0.55);
     stroke-width: 0.8;
     pointer-events: none;
     transform-box: fill-box;
@@ -159,7 +159,7 @@ html, body { height: 100svh; background: var(--bg); color: var(--text); font-fam
 
 @keyframes fishing-dot-pulse {
     0%, 100% { opacity: 0.88; }
-    50%       { opacity: 1; filter: drop-shadow(0 0 3px rgba(64, 224, 160, 0.90)); }
+    50%       { opacity: 1; filter: drop-shadow(0 0 3px rgba(32, 128, 200, 0.90)); }
 }
 
 .player-dot       { pointer-events: none; }
