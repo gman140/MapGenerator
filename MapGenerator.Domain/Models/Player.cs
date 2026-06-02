@@ -29,6 +29,8 @@ public class Player
     public int DungeonFloor { get; set; }
     public int DungeonQ { get; set; }
     public int DungeonR { get; set; }
+    // Persistent revealed rooms per floor; key = "{dungeonInstanceId}:{floorNumber}"
+    public Dictionary<string, List<DungeonRoomCoord>> RevealedDungeonRooms { get; set; } = new();
 
     public bool IsInDungeon => DungeonInstanceId != null;
 

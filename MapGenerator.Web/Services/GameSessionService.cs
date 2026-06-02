@@ -830,6 +830,33 @@ public class GameSessionService : IAsyncDisposable
         return dungeon?.Floors.FirstOrDefault(f => f.FloorNumber == Player.DungeonFloor);
     }
 
+    public HashSet<(int Q, int R)> GetRevealedDungeonRooms()
+    {
+        if (Player == null || !Player.IsInDungeon) return [];
+        var key = $"{Player.DungeonInstanceId}:{Player.DungeonFloor}";
+        var set = new HashSet<(int Q, int R)> { (Player.DungeonQ, Player.DungeonR) };
+        if (Player.RevealedDungeonRooms.TryGetValue(key, out var stored))
+            foreach (var c in stored)
+                set.Add((c.Q, c.R));
+        return set;
+    }
+
+    public async Task AddRevealedDungeonRoomsAsync(IEnumerable<(int Q, int R)> coords)
+    {
+        if (Player == null || !Player.IsInDungeon) return;
+        var key = $"{Player.DungeonInstanceId}:{Player.DungeonFloor}";
+        if (!Player.RevealedDungeonRooms.TryGetValue(key, out var stored))
+        {
+            stored = [];
+            Player.RevealedDungeonRooms[key] = stored;
+        }
+        var existing = stored.Select(c => (c.Q, c.R)).ToHashSet();
+        foreach (var (q, r) in coords)
+            if (existing.Add((q, r)))
+                stored.Add(new DungeonRoomCoord { Q = q, R = r });
+        await _playerRepo.UpdateAsync(Player);
+    }
+
     public bool IsOnDungeonEntrance()
     {
         if (Player == null || Player.IsInDungeon) return false;

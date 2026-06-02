@@ -442,7 +442,7 @@ OnDance="HandleDanceAsync"
         if (Session.Player.IsInDungeon)
         {
             _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
-            _revealedDungeonRooms = [(Session.Player.DungeonQ, Session.Player.DungeonR)];
+            _revealedDungeonRooms = Session.GetRevealedDungeonRooms();
         }
 
         Broadcast.PlayerMoved               += OnPlayerMoved;
@@ -957,9 +957,11 @@ OnDance="HandleDanceAsync"
         if (success)
         {
             _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
-            _revealedDungeonRooms = [(Session.Player!.DungeonQ, Session.Player.DungeonR)];
+            // Load previously revealed rooms for this dungeon, then merge entry reveals
+            _revealedDungeonRooms = Session.GetRevealedDungeonRooms();
             foreach (var pos in revealedOnEntry)
                 _revealedDungeonRooms.Add(pos);
+            await Session.AddRevealedDungeonRoomsAsync(_revealedDungeonRooms);
         }
         StateHasChanged();
     }
@@ -989,10 +991,12 @@ OnDance="HandleDanceAsync"
         }
         else
         {
-            _revealedDungeonRooms = [(result.NewQ, result.NewR)];
+            // Load any previously seen rooms for this floor, then add newly revealed ones
+            _revealedDungeonRooms = Session.GetRevealedDungeonRooms();
             if (result.RevealedRooms != null)
                 foreach (var pos in result.RevealedRooms)
                     _revealedDungeonRooms.Add(pos);
+            await Session.AddRevealedDungeonRoomsAsync(_revealedDungeonRooms);
             _dungeonFloor = await Session.GetCurrentDungeonFloorAsync();
         }
         StateHasChanged();
@@ -1027,6 +1031,7 @@ OnDance="HandleDanceAsync"
             if (result.RevealedRooms != null)
                 foreach (var pos in result.RevealedRooms)
                     _revealedDungeonRooms.Add(pos);
+            await Session.AddRevealedDungeonRoomsAsync(_revealedDungeonRooms);
         }
 
         if (result.CombatStarted)
